@@ -30,6 +30,8 @@ fun translate(text: String,language: String): String {
     return value.replace(Regex("(\\d)h\\b"),"$1 ч")
 }
 private val labels=mapOf(
+    "Website" to "Веб-страница",
+    "Privacy policy" to "Политика за приватност",
     "Shifts and earnings today" to "Смени и заработка денес",
     "Display, reminders and backup" to "Приказ, потсетници и резервна копија",
     "Plan shifts and mark holidays" to "Планирај смени и означи празници",

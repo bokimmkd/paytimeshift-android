@@ -623,10 +623,13 @@ private fun shiftLabel(shift: Shift): String {
         FormSection("Android widget") {UiText("Add a widget from your phone home screen.",fontSize=11.sp)}
         FormSection("PTS · Pay Time Shift") {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                UiText("0.1.5 · Local core preview",Modifier.weight(1f),fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://paytimeshift.com")))}) {
-                    Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(14.dp));Spacer(Modifier.width(4.dp));UiText("paytimeshift.com",fontSize=11.sp)
+                UiText("0.1.7 · Local core preview",Modifier.weight(1f),fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/")))}) {
+                    Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(14.dp));Spacer(Modifier.width(4.dp));UiText("Website",fontSize=11.sp)
                 }
+            }
+            TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/privacy.html")))}) {
+                Icon(Icons.Outlined.PrivacyTip,null,Modifier.size(16.dp));Spacer(Modifier.width(6.dp));UiText("Privacy policy",fontSize=12.sp)
             }
         }
     }
