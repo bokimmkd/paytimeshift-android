@@ -1,6 +1,14 @@
-# PTS · Pay Time Shift — 0.1.5
+# PTS · Pay Time Shift — 0.1.6
 
-Android app: `com.paytimeshift.pts`, versionCode 6, Android 8.0+.
+Android app: `com.paytimeshift.pts`, versionCode 7, Android 8.0+.
+
+## Reporting and payment dialogs in 0.1.6
+
+- Calendar and Earnings share the selected month and year. Changing the reporting month returns Earnings to the monthly report.
+- The month picker opens in the selected year with twelve month buttons in two columns, a highlighted selection and explicit previous/next-year controls. It no longer opens at a year-old entry.
+- Both payday popups use branded PTS headings, job icons, compact teal actions and localized dates with separate payday/from/to labels.
+- Regression coverage checks October → November → October totals for two jobs, saved-data round trips, different years and overnight shifts at a year boundary. A fresh install remains empty; no persistence migration or rate changes are involved.
+- The signed AAB build is configured with four encrypted repository signing Secrets. Build results are available in GitHub Actions; physical-phone UI checks and Play Console acceptance still need verification.
 
 ## Play closed-test candidate 0.1.5
 
@@ -10,7 +18,7 @@ Android app: `com.paytimeshift.pts`, versionCode 6, Android 8.0+.
 - compile/target SDK 36, AGP 8.10.1, Gradle 8.11.1, JDK 17.
 - A new install starts with no jobs, shifts or holidays. No fixture or local database is bundled. Example data is available only after an explicit user choice and confirmation. Automatic Android backup/restore is disabled. Existing local data is never cleared by application startup.
 - Compact design and functionality retained from 0.1.4. Main and secondary screen headings now have icons and short accent-colored Macedonian/English descriptions.
-- GitHub workflow builds/test-checks debug on pushes. Manual workflow_dispatch also builds the signed release AAB using repository secrets. Missing secrets cause an explicit failure.
+- GitHub workflow checks debug/release tests and lint, builds an APK and signed AAB on pushes to main, and supports manual workflow_dispatch using repository Secrets. Missing secrets cause an explicit failure.
 - Private upload key/passwords are never committed to GitHub. The old bundled prototype debug key is used only for debug builds.
 - Google Play's installed APK signature differs from the prototype debug APK. Before switching an existing test phone to Play, export a manual JSON backup; the debug APK may need uninstalling. New testers start empty.
 - Premium billing, live ads and automatic cloud backup remain unconnected. This AAB tests local features and design, not purchases.

@@ -40,6 +40,11 @@ private val labels=mapOf(
     "Review before saving" to "Провери пред зачувување",
     "Export as PDF or image" to "Извези како PDF или слика",
     "Choose an earnings period" to "Избери период за заработката",
+    "Previous year" to "Претходна година", "Next year" to "Следна година",
+    "Previous month" to "Претходен месец", "Next month" to "Следен месец",
+    "Payment details" to "Детали за исплатата",
+    "Payday and covered dates" to "Датум на исплата и платен период",
+    "To" to "До",
 
     "Day of month" to "Ден во месецот",
     "Next / anchor payday" to "Датум на исплата",

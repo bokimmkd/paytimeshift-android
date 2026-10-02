@@ -1,15 +1,15 @@
-# PTS 0.1.5 — прв затворен тест
+# PTS 0.1.6 — прв затворен тест
 
-Пакет: `com.paytimeshift.pts` · versionCode: **6** · target SDK: **36**.
+Пакет: `com.paytimeshift.pts` · versionCode: **7** · target SDK: **36**.
 
 Нова инсталација почнува со празна база. Нема внесени работи или смени. Пример-распоредот се вчитува само ако корисникот го избере и потврди. Локалните податоци на постоечка инсталација не се бришат автоматски.
 
 ## GitHub
 
-Repository: https://github.com/bokimmkd/paytimeshift-android. Кодот и workflow се поставуваат тука. Repository е public; приватниот upload key и неговите лозинки се во посебниот приватен пакет и не се објавуваат.
-Workflow: `.github/workflows/android.yml`. При push на main ги проверува тестовите/lint и гради debug APK. За потпишан AAB избери Actions → PTS Android builds → Run workflow.
+Repository: https://github.com/bokimmkd/paytimeshift-android. Кодот и workflow се поставени тука. Repository е public; приватниот upload key и неговите лозинки се во посебниот приватен пакет и не се објавуваат.
+Workflow: `.github/workflows/android.yml`. При push на main ги проверува тестовите/lint и гради debug APK и потпишан AAB. Може и рачно: Actions → PTS Android builds → Run workflow.
 
-Во Settings → Secrets and variables → Actions додај:
+Во Settings → Secrets and variables → Actions се внесени четирите Secrets:
 
 - `PTS_UPLOAD_KEYSTORE_B64`
 - `PTS_UPLOAD_STORE_PASSWORD`
@@ -23,7 +23,7 @@ Workflow: `.github/workflows/android.yml`. При push на main ги прове
 1. Создај PTS · Pay Time Shift како бесплатна апликација.
 2. Постави policy/контакт/store listing и заврши App content според реалната сегашна функционалност. Не прогласувај облак или плаќање како функционални.
 3. Избери Play App Signing; за новата апликација Google може да создаде app-signing key. AAB е потпишан со посебниот upload key.
-4. Testing → Closed testing → Create release → прикачи `PTS-0.1.5-release.aab`.
+4. Testing → Closed testing → Create release → прикачи `PTS-0.1.6-release.aab`.
 5. Додај ги тестерите и зачувај/испрати ја верзијата за преглед кога задолжителните ставки се пополнети. AAB е локално проверен; прифаќањето и review од Play сè уште не се проверени.
 
 Пред да го замениш досегашниот debug APK на својот телефон со Play-верзија, направи рачна JSON резервна копија. Потписите се различни и може да треба деинсталирање на debug APK. По деинсталација локалните податоци се бришат. За тест со празна база не враќај ја копијата.

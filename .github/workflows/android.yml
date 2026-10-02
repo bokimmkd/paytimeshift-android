@@ -16,6 +16,7 @@ permissions:
 jobs:
   android:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -39,7 +40,6 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
       - name: Build signed Play bundle
-        if: github.event_name == 'workflow_dispatch'
         env:
           PTS_UPLOAD_KEYSTORE_B64: ${{ secrets.PTS_UPLOAD_KEYSTORE_B64 }}
           PTS_UPLOAD_STORE_PASSWORD: ${{ secrets.PTS_UPLOAD_STORE_PASSWORD }}
@@ -56,9 +56,17 @@ jobs:
           printf '%s' "$PTS_UPLOAD_KEYSTORE_B64" | base64 --decode > "$PTS_UPLOAD_STORE_FILE"
           chmod 600 "$PTS_UPLOAD_STORE_FILE"
           gradle testReleaseUnitTest lintRelease bundleRelease
+      - name: Verify bundle signature
+        run: jarsigner -verify app/build/outputs/bundle/release/app-release.aab
       - uses: actions/upload-artifact@v4
-        if: github.event_name == 'workflow_dispatch'
         with:
           name: PTS-Play-AAB
           path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PTS-validation
+          path: |
+            app/build/test-results/test*UnitTest/*.xml
+            app/build/reports/lint-results-*.html
           if-no-files-found: error

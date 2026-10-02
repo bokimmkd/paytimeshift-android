@@ -80,6 +80,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var saving by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
+    var reportMonthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     var settings by rememberSaveable { mutableStateOf(false) }
     var jobEditor by remember { mutableStateOf<Job?>(null) }
     var addJob by remember { mutableStateOf(false) }
@@ -134,9 +135,9 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab==Tab.Calendar && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                 if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) });FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
                 else when(tab) {
-                    Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{tab=Tab.Earnings}) }
-                    Tab.Calendar -> item { CalendarScreen(data,{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it}) }
-                    Tab.Earnings -> item { EarningsScreen(data){message=it} }
+                    Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
+                    Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it}) }
+                    Tab.Earnings -> item { EarningsScreen(data,reportMonthText,{reportMonthText=it}) }
                     Tab.Jobs -> item { JobsScreen(data,{jobEditor=it},{addJob=true},{message=it},{patterns=true}) }
                 }
             }
@@ -348,9 +349,9 @@ private fun shiftLabel(shift: Shift): String {
         }
     }
 }
-@Composable private fun CalendarScreen(data: AppData,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit) {
-    var monthText by rememberSaveable {mutableStateOf(YearMonth.now().toString())};val month=YearMonth.parse(monthText)
-    var selectedText by rememberSaveable {mutableStateOf(LocalDate.now().toString())};val selected=LocalDate.parse(selectedText);val locale=uiLocale();var menu by remember {mutableStateOf(false)}
+@Composable private fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit) {
+    val month=YearMonth.parse(monthText)
+    var selectedText by rememberSaveable(monthText) {mutableStateOf(if(month==YearMonth.now()) LocalDate.now().toString() else month.atDay(1).toString())};val selected=LocalDate.parse(selectedText);val locale=uiLocale();var menu by remember {mutableStateOf(false)}
     LaunchedEffect(selectedText) {onSelected(selectedText)}
     val selectedShifts=data.shifts.filter {it.date==selectedText}.sortedBy {it.begins}
     val offset=(month.atDay(1).dayOfWeek.value-(if(data.preferences.mondayFirst) 1 else 7)+7)%7
@@ -365,8 +366,8 @@ private fun shiftLabel(shift: Shift): String {
                     DropdownMenuItem(text={UiText("Share schedule")},onClick={menu=false;share(monthText)})
                 }
             }
-            IconButton(onClick={monthText=month.minusMonths(1).toString();selectedText=month.minusMonths(1).atDay(1).toString()},modifier=Modifier.size(36.dp)){Icon(Icons.Outlined.ChevronLeft,"Previous month",Modifier.size(20.dp))}
-            IconButton(onClick={monthText=month.plusMonths(1).toString();selectedText=month.plusMonths(1).atDay(1).toString()},modifier=Modifier.size(36.dp)){Icon(Icons.Outlined.ChevronRight,"Next month",Modifier.size(20.dp))}
+            IconButton(onClick={onMonthChange(month.minusMonths(1).toString())},modifier=Modifier.size(36.dp)){Icon(Icons.Outlined.ChevronLeft,translate("Previous month",LocalLanguage.current),Modifier.size(20.dp))}
+            IconButton(onClick={onMonthChange(month.plusMonths(1).toString())},modifier=Modifier.size(36.dp)){Icon(Icons.Outlined.ChevronRight,translate("Next month",LocalLanguage.current),Modifier.size(20.dp))}
         }
         FlowRow(horizontalArrangement=Arrangement.spacedBy(17.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
             data.jobs.forEach {job->Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(14.dp).background(Color(job.color),CircleShape));Spacer(Modifier.width(7.dp));androidx.compose.material3.Text(job.name,fontSize=11.sp)}}
@@ -413,11 +414,12 @@ private fun shiftLabel(shift: Shift): String {
         }
     }
 }
-@Composable private fun EarningsScreen(data: AppData,info: (String)->Unit) {
-    var monthText by rememberSaveable {mutableStateOf(YearMonth.now().toString())};val month=YearMonth.parse(monthText)
-    var picker by remember {mutableStateOf(false)};var period by rememberSaveable {mutableStateOf("Month")}
+@Composable private fun EarningsScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit) {
+    val month=YearMonth.parse(monthText)
+    var picker by remember {mutableStateOf(false)};var period by rememberSaveable(monthText) {mutableStateOf("Month")}
+    var paymentDetails by remember {mutableStateOf<Job?>(null)}
     val today=LocalDate.now();val weekStart=today.minusDays((today.dayOfWeek.value-(if(data.preferences.mondayFirst) 1 else 7)+7L)%7)
-    val rows=data.shifts.filter {s->
+    val rows=if(period=="Month") shiftsForMonth(data.shifts,month) else data.shifts.filter {s->
         val date=s.begins.toLocalDate()
         when(period) {"Week"->date>=weekStart && date<weekStart.plusDays(7)
             "Pay period"->data.jobs.find {it.id==s.jobId}?.let {j->val (from,to)=payPeriod(j,nextPayday(j,today));date>=from && date<=to} ?: false
@@ -453,7 +455,7 @@ private fun shiftLabel(shift: Shift): String {
             Surface(shape=Round,color=MaterialTheme.colorScheme.surface,border=BorderStroke(.7.dp,MaterialTheme.colorScheme.outlineVariant)) {
                 Column {payments.forEachIndexed {index,j->
                     if(index>0) HorizontalDivider(Modifier.padding(horizontal=12.dp),thickness=.5.dp,color=MaterialTheme.colorScheme.outlineVariant)
-                    Row(Modifier.fillMaxWidth().heightIn(min=43.dp).clickable {info("${j.name} · ${nextPayday(j,today)}\n${payPeriod(j,nextPayday(j,today)).first} – ${payPeriod(j,nextPayday(j,today)).second}")}.padding(horizontal=11.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().heightIn(min=43.dp).clickable {paymentDetails=j}.padding(horizontal=11.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically) {
                         JobIcon(j,34.dp);Spacer(Modifier.width(9.dp));androidx.compose.material3.Text(j.name,Modifier.weight(1f),fontSize=12.sp,fontWeight=FontWeight.Medium,maxLines=1,overflow=TextOverflow.Ellipsis)
                         Column(Modifier.weight(1.35f)) {UiText(nextPayday(j,today).format(DateTimeFormatter.ofPattern("MMM d",uiLocale())),fontSize=12.sp,fontWeight=FontWeight.Bold);UiText("${j.payCycle} pay",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
                         Icon(Icons.Outlined.ChevronRight,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -467,7 +469,55 @@ private fun shiftLabel(shift: Shift): String {
             }}
         }
     }
-    if(picker) AlertDialog(onDismissRequest={picker=false},title={ScreenHeading("Choose month", Icons.Outlined.CalendarMonth, "Choose an earnings period", compact=true)},text={LazyColumn(Modifier.heightIn(max=360.dp)) {items((-12L..12L).map {YearMonth.now().plusMonths(it)}) {m->UiText(m.format(DateTimeFormatter.ofPattern("MMMM yyyy",uiLocale())),Modifier.fillMaxWidth().clickable {monthText=m.toString();period="Month";picker=false}.padding(vertical=13.dp),fontWeight=if(m==month) FontWeight.Bold else FontWeight.Normal)}}},confirmButton={TextButton(onClick={picker=false}){UiText("Close")}})
+    if(picker) ReportMonthDialog(month,{onMonthChange(it.toString());period="Month";picker=false},{picker=false})
+    paymentDetails?.let {job->PaymentDetailsDialog(job,today){paymentDetails=null}}
+}
+
+@Composable private fun ReportMonthDialog(selected:YearMonth,onSelect:(YearMonth)->Unit,onClose:()->Unit) {
+    var year by rememberSaveable {mutableStateOf(selected.year)}
+    AlertDialog(onDismissRequest=onClose,containerColor=MaterialTheme.colorScheme.surface,
+        title={ScreenHeading("Choose month",Icons.Outlined.CalendarMonth,"Choose an earnings period",compact=true)},
+        text={Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                IconButton(onClick={year--},enabled=year>1){Icon(Icons.Outlined.ChevronLeft,translate("Previous year",LocalLanguage.current))}
+                UiText(year.toString(),Modifier.weight(1f),fontSize=20.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
+                IconButton(onClick={year++},enabled=year<9999){Icon(Icons.Outlined.ChevronRight,translate("Next year",LocalLanguage.current))}
+            }
+            Column(Modifier.heightIn(max=340.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                monthsForYear(year).chunked(2).forEach {pair->Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) {
+                    pair.forEach {month->Surface(onClick={onSelect(month)},modifier=Modifier.weight(1f),shape=RoundedCornerShape(7.dp),
+                        color=if(month==selected) MaterialTheme.colorScheme.primary.copy(alpha=.13f) else MaterialTheme.colorScheme.surface,
+                        border=BorderStroke(.7.dp,if(month==selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+                        UiText(month.format(DateTimeFormatter.ofPattern("MMMM",uiLocale())),Modifier.semantics {contentDescription=month.format(DateTimeFormatter.ofPattern("MMMM yyyy",uiLocale()))}.padding(horizontal=8.dp,vertical=12.dp),fontSize=12.sp,
+                            fontWeight=if(month==selected) FontWeight.Bold else FontWeight.Normal,color=if(month==selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                    }}
+                }}
+            }
+        }},confirmButton={TextButton(onClick=onClose){Icon(Icons.Outlined.Close,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Close",fontSize=12.sp)}})
+}
+
+@Composable private fun PaymentDetailsDialog(job:Job,today:LocalDate,onClose:()->Unit) {
+    val payday=nextPayday(job,today);val (from,to)=payPeriod(job,payday)
+    val dateFormat=DateTimeFormatter.ofPattern("d MMM yyyy",uiLocale())
+    AlertDialog(onDismissRequest=onClose,containerColor=MaterialTheme.colorScheme.surface,
+        title={ScreenHeading("Payment details",Icons.Outlined.Payments,"Payday and covered dates",compact=true)},
+        text={Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment=Alignment.CenterVertically) {
+                JobIcon(job,36.dp);Spacer(Modifier.width(9.dp));Column(Modifier.weight(1f)) {
+                    androidx.compose.material3.Text(job.name,fontSize=15.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onSurface)
+                    UiText("${job.payCycle} pay",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
+                }
+            }
+            Panel(color=MaterialTheme.colorScheme.primary.copy(alpha=.08f)) {
+                UiText("Next payday",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
+                UiText(payday.format(dateFormat),fontSize=17.sp,fontWeight=FontWeight.Bold)
+            }
+            UiText("Pay period",fontSize=11.sp,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Medium)
+            Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.weight(1f)) {UiText("From",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);UiText(from.format(dateFormat),fontSize=12.sp,fontWeight=FontWeight.Medium)}
+                Column(Modifier.weight(1f)) {UiText("To",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);UiText(to.format(dateFormat),fontSize=12.sp,fontWeight=FontWeight.Medium)}
+            }
+        }},confirmButton={Button(onClick=onClose,contentPadding=PaddingValues(horizontal=14.dp,vertical=7.dp)) {Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("OK",fontSize=12.sp)}})
 }
 @Composable private fun EarningsBreakdown(job: Job,rows: List<Shift>) {
     var expanded by rememberSaveable(job.id) {mutableStateOf(true)}
