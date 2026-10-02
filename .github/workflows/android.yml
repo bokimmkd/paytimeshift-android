@@ -2,7 +2,7 @@ name: PTS Android builds
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, premium-analytics-upgrade]
     paths:
       - "app/**"
       - ".github/workflows/**"

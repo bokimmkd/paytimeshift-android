@@ -1,0 +1,6 @@
+{
+  "name":"pts-premium-backend","private":true,"type":"module","main":"index.js",
+  "engines":{"node":"22"},
+  "scripts":{"test":"node --test","check":"node --check index.js && node --check analytics.js"},
+  "dependencies":{"firebase-admin":"^13.5.0","firebase-functions":"^6.4.0","googleapis":"^144.0.0","decimal.js":"^10.5.0","pdfkit":"^0.16.0","resend":"^4.8.0"}
+}

@@ -6,20 +6,23 @@ import com.paytimeshift.pts.domain.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /** Optional fields preserve all 0.1.0/0.1.1 data during install-over upgrades. */
 class LocalStore(context: Context) {
     private val file = AtomicFile(File(context.filesDir, "pts-data-v1.json"))
-    fun load(): AppData {
+    fun load(): AppData = ioLock.withLock {
         if (!file.baseFile.exists() && !File(file.baseFile.path + ".bak").exists()) return AppData()
         return decode(file.openRead().bufferedReader().use { it.readText() })
     }
-    fun save(data: AppData) {
+    fun save(data: AppData) = ioLock.withLock {
         val stream = file.startWrite()
         try { stream.write(encode(data).toByteArray()); file.finishWrite(stream) }
         catch (e: Exception) { file.failWrite(stream); throw e }
     }
     companion object {
+        private val ioLock = ReentrantLock()
         fun decode(text: String): AppData {
             val root=JSONObject(text)
             require(root.getInt("schemaVersion")==1) {"Unsupported local data version"}
@@ -29,13 +32,15 @@ class LocalStore(context: Context) {
                 rules=rules(j.optJSONObject("rules")),archived=j.optBoolean("archived",false),
                 defaultStart=j.optString("defaultStart","07:00"),defaultEnd=j.optString("defaultEnd","15:00"),
                 defaultBreakMinutes=j.optInt("defaultBreakMinutes",0),paidBreak=j.optBoolean("paidBreak",false),
-                reminderMinutes=j.optInt("reminderMinutes",-1),minGapHours=j.optDouble("minGapHours",-1.0))}
+                reminderMinutes=j.optInt("reminderMinutes",-1),minGapHours=j.optDouble("minGapHours",-1.0), costs=costs(j.optJSONArray("costs")))}
             val shifts=root.getJSONArray("shifts").objects().map {s->Shift(
                 id=s.getString("id"),jobId=s.getString("jobId"),date=s.getString("date"),start=s.getString("start"),end=s.getString("end"),
                 breakMinutes=s.getInt("breakMinutes"),note=s.getString("note"),rate=s.getString("rate"),currency=s.getString("currency"),fixedPay=s.getBoolean("fixedPay"),
                 rules=rules(s.optJSONObject("rules")),bonus=s.optString("bonus","0"),kind=s.optString("kind","Work"),paidBreak=s.optBoolean("paidBreak",false))}
             require(jobs.map {it.id}.distinct().size==jobs.size && shifts.map {it.id}.distinct().size==shifts.size)
             jobs.forEach {j->require(j.rate.toBigDecimal().signum()>=0);java.util.Currency.getInstance(j.currency);java.time.LocalDate.parse(j.paydayAnchor);java.time.LocalTime.parse(j.defaultStart);java.time.LocalTime.parse(j.defaultEnd);validateRules(j.rules)
+                require(j.costs.map {it.id}.distinct().size==j.costs.size && j.costs.size<=100)
+                j.costs.forEach {c->require(c.id.isNotBlank() && c.category in costCategories && c.name.length<=120 && c.amount.length<=32 && c.amount.toBigDecimal().signum()>=0 && c.frequency in costFrequencies)}
                 require(j.defaultBreakMinutes>=0 && j.reminderMinutes in -1..10080 && j.minGapHours.isFinite() && (j.minGapHours==-1.0 || j.minGapHours in 0.0..168.0))}
             shifts.forEach {s->require(jobs.any {it.id==s.jobId});java.util.Currency.getInstance(s.currency);require(s.rate.toBigDecimal().signum()>=0 && s.bonus.toBigDecimal().signum()>=0);require(s.breakMinutes>=0 && s.breakMinutes<java.time.Duration.between(s.begins,s.finishes).toMinutes());validateRules(s.rules)}
             val p=root.getJSONObject("preferences")
@@ -46,12 +51,14 @@ class LocalStore(context: Context) {
         }
         fun encode(data: AppData): String {
             val root=JSONObject().put("schemaVersion",1).put("holidays",JSONArray(data.holidays))
-            root.put("jobs",JSONArray().apply {data.jobs.forEach {j->put(JSONObject().put("id",j.id).put("name",j.name).put("color",j.color).put("currency",j.currency).put("rate",j.rate).put("fixedPay",j.fixedPay).put("payCycle",j.payCycle).put("paydayAnchor",j.paydayAnchor).put("rules",ruleJson(j.rules)).put("archived",j.archived).put("defaultStart",j.defaultStart).put("defaultEnd",j.defaultEnd).put("defaultBreakMinutes",j.defaultBreakMinutes).put("paidBreak",j.paidBreak).put("reminderMinutes",j.reminderMinutes).put("minGapHours",j.minGapHours))}})
+            root.put("jobs",JSONArray().apply {data.jobs.forEach {j->put(JSONObject().put("id",j.id).put("name",j.name).put("color",j.color).put("currency",j.currency).put("rate",j.rate).put("fixedPay",j.fixedPay).put("payCycle",j.payCycle).put("paydayAnchor",j.paydayAnchor).put("rules",ruleJson(j.rules)).put("archived",j.archived).put("defaultStart",j.defaultStart).put("defaultEnd",j.defaultEnd).put("defaultBreakMinutes",j.defaultBreakMinutes).put("paidBreak",j.paidBreak).put("reminderMinutes",j.reminderMinutes).put("minGapHours",j.minGapHours).put("costs",JSONArray().apply {j.costs.forEach {c->put(JSONObject().put("id",c.id).put("category",c.category).put("name",c.name).put("amount",c.amount).put("frequency",c.frequency).put("enabled",c.enabled))}}))}})
             root.put("shifts",JSONArray().apply {data.shifts.forEach {s->put(JSONObject().put("id",s.id).put("jobId",s.jobId).put("date",s.date).put("start",s.start).put("end",s.end).put("breakMinutes",s.breakMinutes).put("note",s.note).put("rate",s.rate).put("currency",s.currency).put("fixedPay",s.fixedPay).put("rules",ruleJson(s.rules)).put("bonus",s.bonus).put("kind",s.kind).put("paidBreak",s.paidBreak))}})
             val p=data.preferences
             root.put("preferences",JSONObject().put("currency",p.currency).put("time24",p.time24).put("mondayFirst",p.mondayFirst).put("appearance",p.appearance).put("gapHours",p.gapHours).put("language",p.language).put("reminderMinutes",p.reminderMinutes))
             return root.toString()
         }
+        private fun costs(a: JSONArray?): List<JobCost> = if(a==null) emptyList() else a.objects().map {c->
+            JobCost(id=c.getString("id"),category=c.getString("category"),name=c.optString("name",""),amount=c.getString("amount"),frequency=c.getString("frequency"),enabled=c.optBoolean("enabled",true))}
         private fun rules(j: JSONObject?)=if(j==null) PayRules() else PayRules(j.optDouble("overtimeAfterHours",8.0),j.optDouble("overtimePercent",0.0),j.optDouble("nightPercent",0.0),j.optDouble("sundayPercent",0.0),j.optString("nightStart","22:00"),j.optString("nightEnd","06:00"),
             j.optBoolean("useHourlyRates",false),j.optString("overtimeRate",""),j.optString("saturdayRate",""),j.optString("sundayRate",""),j.optString("holidayRate",""),strings(j.optJSONArray("holidayDates")))
         private fun ruleJson(r: PayRules)=JSONObject().put("overtimeAfterHours",r.overtimeAfterHours).put("overtimePercent",r.overtimePercent).put("nightPercent",r.nightPercent).put("sundayPercent",r.sundayPercent).put("nightStart",r.nightStart).put("nightEnd",r.nightEnd)
