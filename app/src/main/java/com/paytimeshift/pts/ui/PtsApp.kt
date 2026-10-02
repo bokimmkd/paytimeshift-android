@@ -474,6 +474,7 @@ private fun shiftLabel(shift: Shift): String {
 }
 
 @Composable private fun ReportMonthDialog(selected:YearMonth,onSelect:(YearMonth)->Unit,onClose:()->Unit) {
+    val locale=uiLocale()
     var year by rememberSaveable {mutableStateOf(selected.year)}
     AlertDialog(onDismissRequest=onClose,containerColor=MaterialTheme.colorScheme.surface,
         title={ScreenHeading("Choose month",Icons.Outlined.CalendarMonth,"Choose an earnings period",compact=true)},
@@ -488,7 +489,7 @@ private fun shiftLabel(shift: Shift): String {
                     pair.forEach {month->Surface(onClick={onSelect(month)},modifier=Modifier.weight(1f),shape=RoundedCornerShape(7.dp),
                         color=if(month==selected) MaterialTheme.colorScheme.primary.copy(alpha=.13f) else MaterialTheme.colorScheme.surface,
                         border=BorderStroke(.7.dp,if(month==selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
-                        UiText(month.format(DateTimeFormatter.ofPattern("MMMM",uiLocale())),Modifier.semantics {contentDescription=month.format(DateTimeFormatter.ofPattern("MMMM yyyy",uiLocale()))}.padding(horizontal=8.dp,vertical=12.dp),fontSize=12.sp,
+                        UiText(month.format(DateTimeFormatter.ofPattern("MMMM",locale)),Modifier.semantics {contentDescription=month.format(DateTimeFormatter.ofPattern("MMMM yyyy",locale))}.padding(horizontal=8.dp,vertical=12.dp),fontSize=12.sp,
                             fontWeight=if(month==selected) FontWeight.Bold else FontWeight.Normal,color=if(month==selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                     }}
                 }}
