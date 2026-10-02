@@ -1,0 +1,12 @@
+.gradle/
+.idea/
+local.properties
+**/build/
+*.iml
+.kotlin/
+release-signing/
+*.jks
+*.p12
+signing.env
+validation/*
+!validation/0.1.5/

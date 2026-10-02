@@ -1,0 +1,161 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+package com.paytimeshift.pts.ui
+
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.paytimeshift.pts.domain.*
+import com.paytimeshift.pts.data.LocalStore
+import com.paytimeshift.pts.platform.*
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+@Composable fun NumberField(label:String,value:String,change:(String)->Unit) {
+    CompactField(label,value,change,keyboardType=androidx.compose.ui.text.input.KeyboardType.Decimal)
+}
+@Composable fun JobPicker(jobs:List<Job>,selected:String,choose:(String)->Unit) {
+    var open by remember {mutableStateOf(false)}
+    Box {
+        CompactChoice("Job",jobs.first {it.id==selected}.name,translateValue=false,
+            icon={Icon(Icons.Outlined.KeyboardArrowDown,null,Modifier.size(18.dp))}){open=true}
+        DropdownMenu(open,{open=false}) {
+            jobs.forEach {job->DropdownMenuItem(text={Text(job.name,fontSize=13.sp)},onClick={choose(job.id);open=false})}
+        }
+    }
+}
+@Composable private fun ShiftReviewCard(shift:Shift,selected:Boolean,toggle:()->Unit) {
+    Surface(shape=androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        color=if(selected) MaterialTheme.colorScheme.primary.copy(alpha=.06f) else MaterialTheme.colorScheme.surface,
+        border=BorderStroke(.7.dp,MaterialTheme.colorScheme.outlineVariant)) {
+        Row(Modifier.fillMaxWidth().heightIn(min=54.dp).toggleable(selected,role=Role.Checkbox){toggle()}.padding(6.dp),
+            verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)) {
+            Checkbox(selected,null,Modifier.size(24.dp))
+            Column {
+                UiText(LocalDate.parse(shift.date).format(DateTimeFormatter.ofPattern("d MMM",uiLocale())),fontSize=10.sp)
+                UiText("${shift.start}–${shift.end}",fontSize=12.sp,fontWeight=FontWeight.Medium)
+            }
+        }
+    }
+}
+@Composable private fun ShiftReviewGrid(shifts:List<Shift>,selected:Set<String>,toggle:(String)->Unit) {
+    LazyColumn(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+        items(shifts.chunked(2),key={it.first().id}) {pair->
+            FormPair(first={ShiftReviewCard(pair[0],pair[0].id in selected){toggle(pair[0].id)}},
+                second={pair.getOrNull(1)?.let {s->ShiftReviewCard(s,s.id in selected){toggle(s.id)}}})
+        }
+    }
+}
+@Composable fun GapSetting(p:Preferences,change:(Preferences)->Unit) {
+    var value by remember(p.gapHours) {mutableStateOf(p.gapHours.toString().removeSuffix(".0"))}
+    val n=value.replace(',','.').toDoubleOrNull()
+    Column(verticalArrangement=Arrangement.spacedBy(5.dp)) {
+        Row(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)){NumberField("Rest between shifts (hours)",value){value=it}}
+            Button(onClick={change(p.copy(gapHours=n!!))},enabled=n!=null && n.isFinite() && n in 0.0..168.0 && n!=p.gapHours){Icon(Icons.Outlined.Save,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Save",fontSize=12.sp)}
+        }
+        if(n==null || !n.isFinite() || n !in 0.0..168.0) UiText("Enter 0–168 hours.",color=MaterialTheme.colorScheme.error)
+        UiText("Overlaps and short gaps appear in Calendar.",fontSize=11.sp)
+    }
+}
+@Composable fun PatternDialog(data:AppData,close:()->Unit,save:(List<Shift>)->Unit) {
+    val jobs=data.jobs.filterNot {it.archived}
+    if(jobs.isEmpty()) {AlertDialog(onDismissRequest=close,title={UiText("Shift patterns")},text={UiText("No active jobs.")},confirmButton={TextButton(onClick=close){UiText("Close")}});return}
+    var jobId by remember {mutableStateOf(jobs.first().id)}
+    val job=jobs.first {it.id==jobId}
+    var from by remember {mutableStateOf(LocalDate.now().toString())};var until by remember {mutableStateOf(LocalDate.now().plusDays(30).toString())}
+    var start by remember {mutableStateOf(job.defaultStart)};var end by remember {mutableStateOf(job.defaultEnd)}
+    var pause by remember {mutableStateOf(job.defaultBreakMinutes.toString())}
+    var days by remember {mutableStateOf(setOf(1,2,3,4,5))}
+    var preview by remember {mutableStateOf<List<Shift>?>(null)};var error by remember {mutableStateOf<String?>(null)}
+    var selected by remember {mutableStateOf<Set<String>>(emptySet())}
+    BrandedEditor(onDismissRequest=close,error=error,title={ScreenHeading("Shift patterns",Icons.Outlined.Repeat,"Repeat and review shifts",compact=true)},text={
+        if(preview==null) Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
+            JobPicker(jobs,jobId){id->val j=jobs.first {it.id==id};jobId=id;start=j.defaultStart;end=j.defaultEnd;pause=j.defaultBreakMinutes.toString()}
+            FormPair(first={DateControl("From",from){from=it}},second={DateControl("Repeat until",until){until=it}})
+            FormPair(first={TimeControl("Starts",start){start=it}},second={TimeControl("Ends",end){end=it}})
+            NumberField("Break (minutes)",pause){pause=it}
+            UiText("Repeat on days")
+            val locale=uiLocale()
+            FlowRow(horizontalArrangement=Arrangement.spacedBy(4.dp)){(1..7).forEach {d->FilterChip(d in days,{days=if(d in days) days-d else days+d},label={UiText(java.time.DayOfWeek.of(d).getDisplayName(java.time.format.TextStyle.SHORT,locale))})}}
+        } else Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+            UiText("${selected.size} / ${preview!!.size} shifts",fontSize=12.sp)
+            Box(Modifier.weight(1f)){ShiftReviewGrid(preview!!,selected){id->selected=if(id in selected) selected-id else selected+id}}
+        }
+    },confirmButton={Button(contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp),onClick={
+        if(preview==null) try {
+            val b=pause.toInt();require(days.isNotEmpty() && start!=end && b>=0)
+            val duration=java.time.Duration.between(java.time.LocalTime.parse(start),java.time.LocalTime.parse(end)).toMinutes().let {if(it<=0) it+1440 else it}
+            require(b<duration)
+            preview=generatePattern(job,LocalDate.parse(from),LocalDate.parse(until),days,start,end,b,data.shifts)
+            selected=preview!!.map {it.id}.toSet()
+        } catch(e:Exception) {error="Select days and valid dates/times; maximum 366 days."}
+        else if(selected.isNotEmpty()) save(preview!!.filter {it.id in selected})
+    }){Icon(if(preview==null) Icons.Outlined.Visibility else Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText(if(preview==null) "Preview shifts" else "Add these shifts",fontSize=12.sp)}},dismissButton={TextButton(onClick={if(preview!=null) preview=null else close()}){Icon(if(preview==null) Icons.Outlined.Close else Icons.Outlined.ChevronLeft,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText(if(preview==null) "Cancel" else "Back",fontSize=12.sp)}})
+}
+@Composable fun ImportDialog(data:AppData,close:()->Unit,save:(List<Shift>)->Unit) {
+    val jobs=data.jobs.filterNot {it.archived};val context=LocalContext.current;val scope=rememberCoroutineScope()
+    if(jobs.isEmpty()) {AlertDialog(onDismissRequest=close,title={UiText("Import roster")},text={UiText("No active jobs.")},confirmButton={TextButton(onClick=close){UiText("Close")}});return}
+    var jobId by remember {mutableStateOf(jobs.first().id)};var text by remember {mutableStateOf("")}
+    var busy by remember {mutableStateOf(false)};var error by remember {mutableStateOf<String?>(null)}
+    var preview by remember {mutableStateOf<List<Shift>?>(null)};var selected by remember {mutableStateOf<Set<String>>(emptySet())}
+    val pick=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->if(uri!=null) {busy=true;scope.launch {try {text=withContext(Dispatchers.IO){recognizeRoster(context,uri)}} catch(e:Exception){error="Could not read file. Try another image or enter text below."} finally{busy=false}}}}
+    BrandedEditor(onDismissRequest={if(!busy) close()},error=error,title={ScreenHeading("Import roster",Icons.Outlined.FileUpload,"Review before saving",compact=true)},text={
+        if(preview==null) Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
+            FlowRow {jobs.forEach {j->FilterChip(jobId==j.id,{jobId=j.id},label={androidx.compose.material3.Text(j.name)})}}
+            OutlinedButton(onClick={pick.launch(arrayOf("image/*","application/pdf"))},enabled=!busy){UiText("Choose image or PDF")}
+            UiText("Image recognition supports Latin text. You can correct or enter Cyrillic text below.",fontSize=11.sp)
+            OutlinedTextField(text,{text=it},label={UiText("Paste or edit recognized text")},modifier=Modifier.fillMaxWidth(),minLines=4)
+            UiText("2026-10-02 07:00-15:00\n03.10.2026 18:00-23:00",fontSize=11.sp)
+            if(busy) CircularProgressIndicator()
+        } else Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+            UiText("Check dates and times before importing. Nothing is saved automatically.",fontSize=12.sp)
+            UiText("${selected.size} / ${preview!!.size} shifts",fontSize=12.sp)
+            Box(Modifier.weight(1f)){ShiftReviewGrid(preview!!,selected){id->selected=if(id in selected) selected-id else selected+id}}
+        }
+    },confirmButton={Button(contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp),enabled=!busy,onClick={
+        if(preview==null) {
+            val rows=parseRoster(text,jobs.first {it.id==jobId},data.shifts)
+            if(rows.isEmpty()) error="No matching shifts. Use YYYY-MM-DD HH:mm-HH:mm, one shift per line."
+            else {preview=rows;selected=rows.map {it.id}.toSet();error=null}
+        } else if(selected.isNotEmpty()) save(preview!!.filter {it.id in selected})
+    }){Icon(if(preview==null) Icons.Outlined.Visibility else Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText(if(preview==null) "Review shifts" else "Import shifts",fontSize=12.sp)}},dismissButton={TextButton(onClick={if(preview!=null) preview=null else if(!busy) close()}){Icon(if(preview==null) Icons.Outlined.Close else Icons.Outlined.ChevronLeft,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText(if(preview==null) "Cancel" else "Back",fontSize=12.sp)}})
+}
+@Composable fun BackupControls(data:AppData,restore:(AppData)->Unit,info:(String)->Unit) {
+    val context=LocalContext.current;var pending by remember {mutableStateOf<AppData?>(null)};val scope=rememberCoroutineScope()
+    val create=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")){uri->if(uri!=null) scope.launch {try {withContext(Dispatchers.IO){context.contentResolver.openOutputStream(uri,"wt")!!.bufferedWriter().use {it.write(LocalStore.encode(data))}};info("Backup saved.")} catch(e:Exception){info("File could not be saved.")}}}
+    val open=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null) scope.launch {try {pending=withContext(Dispatchers.IO){context.contentResolver.openInputStream(uri)!!.bufferedReader().use {reader-> val chars=CharArray(4*1024*1024+1);var count=0;while(count<chars.size){val n=reader.read(chars,count,chars.size-count);if(n<0) break;count+=n};require(count<=4*1024*1024);LocalStore.decode(String(chars,0,count))}}} catch(e:Exception){info("Invalid backup. Current data is unchanged.")}}}
+    FormPair(first={OutlinedButton(onClick={create.launch("PTS-backup-${LocalDate.now()}.json")},modifier=Modifier.fillMaxWidth()){Icon(Icons.Outlined.SaveAlt,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Save backup file",fontSize=11.sp)}},
+        second={OutlinedButton(onClick={open.launch(arrayOf("application/json","text/plain","application/octet-stream"))},modifier=Modifier.fillMaxWidth()){Icon(Icons.Outlined.Restore,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Restore backup file",fontSize=11.sp)}})
+    if(pending!=null) AlertDialog(onDismissRequest={pending=null},title={UiText("Restore backup?")},text={UiText("This replaces your local jobs and shifts. Save a backup first.")},confirmButton={TextButton(onClick={restore(pending!!);pending=null}){UiText("Restore backup file")}},dismissButton={TextButton(onClick={pending=null}){UiText("Cancel")}})
+}
+@Composable fun ReminderSetting(p:Preferences,change:(Preferences)->Unit) {
+    var value by remember(p.reminderMinutes) {mutableStateOf(p.reminderMinutes.toString())}
+    val n=value.toIntOrNull()
+    Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
+        Row(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)){NumberField("Minutes before shift (0 = off)",value){value=it}}
+            Button(onClick={change(p.copy(reminderMinutes=n!!))},enabled=n!=null && n in 0..10080 && n!=p.reminderMinutes){Icon(Icons.Outlined.Save,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Save",fontSize=12.sp)}
+        }
+        UiText("Notifications may be delayed by Android battery settings.",fontSize=11.sp)
+    }
+}

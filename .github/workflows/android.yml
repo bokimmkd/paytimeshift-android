@@ -1,0 +1,61 @@
+name: PTS Android builds
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/**"
+      - "gradle/**"
+      - "gradlew*"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - "preview-signing/**"
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
+      - name: Test and build debug
+        run: gradle testDebugUnitTest lintDebug assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PTS-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+      - name: Build signed Play bundle
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          PTS_UPLOAD_KEYSTORE_B64: ${{ secrets.PTS_UPLOAD_KEYSTORE_B64 }}
+          PTS_UPLOAD_STORE_PASSWORD: ${{ secrets.PTS_UPLOAD_STORE_PASSWORD }}
+          PTS_UPLOAD_KEY_ALIAS: ${{ secrets.PTS_UPLOAD_KEY_ALIAS }}
+          PTS_UPLOAD_KEY_PASSWORD: ${{ secrets.PTS_UPLOAD_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in PTS_UPLOAD_KEYSTORE_B64 PTS_UPLOAD_STORE_PASSWORD PTS_UPLOAD_KEY_ALIAS PTS_UPLOAD_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "Missing repository secret: $name"; exit 1; fi
+          done
+          export PTS_UPLOAD_STORE_FILE="$RUNNER_TEMP/pts-upload.jks"
+          trap 'rm -f "$PTS_UPLOAD_STORE_FILE"' EXIT
+          printf '%s' "$PTS_UPLOAD_KEYSTORE_B64" | base64 --decode > "$PTS_UPLOAD_STORE_FILE"
+          chmod 600 "$PTS_UPLOAD_STORE_FILE"
+          gradle testReleaseUnitTest lintRelease bundleRelease
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: PTS-Play-AAB
+          path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

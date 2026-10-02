@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.paytimeshift.pts.domain.NewFeaturesTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-02T18:51:29" hostname="ef24ae6bfe74" time="0.023">
+  <properties/>
+  <testcase name="fixedPayOnlyAcceptsExplicitBonus" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.001"/>
+  <testcase name="paidBreakAndDaysOff" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.0"/>
+  <testcase name="rosterStrictDatesReviewAndDuplicateSafety" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.009"/>
+  <testcase name="legacyDataLoadsWithoutLosingIdsRatesOrGap" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.001"/>
+  <testcase name="patternSkipsExistingAndUsesSeparateJobSettings" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.004"/>
+  <testcase name="newFieldsRoundTripAndRemainSnapshots" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.001"/>
+  <testcase name="fractionalGapAndExactBoundary" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.001"/>
+  <testcase name="overtimeNightSundayAndBonusStackIndependently" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.005"/>
+  <testcase name="periodsAndLeapMonth" classname="com.paytimeshift.pts.domain.NewFeaturesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,46 @@
+{
+  "versionName": "0.1.5",
+  "versionCode": 6,
+  "targetSdk": 36,
+  "debuggable": false,
+  "bundletoolValidated": true,
+  "jarSignatureVerified": true,
+  "aabSha256": "1a4b361b99e1ed5c374f636bc9a9ecb883bea8025cbc20e303e6996b71ef2316",
+  "newInstallStartsEmpty": true,
+  "noDatabaseOrFixtureBundled": true,
+  "automaticAndroidRestoreDisabled": true,
+  "unitTests": 32,
+  "unitTestFailures": 0,
+  "native64BitLibraryAlignments": {
+    "base/lib/arm64-v8a/libandroidx.graphics.path.so": [
+      16384,
+      16384,
+      16384
+    ],
+    "base/lib/arm64-v8a/libmlkit_google_ocr_pipeline.so": [
+      16384,
+      16384,
+      16384
+    ],
+    "base/lib/x86_64/libandroidx.graphics.path.so": [
+      16384,
+      16384,
+      16384
+    ],
+    "base/lib/x86_64/libmlkit_google_ocr_pipeline.so": [
+      16384,
+      16384,
+      16384
+    ]
+  },
+  "githubPublished": false,
+  "githubActionsRunVerified": false,
+  "playUploadAccepted": false,
+  "nativeAndroid16TestCompleted": false,
+  "lintErrors": 0,
+  "lintWarnings": 6,
+  "lintHints": 1,
+  "cloudBackupAndDeviceTransferExplicitlyExcluded": true,
+  "uploadCertificateSha256": "e15894c766a904405e5537d84ecd333aeff4c33558780d841a3149a5e02529f1",
+  "domainDataAndPlatformSourcesUnchangedFrom014": true
+}

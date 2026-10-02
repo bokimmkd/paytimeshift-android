@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.paytimeshift.pts.domain.HourlyPricesTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-02T18:51:29" hostname="ef24ae6bfe74" time="0.091">
+  <properties/>
+  <testcase name="invalidImportedPriceIsRejected" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.044"/>
+  <testcase name="weekdayUsesEightRegularHoursAndTwoOvertimeHours" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.007"/>
+  <testcase name="legacyPercentRulesRemainUnchangedAndConvertForFutureShifts" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.02"/>
+  <testcase name="fractionalThresholdAndBlankPrices" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.001"/>
+  <testcase name="pricesHolidaysAndLegacySnapshotsSurviveBackupRoundTrip" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.004"/>
+  <testcase name="holidayOverridesWeekendAndCanBeRemoved" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.001"/>
+  <testcase name="midnightHolidayAppliesOnlyToItsCalendarDate" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.0"/>
+  <testcase name="saturdayAndSundayUseConcretePrices" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.001"/>
+  <testcase name="unpaidBreakReducesPaidHoursAndOvertimeThreshold" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.0"/>
+  <testcase name="overtimeHigherThanWeekendWinsWithoutAddingTwoFullPrices" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.001"/>
+  <testcase name="nightPercentAndBonusRemainSeparateFromHourlyPrices" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.007"/>
+  <testcase name="futureJobUpdateKeepsHistoryAndBreakSnapshots" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.001"/>
+  <testcase name="midnightSplitsFridaySaturdayAndSaturdaySunday" classname="com.paytimeshift.pts.domain.HourlyPricesTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
