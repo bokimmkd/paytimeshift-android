@@ -1,12 +1,12 @@
 # PTS 0.2.0 service activation and verification
 
-Project: pts-pay-time-shift (924616791326), Android com.paytimeshift.pts. Region europe-west1. Work branch premium-analytics-upgrade. Preserve main/0.1.7 closed Alpha until integrations are verified. v9 is an Internal setup draft only; next deployable Android build uses v10 or higher.
+Project: pts-pay-time-shift (924616791326), Android com.paytimeshift.pts. Region europe-west1. Work branch premium-analytics-upgrade. Preserve main/0.1.7 closed Alpha until integrations are verified. v10 is an Internal integration draft only. If Android code changes after this upload, the next uploaded build must use v11 or higher.
 
 ## Existing external state
 
 Firebase Android/Web apps registered. Email/password enabled. Empty default Standard Firestore created in europe-west1, production rules deny all client reads/writes. Project remains Spark; paid Firebase Functions/Storage cannot be deployed until the owner completes Blaze activation.
 
-Play Internal draft 0.2.0 · Billing setup draft contains signed version 9. Subscription creation remains disabled in the current Console even after upload/save and refresh. Complete service setup and then activate a limited Internal test release to enable the catalog if required. Do not roll out an unverified upgrade to the closed Alpha groups.
+Play Internal draft 0.2.0 · Premium integration draft contains signed version 10, replacing the earlier version 9 attachment. Subscription creation remains disabled in the current Console even after upload/save and refresh. Complete service setup and then activate a limited Internal test release to enable the catalog if required. Do not roll out an unverified upgrade to the closed Alpha groups.
 
 ## Required activation
 
@@ -26,4 +26,4 @@ Use a Google Play license tester for purchases. Do not charge a real card for a 
 
 Automatic emails use the last successful cloud backup; both switches default ON but only Premium verified emails receive reports. Costs use current cost rules for historical estimates. Per-week charges are assigned to the first workday of the ISO week, across month/year boundaries. Worked hours exclude all breaks; paid hours include paid breaks. Different currencies never aggregate. Time classifications overlap. Ties in highlights choose the first chronological month/job.
 
-Only after the gate passes, replace the Internal setup draft with the final higher versionCode, publish to the existing three closed Alpha tester groups, and verify serving status. No production publication is authorized by this upgrade workflow.
+Only after the gate passes, complete the Internal integration draft with the verified final bundle (use a higher versionCode if Android code changes), publish to the existing three closed Alpha tester groups, and verify serving status. No production publication is authorized by this upgrade workflow.
