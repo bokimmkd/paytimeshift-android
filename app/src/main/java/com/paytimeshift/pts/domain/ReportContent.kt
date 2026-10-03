@@ -25,8 +25,8 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
     report.currencies.forEach {c->
         result+=ReportLine(c.currency,heading=true,literal=true)
         time(c.time)
-        result+=listOf(ReportLine("Monthly salary",money(c.salaryBase,c.currency)),ReportLine("Monthly bonuses",money(c.monthlyBonuses,c.currency)),ReportLine("Monthly deductions",money(c.monthlyDeductions,c.currency)),ReportLine("Adjusted estimated earnings",money(c.adjusted,c.currency)))
-        result+=listOf(ReportLine("Gross estimated earnings",money(c.gross,c.currency)),ReportLine("Work-related costs",money(c.costs,c.currency)),
+        result+=listOf(ReportLine("Monthly salary",money(c.salaryBase,c.currency)),ReportLine("Gross estimated earnings",money(c.gross,c.currency)),ReportLine("Monthly bonuses",money(c.monthlyBonuses,c.currency)),ReportLine("Monthly deductions",money(c.monthlyDeductions,c.currency)),ReportLine("Adjusted estimated earnings",money(c.adjusted,c.currency)))
+        result+=listOf(ReportLine("Work-related costs",money(c.costs,c.currency)),
             ReportLine("Real estimated earnings",money(c.real,c.currency)),ReportLine("Gross hourly value",c.grossHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"),
             ReportLine("Real hourly value",c.realHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"))
         result+=ReportLine("Cost breakdown",heading=true)
@@ -35,13 +35,13 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
         c.jobs.forEach {j->
             result+=ReportLine(j.name,heading=true,literal=true)
             time(j.time)
-            result+=listOf(ReportLine("Monthly salary",money(j.salaryBase,c.currency)),ReportLine("Monthly bonuses",money(j.monthlyBonuses,c.currency)),ReportLine("Monthly deductions",money(j.monthlyDeductions,c.currency)),ReportLine("Adjusted estimated earnings",money(j.adjusted,c.currency)))
+            result+=listOf(ReportLine("Monthly salary",money(j.salaryBase,c.currency)),ReportLine("Gross estimated earnings",money(j.gross,c.currency)),ReportLine("Monthly bonuses",money(j.monthlyBonuses,c.currency)),ReportLine("Monthly deductions",money(j.monthlyDeductions,c.currency)),ReportLine("Adjusted estimated earnings",money(j.adjusted,c.currency)))
             if(j.adjustments.isNotEmpty()) result+=ReportLine("Monthly adjustments",heading=true)
             j.adjustments.sortedWith(compareBy({it.month},{it.type},{it.id})).forEach {a->
                 val reason=com.paytimeshift.pts.ui.translate(a.reason,data.preferences.language)
-                result+=ReportLine(a.month+" · "+reason,(if(a.type=="Bonus") "+ " else "− ")+money(a.amount.toBigDecimal(),a.currency)+(if(a.note.isBlank()) "" else " · "+a.note),literal=true)
+                result+=ReportLine(a.month+" · "+reason,(if(a.type=="Bonus") "+ " else "- ")+money(a.amount.toBigDecimal(),a.currency)+(if(a.note.isBlank()) "" else " · "+a.note),literal=true)
             }
-            result+=listOf(ReportLine("Gross estimated earnings",money(j.gross,c.currency)),ReportLine("Work-related costs",money(j.costs,c.currency)),
+            result+=listOf(ReportLine("Work-related costs",money(j.costs,c.currency)),
                 ReportLine("Real estimated earnings",money(j.real,c.currency)),
                 ReportLine("Gross hourly value",j.grossHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"),
                 ReportLine("Real hourly value",j.realHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"))

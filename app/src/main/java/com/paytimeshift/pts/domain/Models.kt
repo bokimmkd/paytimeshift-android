@@ -60,13 +60,18 @@ fun AppData.withJob(job: Job, applyUpcoming: Boolean, today: LocalDate): AppData
     val saved = job.copy(rules = job.rules.copy(holidayDates = holidays))
     val updatedJobs = if (jobs.any { it.id == job.id }) jobs.map { if (it.id == job.id) saved else it } else jobs + saved
     val previous=jobs.find {it.id==job.id}
+    val basisBoundary=if(previous!=null && previous.monthlyPay!=saved.monthlyPay) {
+        (previous.salaryPeriods+saved.salaryPeriods).flatMap {listOf(LocalDate.parse(it.from))+if(it.until.isBlank()) emptyList() else listOf(LocalDate.parse(it.until).plusDays(1))}
+            .distinct().sorted().firstOrNull {date->(previous.monthlySalaryOn(date)!=null)!=(saved.monthlySalaryOn(date)!=null)}
+    } else null
     return copy(jobs = updatedJobs, shifts = shifts.map { shift ->
         if(shift.jobId!=job.id) shift else {
             val date=shift.begins.toLocalDate()
             val wasMonthly=previous?.monthlySalaryOn(date)!=null
             val isMonthly=saved.monthlySalaryOn(date)!=null
             val basisChanged=wasMonthly!=isMonthly
-            if(basisChanged || applyUpcoming && date>=today && (!saved.monthlyPay || isMonthly))
+            if(basisChanged && !isMonthly && saved.monthlyPay) shift.copy(monthlyPay=true, fixedPay=false)
+            else if(basisChanged || applyUpcoming && date>=today && (!saved.monthlyPay || isMonthly) && (basisBoundary==null || date>=basisBoundary))
                 shift.copy(rate=saved.rate,currency=saved.currency,fixedPay=if(isMonthly) false else saved.fixedPay,rules=saved.hourlyRules(),monthlyPay=isMonthly)
             else shift
         }
@@ -229,7 +234,7 @@ fun generatePattern(job: Job, from: LocalDate, until: LocalDate, weekdays: Set<I
     require(until>=from && java.time.temporal.ChronoUnit.DAYS.between(from,until)<=366)
     return generateSequence(from) {it.plusDays(1)}.takeWhile {it<=until}
         .filter {it.dayOfWeek.value in weekdays}.map {d->Shift(jobId=job.id,date=d.toString(),start=start,end=end,
-            breakMinutes=breakMinutes,rate=job.rate,currency=job.currency,fixedPay=job.fixedPay,rules=job.hourlyRules(),paidBreak=job.paidBreak,monthlyPay=job.monthlySalaryOn(d)!=null)}
+            breakMinutes=breakMinutes,rate=job.rate,currency=job.currency,fixedPay=job.fixedPay,rules=job.hourlyRules(),paidBreak=job.paidBreak,monthlyPay=job.monthlyPay || job.monthlySalaryOn(d)!=null)}
         .filter {s->existing.none {it.jobId==s.jobId && it.date==s.date && it.start==s.start && it.end==s.end}}.toList()
 }
 

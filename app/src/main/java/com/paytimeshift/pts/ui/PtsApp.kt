@@ -917,7 +917,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         val preview=runCatching {
             val minutes=breakText.toInt();require(minutes>=0)
             Shift(jobId=jobId,date=date,start=start,end=end,breakMinutes=minutes,rate=if(keepPrices) original!!.rate else job.rate,currency=if(keepPrices) original!!.currency else job.currency,
-                fixedPay=if(keepPrices) original!!.fixedPay else job.fixedPay,rules=if(keepPrices) original!!.rules else job.hourlyRules(),bonus=bonus.replace(',','.').toBigDecimal().toPlainString(),kind=kind,paidBreak=paid,monthlyPay=if(keepPrices) original!!.monthlyPay else job.monthlySalaryOn(LocalDate.parse(date))!=null)
+                fixedPay=if(keepPrices) original!!.fixedPay else job.fixedPay,rules=if(keepPrices) original!!.rules else job.hourlyRules(),bonus=bonus.replace(',','.').toBigDecimal().toPlainString(),kind=kind,paidBreak=paid,monthlyPay=if(keepPrices) original!!.monthlyPay else job.monthlyPay || job.monthlySalaryOn(LocalDate.parse(date))!=null)
         }.getOrNull()
         preview?.let {s->Surface(shape=Round,color=MaterialTheme.colorScheme.primary.copy(alpha=.10f)){
             Row(Modifier.fillMaxWidth().padding(9.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -936,7 +936,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         val pause=if(kind=="Work") breakText.toIntOrNull() else 0
         val candidate=Shift(original?.id ?: java.util.UUID.randomUUID().toString(),jobId,date,start,end,pause ?: 0,note,
             if(keepPrices) original!!.rate else job.rate,if(keepPrices) original!!.currency else job.currency,if(keepPrices) original!!.fixedPay else job.fixedPay,
-            if(keepPrices) original!!.rules else job.hourlyRules(),bonus.replace(',','.').toBigDecimalOrNull()?.toPlainString() ?: "0",kind,paid,if(keepPrices) original!!.monthlyPay else job.monthlySalaryOn(LocalDate.parse(date))!=null).let {if(kind=="Work") it else it.copy(breakMinutes=0,bonus="0",paidBreak=false)}
+            if(keepPrices) original!!.rules else job.hourlyRules(),bonus.replace(',','.').toBigDecimalOrNull()?.toPlainString() ?: "0",kind,paid,if(keepPrices) original!!.monthlyPay else job.monthlyPay || job.monthlySalaryOn(LocalDate.parse(date))!=null).let {if(kind=="Work") it else it.copy(breakMinutes=0,bonus="0",paidBreak=false)}
         when {
             kind=="Work" && bonus.replace(',','.').toBigDecimalOrNull()?.let {it.signum()<0} != false -> error="Numbers must be valid and non-negative."
             kind=="Work" && start==end -> error="Start and end must differ."

@@ -15,7 +15,7 @@ fun Job.shiftTemplates(): List<ShiftTemplate> = listOf(ShiftTemplate(defaultStar
     (0..1).map {extraShifts.getOrNull(it) ?: if(it==0) ShiftTemplate("15:00","23:00") else ShiftTemplate("23:00","07:00")}
 data class RotationBlock(val shift: Int?, val days: Int = 2)
 fun Job.templateShift(date: LocalDate, template: ShiftTemplate) = Shift(jobId=id,date=date.toString(),start=template.start,end=template.end,
-    breakMinutes=template.breakMinutes,paidBreak=template.paidBreak,rate=rate,currency=currency,fixedPay=fixedPay,rules=hourlyRules(),monthlyPay=monthlySalaryOn(date)!=null)
+    breakMinutes=template.breakMinutes,paidBreak=template.paidBreak,rate=rate,currency=currency,fixedPay=fixedPay,rules=hourlyRules(),monthlyPay=monthlyPay || monthlySalaryOn(date)!=null)
 fun newScheduleRows(rows: List<Shift>,existing: List<Shift>): List<Shift> {
     fun key(s:Shift)=listOf(s.jobId,s.date,s.start,s.end,s.kind)
     val occupied=existing.map(::key).toMutableSet()

@@ -31,6 +31,20 @@ class MonthlyPayTest {
         eq("45000",salaryTotals(edited,LocalDate.of(2026,7,1),LocalDate.of(2026,7,31)).getValue("MKD"))
         eq("9333.33333333",salaryTotals(job,LocalDate.of(2026,4,1),LocalDate.of(2026,4,7)).getValue("MKD"))
     }
+    @Test fun salaryBasisChangesKeepEarlierSnapshotsAndDoNotInventPayAfterEmploymentEnds() {
+        val hourly=Job(id="j",name="Old hourly",rate="10",currency="MKD")
+        val october=hourly.templateShift(LocalDate.of(2026,10,15),hourly.shiftTemplates().first())
+        val november=hourly.templateShift(LocalDate.of(2026,11,2),hourly.shiftTemplates().first())
+        val monthly=job.copy(salaryPeriods=listOf(SalaryPeriod("2026-11-01",amount="40000",currency="MKD")))
+        val converted=AppData(listOf(hourly),listOf(october,november)).withJob(monthly,true,LocalDate.of(2026,10,3))
+        assertEquals(october,converted.shifts[0]);assertTrue(converted.shifts[1].monthlyPay)
+        val ended=monthly.copy(archived=true,salaryPeriods=salaryPeriodsEnding(monthly.salaryPeriods,LocalDate.of(2026,11,1)))
+        val closed=converted.withJob(ended,true,LocalDate.of(2026,11,1))
+        eq("0",closed.shifts[1].earnings())
+        eq("0",ended.templateShift(LocalDate.of(2026,12,1),ended.shiftTemplates().first()).earnings())
+        assertTrue(monthlyAnalytics(closed,YearMonth.of(2026,12)).currencies.isEmpty())
+    }
+
     @Test fun monthlyAdjustmentsAreIndependentAndCostsRemainSeparate() {
         val d=AppData(listOf(job.copy(costs=listOf(JobCost(amount="200",frequency="Monthly")))),listOf(job.templateShift(LocalDate.of(2026,10,1),job.shiftTemplates().first()).copy(bonus="50")),adjustments=listOf(
             MonthlyAdjustment(jobId="j",month="2026-10",type="Bonus",amount="2000",currency="MKD",reason="Performance"),
