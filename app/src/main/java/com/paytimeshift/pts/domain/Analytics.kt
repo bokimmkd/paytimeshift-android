@@ -42,9 +42,10 @@ fun Shift.workTime(): WorkTime {
     val proportion=if(total==0.0) 0.0 else paid/total
     return WorkTime(1,worked,paid,paid-overtime,overtime,night*proportion,weekend*proportion,holiday*proportion)
 }
+data class CostDetail(val cost: JobCost,val count: Int,val total: BigDecimal)
 data class CostTotal(val category: String, val amount: BigDecimal)
 data class JobAnalysis(val jobId: String, val name: String, val currency: String,
-    val gross: BigDecimal, val costs: BigDecimal, val time: WorkTime, val categories: List<CostTotal>) {
+    val gross: BigDecimal, val costs: BigDecimal, val time: WorkTime, val categories: List<CostTotal>, val details: List<CostDetail> = emptyList()) {
     val real: BigDecimal get()=gross-costs
     val grossHourly: BigDecimal? get()=hourlyValue(gross,time.worked)
     val realHourly: BigDecimal? get()=hourlyValue(real,time.worked)
@@ -79,24 +80,23 @@ fun analytics(data: AppData, from: LocalDate, until: LocalDate): WorkReport {
         val dates=all.map {it.begins.toLocalDate()}.distinct()
         val weekDates=dates.groupBy {it.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))}.values.map {it.min()}
         val monthDates=dates.groupBy {YearMonth.from(it)}.values.map {it.min()}
-        val categoryAmounts=job.costs.filter {it.enabled}.groupBy {it.category}.map {(category,costs)->
-            CostTotal(category,costs.fold(BigDecimal.ZERO) {a,c->
-                val count=when(c.frequency) {
-                    "Per shift"->rows.size
-                    "Per workday"->dates.count {it in from..until}
-                    "Weekly"->weekDates.count {it in from..until}
-                    "Monthly"->monthDates.count {it in from..until}
-                    else->error("Unsupported cost frequency")
-                }
-                a+c.amount.toBigDecimal().multiply(BigDecimal(count))
-            })
-        }.filter {it.amount.signum()!=0}
+        val details=job.costs.filter {it.enabled}.map {c->
+            val count=when(c.frequency) {
+                "Per shift"->rows.size
+                "Per workday"->dates.count {it in from..until}
+                "Weekly"->weekDates.count {it in from..until}
+                "Monthly"->monthDates.count {it in from..until}
+                else->error("Unsupported cost frequency")
+            }
+            CostDetail(c,count,c.amount.toBigDecimal().multiply(BigDecimal(count)))
+        }.filter {it.count>0}
+        val categoryAmounts=details.groupBy {it.cost.category}.map {(category,items)->CostTotal(category,items.fold(BigDecimal.ZERO){a,d->a+d.total})}.filter {it.amount.signum()!=0}
         val currencies=(rows.map {it.currency}+if(categoryAmounts.isNotEmpty()) listOf(job.currency) else emptyList()).distinct()
         currencies.map {currency->
             val currencyRows=rows.filter {it.currency==currency}
             val categories=if(currency==job.currency) categoryAmounts else emptyList()
             JobAnalysis(job.id,job.name,currency,currencyRows.fold(BigDecimal.ZERO){a,s->a+s.earnings()},
-                categories.fold(BigDecimal.ZERO){a,c->a+c.amount},currencyRows.fold(WorkTime()){a,s->a+s.workTime()},categories)
+                categories.fold(BigDecimal.ZERO){a,c->a+c.amount},currencyRows.fold(WorkTime()){a,s->a+s.workTime()},categories,if(currency==job.currency) details else emptyList())
         }
     }
     return WorkReport(from,until,jobs.groupBy {it.currency}.toSortedMap().map {(currency,rows)->CurrencyAnalysis(currency,rows)})

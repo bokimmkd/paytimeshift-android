@@ -36,9 +36,9 @@ import kotlinx.coroutines.tasks.await
     var enableConfirm by remember {mutableStateOf(false)}
     fun task(block: suspend ()->Unit) {if(busy) return;busy=true;error=null;scope.launch {try {block();refresh()} catch(_: GetCredentialCancellationException) { /* User dismissed the chooser. */ } catch(e: Exception){error=cloudError(e)} finally {busy=false}}}
     BrandedEditor(onDismissRequest=close,title={ScreenHeading("Account & Premium",Icons.Outlined.PersonOutline,"Buy us a coffee ☕",compact=true)},error=error,
-        text={LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+        text={LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)) {
             item {FormSection("Premium") {
-                UiText(if(status.premium) "Premium active" else "Buy us a coffee ☕",fontSize=19.sp,fontWeight=FontWeight.Bold)
+                UiText(if(status.premium) "Premium active" else "Buy us a coffee ☕",fontSize=17.sp,fontWeight=FontWeight.Bold)
                 if(!status.premium) UiText(if(price!=null) "$price / ${translate("year",LocalLanguage.current)}" else "$1.99 / year",fontSize=17.sp,color=MaterialTheme.colorScheme.primary)
                 listOf("No Ads","Automatic Cloud Backup","Restore on new phone","Advanced Work Analytics","Detailed Monthly / Yearly Reports").forEach {benefit->Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) {Icon(Icons.Outlined.CheckCircleOutline,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.primary);UiText(benefit,fontSize=12.sp)}}
                 if(status.premium && !status.testAccess) {
@@ -50,7 +50,7 @@ import kotlinx.coroutines.tasks.await
                     if(price==null) UiText("Subscription is not available in Google Play yet. Please try again later.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     if(status.uid==null) UiText("Sign in before subscribing.",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
                 }
-                TextButton(onClick=restorePurchase,enabled=status.uid!=null && !busy) {Icon(Icons.Outlined.Restore,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore purchases",fontSize=12.sp)}
+                OutlinedButton(onClick=restorePurchase,enabled=status.uid!=null && !busy,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)) {Icon(Icons.Outlined.Restore,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore purchases",fontSize=11.sp)}
             }}
             if(status.uid==null) item {FormSection(if(signup) "Create account" else "Sign in") {
                 GoogleAccountButton("Continue with Google",!busy) {task {continueWithGoogle(context,repo.auth)}}
@@ -74,14 +74,14 @@ import kotlinx.coroutines.tasks.await
                         UiText("Verify your email to receive automatic reports.",fontSize=11.sp)
                         TextButton(enabled=!busy,onClick={task {repo.auth.currentUser?.sendEmailVerification()?.await();error="Verification email sent."}}){UiText("Send verification email",fontSize=11.sp)}
                     }
-                    TextButton(onClick={task {repo.status()}},enabled=!busy){Icon(Icons.Outlined.Refresh,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Refresh account",fontSize=11.sp)}
-                    TextButton(onClick={stopCloudBackup(context,status.uid);repo.unbind();repo.auth.signOut();refresh();scope.launch {clearGoogleSession(context)}},enabled=!busy){Icon(Icons.Outlined.Logout,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Sign out",fontSize=11.sp)}
+                    FormPair(first={OutlinedButton(onClick={task {repo.status()}},enabled=!busy,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.Refresh,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Refresh account",fontSize=11.sp)}},second={
+                    OutlinedButton(onClick={stopCloudBackup(context,status.uid);repo.unbind();repo.auth.signOut();refresh();scope.launch {clearGoogleSession(context)}},enabled=!busy,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.Logout,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Sign out",fontSize=11.sp)}})
                 }}
                 item {FormSection("Cloud backup") {
                     UiText(if(repo.bound(status.uid!!)) "Automatic backup enabled on this phone" else "Choose cloud restore or enable backup on this phone first.",fontSize=11.sp)
                     UiText("${translate("Last cloud backup",LocalLanguage.current)}: ${if(status.backupAt==0L) "—" else java.time.Instant.ofEpochMilli(status.backupAt).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime().toString()}",fontSize=10.sp)
-                    FormPair(first={OutlinedButton(enabled=status.premium && !busy,onClick={enableConfirm=true},contentPadding=PaddingValues(8.dp)){Icon(Icons.Outlined.CloudUpload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Back up now",fontSize=11.sp)}},
-                        second={OutlinedButton(enabled=status.premium && !busy,onClick={restoreConfirm=true},contentPadding=PaddingValues(8.dp)){Icon(Icons.Outlined.CloudDownload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore backup",fontSize=11.sp)}})
+                    FormPair(first={OutlinedButton(enabled=status.premium && !busy,onClick={enableConfirm=true},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.CloudUpload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Back up now",fontSize=11.sp)}},
+                        second={OutlinedButton(enabled=status.premium && !busy,onClick={restoreConfirm=true},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.CloudDownload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore backup",fontSize=11.sp)}})
                     if(!status.premium) UiText("Premium is required.",fontSize=10.sp)
                 }}
                 item {FormSection("Automatic email reports") {

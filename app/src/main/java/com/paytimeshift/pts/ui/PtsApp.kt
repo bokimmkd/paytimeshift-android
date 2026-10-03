@@ -118,6 +118,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var addShift by remember { mutableStateOf(false) }
     var newShiftDate by rememberSaveable {mutableStateOf(LocalDate.now().toString())}
     var patterns by remember {mutableStateOf(false)}
+    var exporter by remember {mutableStateOf(false)}
     var importer by remember {mutableStateOf(false)}
     var shareMonth by remember {mutableStateOf<String?>(null)}
     val permission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {allowed->
@@ -194,7 +195,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         ) { inset ->
             if (!loaded) Box(Modifier.fillMaxSize().padding(inset),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
             else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab in listOf(Tab.Today,Tab.Calendar) && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium);FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
+                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium);FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
                     Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it}) }
@@ -216,8 +217,11 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             commit(data.copy(shifts=data.shifts.filterNot {it.id==id}));addShift=false;shiftEditor=null
         }) { shift -> commit(data.copy(shifts=data.shifts.filterNot {it.id==shift.id} + shift));addShift=false;shiftEditor=null }
         if(patterns) PatternDialog(data,{patterns=false}) {rows->commit(data.copy(shifts=data.shifts+rows));patterns=false}
+        if(exporter) ColleagueExportDialog(data,YearMonth.parse(reportMonthText),{exporter=false}) {job,from,until->scope.launch {try {shareColleagueSchedule(context,job,data,from,until)} catch(_:Exception){message="File could not be saved."}};exporter=false}
         if(importer) ImportDialog(data,{importer=false}) {rows->commit(data.copy(shifts=data.shifts+rows));importer=false}
-        shareMonth?.let {month->AlertDialog(onDismissRequest={shareMonth=null},title={ScreenHeading("Share schedule", Icons.Outlined.Share, "Export as PDF or image", compact=true)},text={Row {
+        shareMonth?.let {month->AlertDialog(onDismissRequest={shareMonth=null},title={ScreenHeading("Share schedule", Icons.Outlined.Share, "Export as PDF or image", compact=true)},text={Column {
+            TextButton(onClick={exporter=true;shareMonth=null}){UiText("Export schedule for colleague")}
+            TextButton(onClick={importer=true;shareMonth=null}){UiText("Import schedule from colleague")}
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),true)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("PDF")}
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),false)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("Image")}
         }},confirmButton={TextButton(onClick={shareMonth=null}){UiText("Cancel")}})}
@@ -663,7 +667,7 @@ private fun shiftLabel(shift: Shift): String {
 @Composable private fun SettingsScreen(p: Preferences, change: (Preferences)->Unit,premium:()->Unit,isPremium:Boolean) {
     var currencyOpen by remember {mutableStateOf(false)}
     val context=LocalContext.current
-    Stack {
+    Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {
         Heading("Settings")
         FormSection("Display") {
             FormPair(first={SelectionField("Language",languageNames[p.language] ?: "English",languageNames.values.toList()){choice->change(p.copy(language=languageNames.entries.first {it.value==choice}.key))}},
@@ -676,16 +680,16 @@ private fun shiftLabel(shift: Shift): String {
         FormSection("Calendar warnings") {GapSetting(p,change)}
         FormSection("Reminders") {ReminderSetting(p,change)}
         FormSection("Premium & backup") {
-            TextButton(onClick=premium){Icon(Icons.Outlined.PersonOutline,null,Modifier.size(18.dp));Spacer(Modifier.width(5.dp));UiText("Account & Premium",fontSize=12.sp)}
+            OutlinedButton(onClick=premium,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.PersonOutline,null,Modifier.size(18.dp));Spacer(Modifier.width(5.dp));UiText("Account & Premium",fontSize=12.sp)}
             UiText(if(isPremium) "Premium active" else "Free · Local storage",fontSize=11.sp)
         }
         FormSection("Ad privacy") {
-            TextButton(onClick={com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(context as android.app.Activity){}}){UiText("Privacy choices",fontSize=11.sp)}
+            OutlinedButton(onClick={com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(context as android.app.Activity){}},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){UiText("Privacy choices",fontSize=11.sp)}
         }
         FormSection("Android widget") {UiText("Add a widget from your phone home screen.",fontSize=11.sp)}
         FormSection("PTS · Pay Time Shift") {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                UiText("0.2.2 · PTS Premium",Modifier.weight(1f),fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                UiText("0.2.3 · PTS Premium",Modifier.weight(1f),fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/")))}) {
                     Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(14.dp));Spacer(Modifier.width(4.dp));UiText("Website",fontSize=11.sp)
                 }
@@ -749,6 +753,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
     var night by remember {mutableStateOf(initialRules.nightPercent.toString().removeSuffix(".0"))}
     var nightStart by remember {mutableStateOf(initialRules.nightStart)};var nightEnd by remember {mutableStateOf(initialRules.nightEnd)}
     var archived by remember {mutableStateOf(original?.archived ?: false)};var applyUpcoming by remember {mutableStateOf(true)}
+    var extraShifts by remember {mutableStateOf((original ?: Job(name="")).shiftTemplates().drop(1))}
     var costs by remember {mutableStateOf(original?.costs ?: emptyList<JobCost>())}
     var error by remember {mutableStateOf<String?>(null)}
     BrandedEditor(onDismissRequest=onClose,error=error,title={ScreenHeading(if(original==null) "Add job" else "Edit job", Icons.Outlined.WorkOutline, "Pay and shift rules", compact=true)},
@@ -779,6 +784,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
                 second={DateControl(if(cycle=="Monthly") "Day of month" else "Next / anchor payday",anchor){anchor=it}})
         }}
         item {FormSection("Default shift & break") {
+            UiText("First shift",fontSize=12.sp,fontWeight=FontWeight.Bold)
             FormPair(first={TimeControl("Starts",shiftStart){shiftStart=it}},second={TimeControl("Ends",shiftEnd){shiftEnd=it}})
             FormPair(first={NumberField("Break (minutes)",pause){pause=it}},second={CompactToggle("Paid break",paid){paid=it}})
             FormPair(first={Column {
@@ -788,6 +794,15 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
                 CompactToggle("Use global reminder",!ownReminder){ownReminder=!it}
                 if(ownReminder) NumberField("Reminder (minutes)",reminder){reminder=it}
             }})
+        }}
+        items(2) {index->FormSection(if(index==0) "Second shift" else "Third shift") {
+            val t=extraShifts[index]
+            fun update(next: ShiftTemplate) {extraShifts=extraShifts.toMutableList().apply {set(index,next)}}
+            CompactToggle("Active",t.active){update(t.copy(active=it))}
+            if(t.active) {
+                FormPair(first={TimeControl("Starts",t.start){update(t.copy(start=it))}},second={TimeControl("Ends",t.end){update(t.copy(end=it))}})
+                FormPair(first={NumberField("Break (minutes)",t.breakMinutes.toString()){v->v.toIntOrNull()?.let {update(t.copy(breakMinutes=it))}}},second={CompactToggle("Paid break",t.paidBreak){update(t.copy(paidBreak=it))}})
+            }
         }}
         if(!fixed) item {FormSection("Night work") {
             NumberField("Night addition (%)",night){night=it}
@@ -809,10 +824,11 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         when {
             name.isBlank() || amount==null || amount.signum()<0 -> error="Enter a job name and a valid rate (0 or more)."
             prices.any {it.isNotBlank() && (it.toBigDecimalOrNull()?.signum() ?: -1)<0} || hoursValue==null || !hoursValue.isFinite() || hoursValue !in 0.0..168.0 || nightValue==null || !nightValue.isFinite() || nightValue !in 0.0..10000.0 || b==null || b<0 || b>=duration || r==null || r !in -1..10080 || (ownReminder && r<0) || gap==null || !gap.isFinite() || (gap!=-1.0 && gap !in 0.0..168.0) || (ownRest && gap<0) || shiftStart==shiftEnd -> error="Numbers must be valid and non-negative."
+            extraShifts.any {runCatching {it.validate()}.isFailure} -> error="Break must be shorter than the shift."
             costs.any {it.amount.replace(',','.').toBigDecimalOrNull()?.signum()?.let {n->n<0} != false} -> error="Enter valid cost amounts (0 or more)."
             else -> save(Job(original?.id ?: java.util.UUID.randomUUID().toString(),name.trim(),color,currency,amount.toPlainString(),fixed,cycle,anchor,
                 PayRules(overtimeAfterHours=hoursValue,nightPercent=nightValue,nightStart=nightStart,nightEnd=nightEnd,useHourlyRates=true,
-                    overtimeRate=prices[0],saturdayRate=prices[1],sundayRate=prices[2],holidayRate=prices[3]),archived,shiftStart,shiftEnd,b,paid,r,gap,costs.map {it.copy(amount=it.amount.replace(',','.'))}),original!=null && applyUpcoming)
+                    overtimeRate=prices[0],saturdayRate=prices[1],sundayRate=prices[2],holidayRate=prices[3]),archived,shiftStart,shiftEnd,b,paid,r,gap,costs.map {it.copy(amount=it.amount.replace(',','.'))},extraShifts),original!=null && applyUpcoming)
         }
     }){Icon(Icons.Outlined.Save,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save job",fontSize=12.sp)}},dismissButton={TextButton(onClick=onClose,contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)){Icon(Icons.Outlined.Close,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Cancel",fontSize=12.sp)}})
     if(currencyOpen) CurrencyDialog(currency,{currencyOpen=false}){currency=it;currencyOpen=false}
@@ -835,6 +851,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
             val selectedJob=data.jobs.first {it.id==id}
             jobId=id;start=selectedJob.defaultStart;end=selectedJob.defaultEnd;breakText=selectedJob.defaultBreakMinutes.toString();paid=selectedJob.paidBreak;currentPrices=true
         }
+        if(kind=="Work") FlowRow(horizontalArrangement=Arrangement.spacedBy(5.dp)) {job.shiftTemplates().forEachIndexed {i,t->if(t.active) FilterChip(selected=start==t.start && end==t.end,onClick={start=t.start;end=t.end;breakText=t.breakMinutes.toString();paid=t.paidBreak},label={UiText(listOf("First shift","Second shift","Third shift")[i],fontSize=11.sp)})}}
         FormPair(first={DateControl("Date",date){date=it}},second={SelectionField("Day type",kind,listOf("Work","Off","Vacation","Sick")){kind=it}})
         if(kind!="Work") UiText("Days off, vacation and sick leave have no estimated pay.",fontSize=10.sp)
         if(date in data.holidays) UiText("Holiday",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)

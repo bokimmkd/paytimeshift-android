@@ -38,6 +38,11 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
                 ReportLine("Real estimated earnings",money(j.real,c.currency)),
                 ReportLine("Gross hourly value",j.grossHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"),
                 ReportLine("Real hourly value",j.realHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"))
+            if(j.details.isNotEmpty()) result+=ReportLine("Cost items",heading=true)
+            j.details.forEach {d->
+                result+=ReportLine(d.cost.name.ifBlank {com.paytimeshift.pts.ui.translate(d.cost.category,data.preferences.language)},
+                    money(d.cost.amount.toBigDecimal(),c.currency)+" × "+d.count+" · "+com.paytimeshift.pts.ui.translate(d.cost.frequency,data.preferences.language)+" = "+money(d.total,c.currency),literal=true)
+            }
         }
         if(yearly) {
             val trend=yearlyTrend(data,month.year).map {it.from to it.currencies.find {r->r.currency==c.currency}}

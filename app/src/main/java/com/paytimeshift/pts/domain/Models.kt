@@ -19,7 +19,7 @@ data class Job(
     val rules: PayRules = PayRules(useHourlyRates = true), val archived: Boolean = false,
     val defaultStart: String = "07:00", val defaultEnd: String = "15:00", val defaultBreakMinutes: Int = 0,
     val paidBreak: Boolean = false, val reminderMinutes: Int = -1, val minGapHours: Double = -1.0,
-    val costs: List<JobCost> = emptyList()
+    val costs: List<JobCost> = emptyList(), val extraShifts: List<ShiftTemplate> = emptyList()
 )
 data class Shift(
     val id: String = UUID.randomUUID().toString(), val jobId: String,
