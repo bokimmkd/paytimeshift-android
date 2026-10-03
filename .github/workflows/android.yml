@@ -89,7 +89,7 @@ jobs:
       - name: Check and test Premium backend
         working-directory: backend
         run: |
-          npm install --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
           npm run check
           npm test
           node tools/sample-reports.js

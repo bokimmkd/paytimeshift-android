@@ -5,6 +5,8 @@ on:
     branches: [premium-analytics-upgrade]
     paths:
       - "app/src/androidTest/**"
+      - "app/src/main/**"
+      - "app/build.gradle.kts"
       - ".github/workflows/ui-validation.yml"
 permissions:
   contents: read
@@ -40,13 +42,13 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
           script: |
-            gradle connectedDebugAndroidTest
-            adb pull /sdcard/Android/data/com.paytimeshift.pts/files/screenshots ui-screenshots
+            gradle connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.additionalTestOutputDir=/sdcard/Android/data/com.paytimeshift.pts/files/screenshots
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: PTS-UI-validation
           path: |
-            ui-screenshots/*.png
+            app/build/outputs/connected_android_test_additional_output/**
+            app/build/intermediates/connected_android_test_additional_output/**
             app/build/reports/androidTests/connected/**
             app/build/outputs/androidTest-results/connected/**

@@ -5,7 +5,7 @@ import java.time.YearMonth
 
 data class ReportLine(val label: String, val value: String = "", val heading: Boolean = false, val literal: Boolean = false)
 fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLine> {
-    val locale=java.util.Locale.forLanguageTag(data.preferences.language)
+    val locale=com.paytimeshift.pts.ui.localeForLanguage(data.preferences.language)
     val unit=com.paytimeshift.pts.ui.translate("h",data.preferences.language)
     fun number(value: BigDecimal,places: Int=2)=java.text.NumberFormat.getNumberInstance(locale).apply {maximumFractionDigits=places;minimumFractionDigits=0}.format(value)
     fun money(value: BigDecimal,code: String)=code+" "+number(value,java.util.Currency.getInstance(code).defaultFractionDigits.coerceAtLeast(0))

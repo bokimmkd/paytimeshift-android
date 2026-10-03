@@ -126,7 +126,7 @@ import java.time.YearMonth
         }},confirmButton={TextButton(onClick=close){UiText("Close",fontSize=12.sp)}},dismissButton={})
 }
 
-private fun reportMoney(value: java.math.BigDecimal,code: String,language: String): String = code+" "+java.text.NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag(language)).apply {minimumFractionDigits=0;maximumFractionDigits=java.util.Currency.getInstance(code).defaultFractionDigits.coerceAtLeast(0)}.format(value)
+private fun reportMoney(value: java.math.BigDecimal,code: String,language: String): String = code+" "+java.text.NumberFormat.getNumberInstance(localeForLanguage(language)).apply {minimumFractionDigits=0;maximumFractionDigits=java.util.Currency.getInstance(code).defaultFractionDigits.coerceAtLeast(0)}.format(value)
 
 private data class AnalyticsBlock(val lines: List<ReportLine>,val grid: Boolean=false,val trend: Boolean=false)
 private fun compactReportBlocks(lines: List<ReportLine>): List<AnalyticsBlock> {

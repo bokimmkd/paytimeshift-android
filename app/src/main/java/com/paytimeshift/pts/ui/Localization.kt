@@ -14,7 +14,8 @@ import com.paytimeshift.pts.ui.translations.*
 
 val languageNames=linkedMapOf("en" to "English", "mk" to "Македонски", "de" to "Deutsch", "it" to "Italiano", "es" to "Español", "fr" to "Français", "sr" to "Srpski", "pt-BR" to "Português (Brasil)", "el" to "Ελληνικά")
 val LocalLanguage=staticCompositionLocalOf {"en"}
-@Composable fun uiLocale(): Locale = Locale.forLanguageTag(LocalLanguage.current)
+fun localeForLanguage(language: String): Locale = Locale.forLanguageTag(if(language=="sr") "sr-Latn" else language)
+@Composable fun uiLocale(): Locale = localeForLanguage(LocalLanguage.current)
 fun translationCatalog(language: String): Map<String,String> = when(language) {
     "mk" -> catalogmk; "de" -> catalogde; "it" -> catalogit; "es" -> cataloges; "fr" -> catalogfr
     "sr" -> catalogsr; "pt-BR" -> catalogptBR; "el" -> catalogel; else -> emptyMap()
