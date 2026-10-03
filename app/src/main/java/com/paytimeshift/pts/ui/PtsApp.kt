@@ -684,7 +684,7 @@ private fun shiftLabel(shift: Shift): String {
         FormSection("Android widget") {UiText("Add a widget from your phone home screen.",fontSize=11.sp)}
         FormSection("PTS · Pay Time Shift") {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                UiText("0.2.0 · PTS Premium",Modifier.weight(1f),fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                UiText("0.2.2 · PTS Premium",Modifier.weight(1f),fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/")))}) {
                     Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(14.dp));Spacer(Modifier.width(4.dp));UiText("Website",fontSize=11.sp)
                 }
@@ -710,15 +710,22 @@ private fun shiftLabel(shift: Shift): String {
         }}
     }},confirmButton={TextButton(onClick=close){UiText("Close")}})
 }
+// A resources-only configuration Context loses the Activity's window token.
+// Override locale on an Activity-backed themed wrapper so native pickers can attach.
+internal fun localizedPickerContext(base: android.content.Context, locale: Locale) =
+    android.view.ContextThemeWrapper(base, com.paytimeshift.pts.R.style.Theme_PTS).apply {
+        applyOverrideConfiguration(android.content.res.Configuration().apply { setLocale(locale) })
+    }
+
 @Composable fun DateControl(label: String, date: String, change: (String)->Unit) {
-    val base=LocalContext.current;val locale=uiLocale();val context=remember(base,locale) {base.createConfigurationContext(android.content.res.Configuration(base.resources.configuration).apply {setLocale(locale)})};val value=LocalDate.parse(date)
+    val base=LocalContext.current;val locale=uiLocale();val context=remember(base,locale) {localizedPickerContext(base,locale)};val value=LocalDate.parse(date)
     CompactChoice(label,value.format(DateTimeFormatter.ofPattern("d MMM yyyy",uiLocale())),
         icon={Icon(Icons.Outlined.CalendarMonth,null,Modifier.size(17.dp))}) {
         DatePickerDialog(context,{_,y,m,d->change(LocalDate.of(y,m+1,d).toString())},value.year,value.monthValue-1,value.dayOfMonth).show()
     }
 }
 @Composable fun TimeControl(label: String, time: String, modifier: Modifier=Modifier, change: (String)->Unit) {
-    val base=LocalContext.current;val locale=uiLocale();val context=remember(base,locale) {base.createConfigurationContext(android.content.res.Configuration(base.resources.configuration).apply {setLocale(locale)})};val value=LocalTime.parse(time)
+    val base=LocalContext.current;val locale=uiLocale();val context=remember(base,locale) {localizedPickerContext(base,locale)};val value=LocalTime.parse(time)
     CompactChoice(label,time,modifier,icon={Icon(Icons.Outlined.Schedule,null,Modifier.size(17.dp))}) {
         TimePickerDialog(context,{_,h,m->change(LocalTime.of(h,m).toString())},value.hour,value.minute,true).show()
     }
