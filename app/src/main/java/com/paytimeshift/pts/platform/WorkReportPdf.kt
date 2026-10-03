@@ -53,7 +53,6 @@ fun createWorkReportPdf(context: Context,data: AppData,month: YearMonth,yearly: 
     try {
         start()
         val report=if(yearly) yearlyAnalytics(data,month.year) else monthlyAnalytics(data,month)
-        section(translate(if(yearly) "Annual Work & Earnings Report" else "Monthly Work & Earnings Report",language),listOf(translate("Summary",language),translate("Amount",language)),listOf(290f,233f))
         reportLines(data,month,yearly).forEach {line->
             val label=if(line.literal)line.label else translate(line.label,language)
             if(line.heading) section(label,listOf(translate("Summary",language),translate("Amount",language)),listOf(290f,233f)) else row(listOf(label,line.value))
