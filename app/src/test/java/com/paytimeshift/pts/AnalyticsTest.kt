@@ -51,7 +51,7 @@ class AnalyticsTest {
     }
     @Test fun invalidCostAndUnsupportedFrequencyRejected() {
         listOf(JobCost(amount="-1"),JobCost(frequency="Daily"),JobCost(category="Invented")).forEach {c->
-            try {LocalStore.decode(LocalStore.encode(data(emptyList(),listOf(c)))));fail("Invalid costs accepted")} catch(_: IllegalArgumentException) { }
+            try {LocalStore.decode(LocalStore.encode(data(emptyList(),listOf(c))));fail("Invalid costs accepted")} catch(_: IllegalArgumentException) { }
         }
     }
     @Test fun effectiveHourlyAndNegativeRealAndZeroComparison() {
