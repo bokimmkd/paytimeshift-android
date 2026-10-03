@@ -15,7 +15,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: PTS-debug-apk
-          run-id: 37085464735
+          run-id: 37112385105
           github-token: ${{ github.token }}
           path: original
       - name: Prepare transfer parts from the validated APK
@@ -25,11 +25,11 @@ jobs:
           mkdir -p parts
           apk="$(find original -name '*.apk' -type f)"
           test -f "$apk"
-          cp "$apk" parts/PTS-0.2.0-v10-debug.apk
+          cp "$apk" parts/PTS-0.2.1-v11-debug.apk
           cd parts
-          sha256sum PTS-0.2.0-v10-debug.apk > SHA256SUMS
-          split --bytes=25M --numeric-suffixes=0 --suffix-length=2 PTS-0.2.0-v10-debug.apk debug-apk.part
-          rm PTS-0.2.0-v10-debug.apk
+          sha256sum PTS-0.2.1-v11-debug.apk > SHA256SUMS
+          split --bytes=25M --numeric-suffixes=0 --suffix-length=2 PTS-0.2.1-v11-debug.apk debug-apk.part
+          rm PTS-0.2.1-v11-debug.apk
           test -f debug-apk.part00
           test -f debug-apk.part01
       - uses: actions/upload-artifact@v4
