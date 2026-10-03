@@ -145,8 +145,8 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     }
     val dark = data.preferences.appearance == "Dark" || (data.preferences.appearance == "System" && isSystemInDarkTheme())
     androidx.compose.runtime.CompositionLocalProvider(LocalLanguage provides data.preferences.language, LocalPremium provides account.premium, LocalAdsResolved provides accountResolved) {
-    MaterialTheme(colorScheme = if (dark) darkColorScheme(primary=Color(0xFF69D6C6), secondary=Color(0xFF69D6C6))
-        else lightColorScheme(primary=Teal, secondary=Teal, background=Pale, surface=Color.White, onSurface=Navy, onBackground=Navy, onSurfaceVariant=Color(0xFF4F5F7B), outlineVariant=Color(0xFFE5E8ED),surfaceVariant=Color(0xFFEBEDF1))) {
+    MaterialTheme(colorScheme = if (dark) darkColorScheme(primary=Color(0xFF69D6C6), secondary=Color(0xFF69D6C6),primaryContainer=Color(0xFF104A49),onPrimaryContainer=Color(0xFFB8F4E8),secondaryContainer=Color(0xFF164440),onSecondaryContainer=Color(0xFFB8F4E8))
+        else lightColorScheme(primary=Teal, secondary=Teal,primaryContainer=Color(0xFFD8EFEB),onPrimaryContainer=Navy,secondaryContainer=Color(0xFFD8EFEB),onSecondaryContainer=Navy, background=Pale, surface=Color.White, onSurface=Navy, onBackground=Navy, onSurfaceVariant=Color(0xFF4F5F7B), outlineVariant=Color(0xFFE5E8ED),surfaceVariant=Color(0xFFEBEDF1))) {
         BackHandler(settings || tab != Tab.Today) { if (settings) settings=false else tab=Tab.Today }
         Scaffold(
             topBar = { Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start=16.dp,end=8.dp,top=3.dp,bottom=5.dp), verticalAlignment=Alignment.CenterVertically) {

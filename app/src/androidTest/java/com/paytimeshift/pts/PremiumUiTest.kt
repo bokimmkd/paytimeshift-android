@@ -21,7 +21,7 @@ class PremiumUiTest {
     private val fixture=AppData(jobs=listOf(Job(id="j",name="Regular Job",currency="MKD",rate="180",costs=listOf(JobCost(id="fuel",category="Fuel",amount="250",frequency="Per workday")))),
         shifts=(1..20).map {Shift(id="s$it",jobId="j",date="2026-10-${it.toString().padStart(2,'0')}",start="07:00",end="16:00",breakMinutes=30,rate="180",currency="MKD",rules=PayRules(useHourlyRates=true,overtimeRate="250"))})
     @Composable private fun Theme(content:@Composable ()->Unit) {
-        MaterialTheme(colorScheme=lightColorScheme(primary=Color(0xFF00857C),secondary=Color(0xFF00857C),background=Color(0xFFF8FAFB),surface=Color.White,onSurface=Color(0xFF071C43),onBackground=Color(0xFF071C43),onSurfaceVariant=Color(0xFF4F5F7B),outlineVariant=Color(0xFFE5E8ED)),content=content)
+        MaterialTheme(colorScheme=lightColorScheme(primary=Color(0xFF00857C),secondary=Color(0xFF00857C),primaryContainer=Color(0xFFD8EFEB),onPrimaryContainer=Color(0xFF071C43),secondaryContainer=Color(0xFFD8EFEB),onSecondaryContainer=Color(0xFF071C43),background=Color(0xFFF8FAFB),surface=Color.White,onSurface=Color(0xFF071C43),onBackground=Color(0xFF071C43),onSurfaceVariant=Color(0xFF4F5F7B),outlineVariant=Color(0xFFE5E8ED)),content=content)
     }
     private fun screenshot(name: String) {
         ui.waitForIdle()
