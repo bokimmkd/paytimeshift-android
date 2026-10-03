@@ -55,8 +55,8 @@ class PremiumUiTest {
         val job=fixture.jobs.single().copy(extraShifts=listOf(ShiftTemplate("15:00","23:00",30,true,true),ShiftTemplate("23:00","07:00",15,false,true)))
         var saved:List<Shift>?=null
         ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(fixture.copy(jobs=listOf(job),shifts=emptyList()),{}) {saved=it}}}}
-        ui.onNode(isToggleable() and hasAnySibling(hasAnyDescendant(hasText("Second shift")))).performClick()
-        ui.onNode(isToggleable() and hasAnySibling(hasAnyDescendant(hasText("Third shift")))).performClick()
+        ui.onNodeWithContentDescription("Second shift").performClick()
+        ui.onNodeWithContentDescription("Third shift").performClick()
         ui.onNodeWithText("Rotation").performClick()
         screenshot("three-shift-rotation")
         ui.onNodeWithText("Preview shifts").performClick()

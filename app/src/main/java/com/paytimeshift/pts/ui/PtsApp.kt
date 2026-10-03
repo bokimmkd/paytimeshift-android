@@ -795,7 +795,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         items(2) {index->FormSection(if(index==0) "Second shift" else "Third shift") {
             val t=extraShifts[index]
             fun update(next: ShiftTemplate) {extraShifts=extraShifts.toMutableList().apply {set(index,next)}}
-            CompactToggle("Active",t.active){update(t.copy(active=it))}
+            CompactToggle("Enabled",t.active){update(t.copy(active=it))}
             if(t.active) {
                 FormPair(first={TimeControl("Starts",t.start){update(t.copy(start=it))}},second={TimeControl("Ends",t.end){update(t.copy(end=it))}})
                 FormPair(first={NumberField("Break (minutes)",t.breakMinutes.toString()){v->v.toIntOrNull()?.let {update(t.copy(breakMinutes=it))}}},second={CompactToggle("Paid break",t.paidBreak){update(t.copy(paidBreak=it))}})

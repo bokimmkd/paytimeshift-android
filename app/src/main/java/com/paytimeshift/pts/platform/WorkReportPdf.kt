@@ -58,7 +58,7 @@ fun createWorkReportPdf(context: Context,data: AppData,month: YearMonth,yearly: 
             val label=if(line.literal)line.label else translate(line.label,language)
             if(line.heading) section(label,listOf(translate("Summary",language),translate("Amount",language)),listOf(290f,233f)) else row(listOf(label,line.value))
         }
-        section(translate("Shifts",language),listOf("Date","Job","Shift","Break","Paid hours","Earnings").map {translate(it,language)},listOf(72f,114f,91f,54f,65f,127f))
+        section(translate("Total shifts",language),listOf("Date","Job","Shift","Break","Paid hours","Earnings").map {translate(it,language)},listOf(72f,114f,91f,54f,65f,127f))
         data.shifts.filter {LocalDate.parse(it.date) in report.from..report.until}.sortedBy {it.begins}.forEach {shift->
             row(listOf(shift.date,data.jobs.find {it.id==shift.jobId}?.name ?: "",if(shift.kind=="Work") "${shift.start}–${shift.end}" else translate(shift.kind,language),shift.breakMinutes.toString(),hours(shift.paidMinutes),money(shift.earnings(),shift.currency)))
         }

@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -95,7 +97,8 @@ import kotlinx.coroutines.withContext
             JobPicker(jobs,jobId){id->jobId=id;enabled=setOf(0);blocks=listOf(RotationBlock(0,2),RotationBlock(null,1));error=null}
             FormPair(first={DateControl("From",from){from=it}},second={DateControl("Repeat until",until){until=it}})
             templates.forEachIndexed {i,t->if(t.active) Row(verticalAlignment=Alignment.CenterVertically) {
-                Checkbox(i in enabled,{checked->enabled=if(checked) enabled+i else enabled-i;blocks=if(checked) blocks.filter {it.shift!=null}+RotationBlock(i,2)+blocks.filter {it.shift==null} else blocks.filter {it.shift==null || it.shift in enabled}})
+                val shiftLabel=translate(names[i],LocalLanguage.current)
+                Checkbox(i in enabled,{checked->enabled=if(checked) enabled+i else enabled-i;blocks=if(checked) blocks.filter {it.shift!=null}+RotationBlock(i,2)+blocks.filter {it.shift==null} else blocks.filter {it.shift==null || it.shift in enabled}},modifier=Modifier.semantics {contentDescription=shiftLabel})
                 Column {UiText(names[i],fontSize=12.sp,fontWeight=FontWeight.Bold);UiText("${t.start}–${t.end} · ${t.breakMinutes} min",fontSize=11.sp)}
             }}
             CompactToggle("Rotation",rotation){rotation=it}
