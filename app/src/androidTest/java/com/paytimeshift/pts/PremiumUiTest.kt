@@ -25,6 +25,9 @@ class PremiumUiTest {
     }
     private fun screenshot(name: String) {
         ui.waitForIdle()
+        // UiAutomation captures SurfaceFlinger pixels; allow the committed Compose
+        // frame to reach the compositor after a language change.
+        android.os.SystemClock.sleep(300)
         val inst=InstrumentationRegistry.getInstrumentation()
         val file=File(inst.targetContext.getExternalFilesDir("screenshots"),"$name.png")
         file.parentFile!!.mkdirs();inst.uiAutomation.takeScreenshot().useBitmap {image->file.outputStream().use {image.compress(Bitmap.CompressFormat.PNG,100,it)}}
