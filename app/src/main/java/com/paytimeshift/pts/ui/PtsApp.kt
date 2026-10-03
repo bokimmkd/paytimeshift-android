@@ -531,7 +531,7 @@ private fun shiftLabel(shift: Shift): String {
             if(jobRows.isNotEmpty() || jobAnalysis.isNotEmpty()) EarningsBreakdown(job,jobRows,jobAnalysis)
             if(period=="Month" && (!job.archived || jobAnalysis.isNotEmpty())) HintAnchor("Monthly adjustments") {show,_ ->
                 TextButton(onClick={show();adjustmentJob=job},contentPadding=PaddingValues(horizontal=8.dp,vertical=2.dp)) {
-                    Icon(Icons.Outlined.Tune,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Monthly adjustments",fontSize=11.sp);Text(" · "+job.name,fontSize=11.sp,maxLines=1)
+                    Icon(Icons.Outlined.Tune,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Monthly adjustments",fontSize=11.sp);Text(" · "+job.name,Modifier.weight(1f),fontSize=11.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
                 }
             }
         }
@@ -771,7 +771,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
     var currency by remember {mutableStateOf(original?.currency ?: defaultCurrency)};var currencyOpen by remember {mutableStateOf(false)}
     var fixed by remember {mutableStateOf(original?.fixedPay ?: false)};var cycle by remember {mutableStateOf(original?.payCycle ?: "Monthly")}
     val previousSalary=original?.salaryPeriods?.lastOrNull()
-    val initialSalaryFrom=maxOf(YearMonth.now().atDay(1).toString(),previousSalary?.from ?: "0001-01-01")
+    val initialSalaryFrom=if(previousSalary?.until?.isNotBlank()==true && previousSalary.until<YearMonth.now().atDay(1).toString()) previousSalary.from else maxOf(YearMonth.now().atDay(1).toString(),previousSalary?.from ?: "0001-01-01")
     var monthly by remember {mutableStateOf(original?.monthlyPay ?: false)}
     var salary by remember {mutableStateOf(previousSalary?.amount ?: "")}
     var salaryFrom by remember {mutableStateOf(initialSalaryFrom)}

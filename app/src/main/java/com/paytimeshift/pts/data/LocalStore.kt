@@ -56,7 +56,7 @@ class LocalStore(context: Context) {
             require(adjustments.size<=10000 && adjustments.map {it.id}.distinct().size==adjustments.size)
             adjustments.forEach {a->require(a.id.isNotBlank() && jobs.any {it.id==a.jobId} && a.type in listOf("Bonus","Deduction") && a.amount.length<=32 && a.amount.toBigDecimal().signum()>0 && a.reason.isNotBlank() && a.reason.length<=120 && a.note.length<=1000);java.time.YearMonth.parse(a.month);java.util.Currency.getInstance(a.currency)}
             val hidden=strings(p.optJSONArray("hiddenHintIds"));require(hidden.size<=200 && hidden.all {it.length<=100})
-            return AppData(jobs,shifts,Preferences(p.getString("currency"),p.getBoolean("time24"),p.getBoolean("mondayFirst"),p.getString("appearance"),gap,p.optString("language","en"),p.optInt("reminderMinutes",0),p.optBoolean("showHints",true),hidden),holidays,adjustments)
+            return AppData(jobs,shifts,Preferences(p.getString("currency"),p.getBoolean("time24"),p.getBoolean("mondayFirst"),p.getString("appearance"),gap,p.optString("language","mk"),p.optInt("reminderMinutes",0),p.optBoolean("showHints",true),hidden),holidays,adjustments)
         }
         fun encode(data: AppData): String {
             val root=JSONObject().put("schemaVersion",1).put("holidays",JSONArray(data.holidays))

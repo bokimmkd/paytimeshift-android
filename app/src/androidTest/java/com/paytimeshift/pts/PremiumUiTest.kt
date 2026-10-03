@@ -187,7 +187,7 @@ class PremiumUiTest {
         val other=otherJob.templateShift(date,otherJob.shiftTemplates().first())
         val data=fixture.copy(jobs=listOf(job,otherJob),shifts=listOf(old,other))
         var saved:PatternChange?=null
-        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(data,{}) {saved=it.shift}}}}
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(data,{}) {saved=it}}}}
         ui.onNodeWithText("Replace existing shifts in this period").performScrollTo().performClick()
         ui.onNodeWithText("Preview shifts").performClick()
         ui.runOnIdle {org.junit.Assert.assertNull(saved)}
