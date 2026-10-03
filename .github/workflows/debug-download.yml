@@ -1,0 +1,50 @@
+name: PTS debug download
+on:
+  push:
+    branches: [pts-debug-download]
+    paths: [".github/workflows/debug-download.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: PTS-debug-apk
+          run-id: 37085464735
+          github-token: ${{ github.token }}
+          path: original
+      - name: Prepare transfer parts from the validated APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p parts
+          apk="$(find original -name '*.apk' -type f)"
+          test -f "$apk"
+          cp "$apk" parts/PTS-0.2.0-v10-debug.apk
+          cd parts
+          sha256sum PTS-0.2.0-v10-debug.apk > SHA256SUMS
+          split --bytes=25M --numeric-suffixes=0 --suffix-length=2 PTS-0.2.0-v10-debug.apk debug-apk.part
+          rm PTS-0.2.0-v10-debug.apk
+          test -f debug-apk.part00
+          test -f debug-apk.part01
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PTS-debug-part00
+          path: |
+            parts/debug-apk.part00
+            parts/SHA256SUMS
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PTS-debug-part01
+          path: parts/debug-apk.part01
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
