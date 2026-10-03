@@ -101,3 +101,13 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - AAB SHA-256: 1e6f6dd971c62d5093c45ffd1b6a37e56f396a1d90350e559e2eef752d09a263.
 - PTS-Firebase-v14.zip contains compatible source, private rules and a project-scoped deploy script; it does not seed jobs/shifts or contain private keys. Deploy with bash deploy.sh core, then verify new-field cloud backup/restore.
 - No new Firebase deployment, Play upload/closed-test rollout or physical Google Play update flow is claimed by this validation. Automatic report emails still require a verified sender/secret and report-mode deployment.
+
+## 0.2.4 closed-test submission — 2026-10-03
+
+- User supplied a Firebase v14 Cloud Shell completion screenshot showing successful updates of all eight core functions. Live app sign-in, entitlement and new-field cloud backup/restore still need device verification; automatic report emails remain undeployed.
+- Signed AAB versionCode 14 / versionName 0.2.4 uploaded to existing Closed testing – Alpha track 4699298164505386169, release 4.
+- Release name: 0.2.4 · Field hints & monthly pay. English release notes cover field help, monthly salaries, adjustments, job-specific day statuses, reports/backups and optional Play update offer.
+- All three existing tester lists remain selected: BokiTESTER, StayGuide Internal TEST, WarrantyCave Closed Test.
+- Full rollout requested only within this closed-test track; no production rollout. Publishing overview shows Changes in review, with automated quick checks still running before Google review.
+- Native debug symbols warning is nonblocking; no unsupported-device changes or validation errors were shown.
+- Managed publishing was already off; approved changes can publish automatically. Do not claim availability to testers until Google approves/publishes this release.
