@@ -381,5 +381,14 @@ internal val catalogel = mapOf(
     "Cost item" to "Στοιχείο κόστους",
     "Count" to "Πλήθος",
     "Summary" to "Σύνοψη",
-    "Break" to "Διάλειμμα"
+    "Break" to "Διάλειμμα",
+    "Existing shifts in this period" to "Υπάρχουσες βάρδιες σε αυτή την περίοδο",
+    "Replace existing shifts in this period" to "Αντικατάσταση των υπαρχουσών βαρδιών σε αυτή την περίοδο",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule." to "Η επιβεβαίωση του νέου προγράμματος αφαιρεί όλες τις υπάρχουσες καταχωρίσεις για αυτή την εργασία στην επιλεγμένη περίοδο, μαζί με ρεπό και άδειες.",
+    "Existing entries to remove" to "Υπάρχουσες καταχωρίσεις προς αφαίρεση",
+    "Replace existing shifts?" to "Αντικατάσταση υπαρχουσών βαρδιών;",
+    "New shifts to add" to "Νέες βάρδιες προς προσθήκη",
+    "Other jobs and dates outside this period stay unchanged." to "Οι άλλες εργασίες και οι ημερομηνίες εκτός αυτής της περιόδου παραμένουν αμετάβλητες.",
+    "Replace shifts" to "Αντικατάσταση βαρδιών",
+    "Schedule changed. Review the shifts again." to "Το πρόγραμμα άλλαξε. Ελέγξτε ξανά τις βάρδιες."
 )

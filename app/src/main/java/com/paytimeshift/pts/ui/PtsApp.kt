@@ -216,7 +216,10 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         if (addShift || shiftEditor != null) ShiftDialog(shiftEditor,data,newShiftDate,onClose={addShift=false;shiftEditor=null},onDelete={ id ->
             commit(data.copy(shifts=data.shifts.filterNot {it.id==id}));addShift=false;shiftEditor=null
         }) { shift -> commit(data.copy(shifts=data.shifts.filterNot {it.id==shift.id} + shift));addShift=false;shiftEditor=null }
-        if(patterns) PatternDialog(data,{patterns=false}) {rows->commit(data.copy(shifts=data.shifts+rows));patterns=false}
+        if(patterns) PatternDialog(data,{patterns=false}) {change->
+            val next=runCatching {data.withPatternChange(change)}.getOrElse {message="Schedule changed. Review the shifts again.";return@PatternDialog}
+            commit(next);patterns=false
+        }
         if(exporter) ColleagueExportDialog(data,YearMonth.parse(reportMonthText),{exporter=false}) {job,from,until->scope.launch {try {shareColleagueSchedule(context,job,data,from,until)} catch(_:Exception){message="File could not be saved."}};exporter=false}
         if(importer) ImportDialog(data,{importer=false}) {rows->commit(data.copy(shifts=data.shifts+rows));importer=false}
         shareMonth?.let {month->AlertDialog(onDismissRequest={shareMonth=null},title={ScreenHeading("Share schedule", Icons.Outlined.Share, "Export as PDF or image", compact=true)},text={Column {

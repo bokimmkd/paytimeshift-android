@@ -33,3 +33,25 @@ fun generateRotation(job: Job,from: LocalDate,until: LocalDate,blocks: List<Rota
     }.toList()
     return newScheduleRows(rows,existing)
 }
+
+/** Reports select shifts by their start date; replacement uses the same boundary. */
+fun patternShiftsInPeriod(shifts: List<Shift>,jobId: String,from: LocalDate,until: LocalDate): List<Shift> {
+    require(until>=from)
+    return shifts.filter {it.jobId==jobId && it.begins.toLocalDate() in from..until}
+}
+
+data class PatternChange(val jobId: String,val from: LocalDate,val until: LocalDate,
+    val added: List<Shift>,val removedIds: Set<String> = emptySet())
+
+/** Preview/cancel never changes data. One validated save replaces only reviewed IDs. */
+fun AppData.withPatternChange(change: PatternChange): AppData {
+    require(change.added.isNotEmpty())
+    val allowedIds=patternShiftsInPeriod(shifts,change.jobId,change.from,change.until).map {it.id}.toSet()
+    require(allowedIds.containsAll(change.removedIds))
+    require(change.added.all {it.jobId==change.jobId && it.begins.toLocalDate() in change.from..change.until})
+    require(change.added.map {it.id}.distinct().size==change.added.size)
+    val remaining=shifts.filterNot {it.id in change.removedIds}
+    require(change.added.none {added->remaining.any {it.id==added.id}})
+    require(newScheduleRows(change.added,remaining).size==change.added.size)
+    return copy(shifts=remaining+change.added)
+}

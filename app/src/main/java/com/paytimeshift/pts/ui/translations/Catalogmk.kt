@@ -381,5 +381,14 @@ internal val catalogmk = mapOf(
     "Cost item" to "Ставка на трошок",
     "Count" to "Број",
     "Summary" to "Преглед",
-    "Break" to "Пауза"
+    "Break" to "Пауза",
+    "Existing shifts in this period" to "Постојни смени во овој период",
+    "Replace existing shifts in this period" to "Замени ги постојните смени во овој период",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule." to "Со потврдување на новиот распоред се отстрануваат сите постојни записи за оваа работа во избраниот период, вклучувајќи слободни денови и отсуства.",
+    "Existing entries to remove" to "Постојни записи за отстранување",
+    "Replace existing shifts?" to "Да се заменат постојните смени?",
+    "New shifts to add" to "Нови смени за додавање",
+    "Other jobs and dates outside this period stay unchanged." to "Другите работи и датумите надвор од овој период остануваат непроменети.",
+    "Replace shifts" to "Замени смени",
+    "Schedule changed. Review the shifts again." to "Распоредот е променет. Прегледај ги смените повторно."
 )

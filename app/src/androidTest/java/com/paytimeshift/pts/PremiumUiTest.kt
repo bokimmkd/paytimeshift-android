@@ -54,7 +54,7 @@ class PremiumUiTest {
     @Test fun threeShiftRotationUsesJobTemplatesAndPreviewsBeforeSaving() {
         val job=fixture.jobs.single().copy(extraShifts=listOf(ShiftTemplate("15:00","23:00",30,true,true),ShiftTemplate("23:00","07:00",15,false,true)))
         var saved:List<Shift>?=null
-        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(fixture.copy(jobs=listOf(job),shifts=emptyList()),{}) {saved=it}}}}
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(fixture.copy(jobs=listOf(job),shifts=emptyList()),{}) {saved=it.added}}}}
         ui.onNodeWithContentDescription("Second shift").performClick()
         ui.onNodeWithContentDescription("Third shift").performClick()
         ui.onNodeWithText("Rotation").performClick()
@@ -78,6 +78,34 @@ class PremiumUiTest {
                         File(destination.parentFile,"table-report-$language.png").outputStream().use {image.compress(Bitmap.CompressFormat.PNG,100,it)}}
                 }
             }
+        }
+    }
+
+    @Test fun replacingExistingPatternRequiresConfirmationAndCancelKeepsData() {
+        val job=fixture.jobs.single()
+        val date=java.time.LocalDate.now().with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.MONDAY))
+        val old=job.templateShift(date,job.shiftTemplates().first())
+        val otherJob=job.copy(id="other",name="Other job")
+        val other=otherJob.templateShift(date,otherJob.shiftTemplates().first())
+        val data=fixture.copy(jobs=listOf(job,otherJob),shifts=listOf(old,other))
+        var saved:PatternChange?=null
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(data,{}) {saved=it}}}}
+        ui.onNodeWithText("Replace existing shifts in this period").performScrollTo().performClick()
+        ui.onNodeWithText("Preview shifts").performClick()
+        ui.runOnIdle {org.junit.Assert.assertNull(saved)}
+        ui.onNodeWithText("Add these shifts").performClick()
+        ui.onNodeWithText("Replace existing shifts?").assertIsDisplayed()
+        ui.onNodeWithText("Cancel").performClick()
+        ui.runOnIdle {org.junit.Assert.assertNull(saved);org.junit.Assert.assertEquals(listOf(old,other),data.shifts)}
+        ui.onNodeWithText("Add these shifts").performClick()
+        screenshot("replace-pattern-confirmation")
+        ui.onNodeWithText("Replace shifts").performClick()
+        ui.runOnIdle {
+            org.junit.Assert.assertEquals(setOf(old.id),saved!!.removedIds)
+            val next=data.withPatternChange(saved!!)
+            org.junit.Assert.assertTrue(other in next.shifts)
+            org.junit.Assert.assertFalse(old in next.shifts)
+            org.junit.Assert.assertTrue(next.shifts.any {it.jobId==job.id && it.date==date.toString()})
         }
     }
 }

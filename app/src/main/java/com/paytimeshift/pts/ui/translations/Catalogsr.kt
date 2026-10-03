@@ -381,5 +381,14 @@ internal val catalogsr = mapOf(
     "Cost item" to "Stavka troška",
     "Count" to "Broj",
     "Summary" to "Pregled",
-    "Break" to "Pauza"
+    "Break" to "Pauza",
+    "Existing shifts in this period" to "Postojeće smene u ovom periodu",
+    "Replace existing shifts in this period" to "Zameni postojeće smene u ovom periodu",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule." to "Potvrdom novog rasporeda uklanjaju se svi postojeći unosi za ovaj posao u izabranom periodu, uključujući slobodne dane i odsustva.",
+    "Existing entries to remove" to "Postojeći unosi za uklanjanje",
+    "Replace existing shifts?" to "Zameniti postojeće smene?",
+    "New shifts to add" to "Nove smene za dodavanje",
+    "Other jobs and dates outside this period stay unchanged." to "Drugi poslovi i datumi van ovog perioda ostaju nepromenjeni.",
+    "Replace shifts" to "Zameni smene",
+    "Schedule changed. Review the shifts again." to "Raspored je promenjen. Ponovo pregledaj smene."
 )

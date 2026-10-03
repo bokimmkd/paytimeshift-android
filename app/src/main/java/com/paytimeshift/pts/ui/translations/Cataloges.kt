@@ -381,5 +381,14 @@ internal val cataloges = mapOf(
     "Cost item" to "Partida de gasto",
     "Count" to "Cantidad",
     "Summary" to "Resumen",
-    "Break" to "Descanso"
+    "Break" to "Descanso",
+    "Existing shifts in this period" to "Turnos existentes en este período",
+    "Replace existing shifts in this period" to "Reemplazar los turnos existentes en este período",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule." to "Al confirmar el nuevo horario se eliminan todas las entradas existentes de este trabajo en el período seleccionado, incluidos días libres y ausencias.",
+    "Existing entries to remove" to "Entradas existentes que se eliminarán",
+    "Replace existing shifts?" to "¿Reemplazar los turnos existentes?",
+    "New shifts to add" to "Turnos nuevos que se añadirán",
+    "Other jobs and dates outside this period stay unchanged." to "Los demás trabajos y las fechas fuera de este período no cambian.",
+    "Replace shifts" to "Reemplazar turnos",
+    "Schedule changed. Review the shifts again." to "El horario ha cambiado. Revisa los turnos de nuevo."
 )

@@ -38,4 +38,41 @@ class ShiftRotationTest {
         assertEquals(15,row.breakMinutes);assertEquals(source.finishes,row.finishes)
         assertTrue(decodeColleagueSchedule(json,target,listOf(row)).isEmpty())
     }
+
+    @Test fun replacementOnlyTouchesReviewedJobAndStartDates() {
+        val before=job.templateShift(first.minusDays(1),job.shiftTemplates()[2])
+        val old=job.templateShift(first,job.shiftTemplates()[0])
+        val leave=job.templateShift(first.plusDays(1),job.shiftTemplates()[0]).copy(kind="Vacation")
+        val after=job.templateShift(first.plusDays(2),job.shiftTemplates()[0])
+        val other=job.copy(id="other").templateShift(first,job.shiftTemplates()[0])
+        val data=AppData(jobs=listOf(job,job.copy(id="other")),shifts=listOf(before,old,leave,after,other))
+        val removed=patternShiftsInPeriod(data.shifts,job.id,first,first.plusDays(1)).map {it.id}.toSet()
+        assertEquals(setOf(old.id,leave.id),removed)
+        val generated=generateRotation(job,first,first.plusDays(1),listOf(RotationBlock(1)),data.shifts.filterNot {it.id in removed})
+        val next=data.withPatternChange(PatternChange(job.id,first,first.plusDays(1),generated,removed))
+        assertEquals(listOf(before,after,other)+generated,next.shifts)
+        assertEquals(data.jobs,next.jobs)
+        assertEquals(data,LocalStore.decode(LocalStore.encode(data)))
+        assertEquals(next,LocalStore.decode(LocalStore.encode(next)))
+    }
+    @Test fun disabledReplacementKeepsOldRowsAndAddsOnlyNewRows() {
+        val old=job.templateShift(first,job.shiftTemplates()[0])
+        val data=AppData(jobs=listOf(job),shifts=listOf(old))
+        val generated=generateRotation(job,first,first.plusDays(1),listOf(RotationBlock(0)),data.shifts)
+        assertEquals(1,generated.size)
+        assertEquals(listOf(old)+generated,data.withPatternChange(PatternChange(job.id,first,first.plusDays(1),generated)).shifts)
+    }
+    @Test(expected=IllegalArgumentException::class) fun replacementCannotDeleteAnotherJobsShift() {
+        val other=job.copy(id="other").templateShift(first,job.shiftTemplates()[0])
+        val added=job.templateShift(first,job.shiftTemplates()[1])
+        AppData(shifts=listOf(other)).withPatternChange(PatternChange(job.id,first,first,listOf(added),setOf(other.id)))
+    }
+    @Test(expected=IllegalArgumentException::class) fun emptySelectionCannotDeleteExistingSchedule() {
+        val old=job.templateShift(first,job.shiftTemplates()[0])
+        AppData(shifts=listOf(old)).withPatternChange(PatternChange(job.id,first,first,emptyList(),setOf(old.id)))
+    }
+    @Test(expected=IllegalArgumentException::class) fun staleReplacementDoesNotDeleteUnreviewedSchedule() {
+        val added=job.templateShift(first,job.shiftTemplates()[1])
+        AppData().withPatternChange(PatternChange(job.id,first,first,listOf(added),setOf("no-longer-present")))
+    }
 }

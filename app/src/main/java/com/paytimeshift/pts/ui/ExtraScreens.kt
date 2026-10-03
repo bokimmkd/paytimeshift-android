@@ -79,7 +79,7 @@ import kotlinx.coroutines.withContext
         UiText("Overlaps and short gaps appear in Calendar.",fontSize=11.sp)
     }
 }
-@Composable fun PatternDialog(data:AppData,close:()->Unit,save:(List<Shift>)->Unit) {
+@Composable fun PatternDialog(data:AppData,close:()->Unit,save:(PatternChange)->Unit) {
     val jobs=data.jobs.filterNot {it.archived}
     if(jobs.isEmpty()) {AlertDialog(onDismissRequest=close,title={UiText("Shift patterns")},text={UiText("No active jobs.")},confirmButton={TextButton(onClick=close){UiText("Close")}});return}
     var jobId by remember {mutableStateOf(jobs.first().id)}
@@ -91,11 +91,21 @@ import kotlinx.coroutines.withContext
     var days by remember {mutableStateOf(setOf(1,2,3,4,5))}
     var preview by remember {mutableStateOf<List<Shift>?>(null)};var error by remember {mutableStateOf<String?>(null)}
     var selected by remember {mutableStateOf<Set<String>>(emptySet())}
+    var replaceExisting by remember {mutableStateOf(false)}
+    var removedIds by remember {mutableStateOf<Set<String>>(emptySet())}
+    var confirmReplacement by remember {mutableStateOf(false)}
+    val existing=runCatching {patternShiftsInPeriod(data.shifts,jobId,LocalDate.parse(from),LocalDate.parse(until))}.getOrDefault(emptyList())
+    fun saveReviewed() {save(PatternChange(jobId,LocalDate.parse(from),LocalDate.parse(until),preview!!.filter {it.id in selected},removedIds))}
     val names=listOf("First shift","Second shift","Third shift")
     BrandedEditor(onDismissRequest=close,error=error,title={ScreenHeading("Shift patterns",Icons.Outlined.Repeat,"Repeat and review shifts",compact=true)},text={
         if(preview==null) Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-            JobPicker(jobs,jobId){id->jobId=id;enabled=setOf(0);blocks=listOf(RotationBlock(0,2),RotationBlock(null,1));error=null}
-            FormPair(first={DateControl("From",from){from=it}},second={DateControl("Repeat until",until){until=it}})
+            JobPicker(jobs,jobId){id->jobId=id;enabled=setOf(0);blocks=listOf(RotationBlock(0,2),RotationBlock(null,1));replaceExisting=false;removedIds=emptySet();error=null}
+            FormPair(first={DateControl("From",from){from=it;replaceExisting=false}},second={DateControl("Repeat until",until){until=it;replaceExisting=false}})
+            if(existing.isNotEmpty()) FormSection("Existing shifts in this period") {
+                UiText("${existing.size}",fontSize=13.sp,fontWeight=FontWeight.Bold)
+                CompactToggle("Replace existing shifts in this period",replaceExisting){replaceExisting=it}
+                UiText("Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.",fontSize=10.sp)
+            }
             templates.forEachIndexed {i,t->if(t.active) Row(verticalAlignment=Alignment.CenterVertically) {
                 val shiftLabel=translate(names[i],LocalLanguage.current)
                 Checkbox(i in enabled,{checked->enabled=if(checked) enabled+i else enabled-i;blocks=if(checked) blocks.filter {it.shift!=null}+RotationBlock(i,2)+blocks.filter {it.shift==null} else blocks.filter {it.shift==null || it.shift in enabled}},modifier=Modifier.semantics {contentDescription=shiftLabel})
@@ -119,7 +129,8 @@ import kotlinx.coroutines.withContext
             }
         } else Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(6.dp)) {
             UiText("${selected.size} / ${preview!!.size} shifts",fontSize=12.sp)
-            val alerts=warnings(data.shifts+preview!!.filter {it.id in selected},data.preferences.gapHours,data.jobs)
+            if(removedIds.isNotEmpty()) Row(horizontalArrangement=Arrangement.spacedBy(5.dp)) {UiText("Existing entries to remove",fontSize=11.sp);UiText(removedIds.size.toString(),fontSize=11.sp,fontWeight=FontWeight.Bold)}
+            val alerts=warnings(data.shifts.filterNot {it.id in removedIds}+preview!!.filter {it.id in selected},data.preferences.gapHours,data.jobs)
             alerts.take(3).forEach {UiText(it,fontSize=10.sp,color=MaterialTheme.colorScheme.error)}
             Box(Modifier.weight(1f)){ShiftReviewGrid(preview!!,selected){id->selected=if(id in selected) selected-id else selected+id}}
         }
@@ -128,14 +139,27 @@ import kotlinx.coroutines.withContext
             require(enabled.isNotEmpty())
             val a=LocalDate.parse(from);val b=LocalDate.parse(until)
             require(b>=a && java.time.temporal.ChronoUnit.DAYS.between(a,b)<=366)
-            val rows=if(rotation) {require(blocks.all {it.shift==null || it.shift in enabled});generateRotation(job,a,b,blocks,data.shifts)} else {
+            val removing=if(replaceExisting) patternShiftsInPeriod(data.shifts,jobId,a,b).map {it.id}.toSet() else emptySet()
+            val remaining=data.shifts.filterNot {it.id in removing}
+            val rows=if(rotation) {require(blocks.all {it.shift==null || it.shift in enabled});generateRotation(job,a,b,blocks,remaining)} else {
                 require(days.isNotEmpty())
-                newScheduleRows(generateSequence(a){it.plusDays(1)}.takeWhile {it<=b}.filter {it.dayOfWeek.value in days}.flatMap {d->enabled.sorted().asSequence().map {i->templates[i].validate();job.templateShift(d,templates[i])}}.toList(),data.shifts)
+                newScheduleRows(generateSequence(a){it.plusDays(1)}.takeWhile {it<=b}.filter {it.dayOfWeek.value in days}.flatMap {d->enabled.sorted().asSequence().map {i->templates[i].validate();job.templateShift(d,templates[i])}}.toList(),remaining)
             }
-            preview=rows;selected=rows.map {it.id}.toSet();error=if(rows.isEmpty()) "No new shifts." else null
+            preview=rows;selected=rows.map {it.id}.toSet();removedIds=removing;error=if(rows.isEmpty()) "No new shifts." else null
         } catch(_:Exception) {error="Select days and valid dates/times; maximum 366 days."}
-        else save(preview!!.filter {it.id in selected})
-    }){Icon(if(preview==null) Icons.Outlined.Visibility else Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText(if(preview==null) "Preview shifts" else "Add these shifts",fontSize=12.sp)}},dismissButton={TextButton(onClick={if(preview!=null) preview=null else close()}){UiText(if(preview==null) "Cancel" else "Back",fontSize=12.sp)}})
+        else if(removedIds.isNotEmpty()) confirmReplacement=true else saveReviewed()
+    }){Icon(if(preview==null) Icons.Outlined.Visibility else Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText(if(preview==null) "Preview shifts" else "Add these shifts",fontSize=12.sp)}},dismissButton={TextButton(onClick={if(preview!=null) {preview=null;removedIds=emptySet()} else close()}){UiText(if(preview==null) "Cancel" else "Back",fontSize=12.sp)}})
+    if(confirmReplacement) AlertDialog(onDismissRequest={confirmReplacement=false},
+        title={ScreenHeading("Replace existing shifts?",Icons.Outlined.Repeat,"Review before saving",compact=true)},
+        text={Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
+            Text(job.name,fontWeight=FontWeight.Bold)
+            Text("$from – $until",fontSize=12.sp)
+            Row(horizontalArrangement=Arrangement.spacedBy(5.dp)) {UiText("Existing entries to remove");Text(removedIds.size.toString(),fontWeight=FontWeight.Bold)}
+            Row(horizontalArrangement=Arrangement.spacedBy(5.dp)) {UiText("New shifts to add");Text(selected.size.toString(),fontWeight=FontWeight.Bold)}
+            UiText("Other jobs and dates outside this period stay unchanged.",fontSize=11.sp)
+        }},
+        confirmButton={Button(onClick={confirmReplacement=false;saveReviewed()}) {Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Replace shifts")}},
+        dismissButton={TextButton(onClick={confirmReplacement=false}){UiText("Cancel")}})
 }
 @Composable fun ImportDialog(data:AppData,close:()->Unit,save:(List<Shift>)->Unit) {
     val jobs=data.jobs.filterNot {it.archived};val context=LocalContext.current;val scope=rememberCoroutineScope()

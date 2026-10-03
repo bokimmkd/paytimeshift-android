@@ -381,5 +381,14 @@ internal val catalogptBR = mapOf(
     "Cost item" to "Item de custo",
     "Count" to "Quantidade",
     "Summary" to "Resumo",
-    "Break" to "Pausa"
+    "Break" to "Pausa",
+    "Existing shifts in this period" to "Turnos existentes neste período",
+    "Replace existing shifts in this period" to "Substituir os turnos existentes neste período",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule." to "Ao confirmar a nova escala, todas as entradas existentes deste trabalho no período selecionado são removidas, incluindo folgas e afastamentos.",
+    "Existing entries to remove" to "Entradas existentes a remover",
+    "Replace existing shifts?" to "Substituir os turnos existentes?",
+    "New shifts to add" to "Novos turnos a adicionar",
+    "Other jobs and dates outside this period stay unchanged." to "Outros trabalhos e datas fora deste período permanecem inalterados.",
+    "Replace shifts" to "Substituir turnos",
+    "Schedule changed. Review the shifts again." to "A escala mudou. Revise os turnos novamente."
 )

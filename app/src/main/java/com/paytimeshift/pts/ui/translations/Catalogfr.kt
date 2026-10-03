@@ -381,5 +381,14 @@ internal val catalogfr = mapOf(
     "Cost item" to "Poste de dépense",
     "Count" to "Nombre",
     "Summary" to "Résumé",
-    "Break" to "Pause"
+    "Break" to "Pause",
+    "Existing shifts in this period" to "Services existants sur cette période",
+    "Replace existing shifts in this period" to "Remplacer les services existants sur cette période",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule." to "La confirmation du nouveau planning supprime toutes les entrées existantes de cet emploi sur la période choisie, y compris les jours de repos et les absences.",
+    "Existing entries to remove" to "Entrées existantes à supprimer",
+    "Replace existing shifts?" to "Remplacer les services existants ?",
+    "New shifts to add" to "Nouveaux services à ajouter",
+    "Other jobs and dates outside this period stay unchanged." to "Les autres emplois et les dates hors de cette période restent inchangés.",
+    "Replace shifts" to "Remplacer les services",
+    "Schedule changed. Review the shifts again." to "Le planning a changé. Vérifiez à nouveau les services."
 )

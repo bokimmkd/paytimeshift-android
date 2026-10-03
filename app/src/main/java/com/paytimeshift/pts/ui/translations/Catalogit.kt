@@ -381,5 +381,14 @@ internal val catalogit = mapOf(
     "Cost item" to "Voce di costo",
     "Count" to "Numero",
     "Summary" to "Riepilogo",
-    "Break" to "Pausa"
+    "Break" to "Pausa",
+    "Existing shifts in this period" to "Turni esistenti in questo periodo",
+    "Replace existing shifts in this period" to "Sostituisci i turni esistenti in questo periodo",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule." to "Confermando il nuovo programma vengono rimosse tutte le voci esistenti per questo lavoro nel periodo selezionato, inclusi giorni liberi e assenze.",
+    "Existing entries to remove" to "Voci esistenti da rimuovere",
+    "Replace existing shifts?" to "Sostituire i turni esistenti?",
+    "New shifts to add" to "Nuovi turni da aggiungere",
+    "Other jobs and dates outside this period stay unchanged." to "Gli altri lavori e le date fuori da questo periodo rimangono invariati.",
+    "Replace shifts" to "Sostituisci turni",
+    "Schedule changed. Review the shifts again." to "Il programma è cambiato. Controlla di nuovo i turni."
 )

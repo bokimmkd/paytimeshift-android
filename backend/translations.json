@@ -379,7 +379,16 @@
     "Cost item": "Ставка на трошок",
     "Count": "Број",
     "Summary": "Преглед",
-    "Break": "Пауза"
+    "Break": "Пауза",
+    "Existing shifts in this period": "Постојни смени во овој период",
+    "Replace existing shifts in this period": "Замени ги постојните смени во овој период",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.": "Со потврдување на новиот распоред се отстрануваат сите постојни записи за оваа работа во избраниот период, вклучувајќи слободни денови и отсуства.",
+    "Existing entries to remove": "Постојни записи за отстранување",
+    "Replace existing shifts?": "Да се заменат постојните смени?",
+    "New shifts to add": "Нови смени за додавање",
+    "Other jobs and dates outside this period stay unchanged.": "Другите работи и датумите надвор од овој период остануваат непроменети.",
+    "Replace shifts": "Замени смени",
+    "Schedule changed. Review the shifts again.": "Распоредот е променет. Прегледај ги смените повторно."
   },
   "de": {
     "Today": "Heute",
@@ -761,7 +770,16 @@
     "Cost item": "Kostenposition",
     "Count": "Anzahl",
     "Summary": "Übersicht",
-    "Break": "Pause"
+    "Break": "Pause",
+    "Existing shifts in this period": "Vorhandene Schichten in diesem Zeitraum",
+    "Replace existing shifts in this period": "Vorhandene Schichten in diesem Zeitraum ersetzen",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.": "Beim Bestätigen des neuen Plans werden alle vorhandenen Einträge für diesen Job im gewählten Zeitraum entfernt, einschließlich freier Tage und Abwesenheiten.",
+    "Existing entries to remove": "Zu entfernende vorhandene Einträge",
+    "Replace existing shifts?": "Vorhandene Schichten ersetzen?",
+    "New shifts to add": "Hinzuzufügende neue Schichten",
+    "Other jobs and dates outside this period stay unchanged.": "Andere Jobs und Daten außerhalb dieses Zeitraums bleiben unverändert.",
+    "Replace shifts": "Schichten ersetzen",
+    "Schedule changed. Review the shifts again.": "Der Plan wurde geändert. Prüfe die Schichten erneut."
   },
   "it": {
     "Today": "Oggi",
@@ -1143,7 +1161,16 @@
     "Cost item": "Voce di costo",
     "Count": "Numero",
     "Summary": "Riepilogo",
-    "Break": "Pausa"
+    "Break": "Pausa",
+    "Existing shifts in this period": "Turni esistenti in questo periodo",
+    "Replace existing shifts in this period": "Sostituisci i turni esistenti in questo periodo",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.": "Confermando il nuovo programma vengono rimosse tutte le voci esistenti per questo lavoro nel periodo selezionato, inclusi giorni liberi e assenze.",
+    "Existing entries to remove": "Voci esistenti da rimuovere",
+    "Replace existing shifts?": "Sostituire i turni esistenti?",
+    "New shifts to add": "Nuovi turni da aggiungere",
+    "Other jobs and dates outside this period stay unchanged.": "Gli altri lavori e le date fuori da questo periodo rimangono invariati.",
+    "Replace shifts": "Sostituisci turni",
+    "Schedule changed. Review the shifts again.": "Il programma è cambiato. Controlla di nuovo i turni."
   },
   "es": {
     "Today": "Hoy",
@@ -1525,7 +1552,16 @@
     "Cost item": "Partida de gasto",
     "Count": "Cantidad",
     "Summary": "Resumen",
-    "Break": "Descanso"
+    "Break": "Descanso",
+    "Existing shifts in this period": "Turnos existentes en este período",
+    "Replace existing shifts in this period": "Reemplazar los turnos existentes en este período",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.": "Al confirmar el nuevo horario se eliminan todas las entradas existentes de este trabajo en el período seleccionado, incluidos días libres y ausencias.",
+    "Existing entries to remove": "Entradas existentes que se eliminarán",
+    "Replace existing shifts?": "¿Reemplazar los turnos existentes?",
+    "New shifts to add": "Turnos nuevos que se añadirán",
+    "Other jobs and dates outside this period stay unchanged.": "Los demás trabajos y las fechas fuera de este período no cambian.",
+    "Replace shifts": "Reemplazar turnos",
+    "Schedule changed. Review the shifts again.": "El horario ha cambiado. Revisa los turnos de nuevo."
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -1907,7 +1943,16 @@
     "Cost item": "Poste de dépense",
     "Count": "Nombre",
     "Summary": "Résumé",
-    "Break": "Pause"
+    "Break": "Pause",
+    "Existing shifts in this period": "Services existants sur cette période",
+    "Replace existing shifts in this period": "Remplacer les services existants sur cette période",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.": "La confirmation du nouveau planning supprime toutes les entrées existantes de cet emploi sur la période choisie, y compris les jours de repos et les absences.",
+    "Existing entries to remove": "Entrées existantes à supprimer",
+    "Replace existing shifts?": "Remplacer les services existants ?",
+    "New shifts to add": "Nouveaux services à ajouter",
+    "Other jobs and dates outside this period stay unchanged.": "Les autres emplois et les dates hors de cette période restent inchangés.",
+    "Replace shifts": "Remplacer les services",
+    "Schedule changed. Review the shifts again.": "Le planning a changé. Vérifiez à nouveau les services."
   },
   "sr": {
     "Today": "Danas",
@@ -2289,7 +2334,16 @@
     "Cost item": "Stavka troška",
     "Count": "Broj",
     "Summary": "Pregled",
-    "Break": "Pauza"
+    "Break": "Pauza",
+    "Existing shifts in this period": "Postojeće smene u ovom periodu",
+    "Replace existing shifts in this period": "Zameni postojeće smene u ovom periodu",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.": "Potvrdom novog rasporeda uklanjaju se svi postojeći unosi za ovaj posao u izabranom periodu, uključujući slobodne dane i odsustva.",
+    "Existing entries to remove": "Postojeći unosi za uklanjanje",
+    "Replace existing shifts?": "Zameniti postojeće smene?",
+    "New shifts to add": "Nove smene za dodavanje",
+    "Other jobs and dates outside this period stay unchanged.": "Drugi poslovi i datumi van ovog perioda ostaju nepromenjeni.",
+    "Replace shifts": "Zameni smene",
+    "Schedule changed. Review the shifts again.": "Raspored je promenjen. Ponovo pregledaj smene."
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -2671,7 +2725,16 @@
     "Cost item": "Item de custo",
     "Count": "Quantidade",
     "Summary": "Resumo",
-    "Break": "Pausa"
+    "Break": "Pausa",
+    "Existing shifts in this period": "Turnos existentes neste período",
+    "Replace existing shifts in this period": "Substituir os turnos existentes neste período",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.": "Ao confirmar a nova escala, todas as entradas existentes deste trabalho no período selecionado são removidas, incluindo folgas e afastamentos.",
+    "Existing entries to remove": "Entradas existentes a remover",
+    "Replace existing shifts?": "Substituir os turnos existentes?",
+    "New shifts to add": "Novos turnos a adicionar",
+    "Other jobs and dates outside this period stay unchanged.": "Outros trabalhos e datas fora deste período permanecem inalterados.",
+    "Replace shifts": "Substituir turnos",
+    "Schedule changed. Review the shifts again.": "A escala mudou. Revise os turnos novamente."
   },
   "el": {
     "Today": "Σήμερα",
@@ -3053,6 +3116,15 @@
     "Cost item": "Στοιχείο κόστους",
     "Count": "Πλήθος",
     "Summary": "Σύνοψη",
-    "Break": "Διάλειμμα"
+    "Break": "Διάλειμμα",
+    "Existing shifts in this period": "Υπάρχουσες βάρδιες σε αυτή την περίοδο",
+    "Replace existing shifts in this period": "Αντικατάσταση των υπαρχουσών βαρδιών σε αυτή την περίοδο",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule.": "Η επιβεβαίωση του νέου προγράμματος αφαιρεί όλες τις υπάρχουσες καταχωρίσεις για αυτή την εργασία στην επιλεγμένη περίοδο, μαζί με ρεπό και άδειες.",
+    "Existing entries to remove": "Υπάρχουσες καταχωρίσεις προς αφαίρεση",
+    "Replace existing shifts?": "Αντικατάσταση υπαρχουσών βαρδιών;",
+    "New shifts to add": "Νέες βάρδιες προς προσθήκη",
+    "Other jobs and dates outside this period stay unchanged.": "Οι άλλες εργασίες και οι ημερομηνίες εκτός αυτής της περιόδου παραμένουν αμετάβλητες.",
+    "Replace shifts": "Αντικατάσταση βαρδιών",
+    "Schedule changed. Review the shifts again.": "Το πρόγραμμα άλλαξε. Ελέγξτε ξανά τις βάρδιες."
   }
 }

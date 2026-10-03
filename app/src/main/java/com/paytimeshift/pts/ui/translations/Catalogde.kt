@@ -381,5 +381,14 @@ internal val catalogde = mapOf(
     "Cost item" to "Kostenposition",
     "Count" to "Anzahl",
     "Summary" to "Übersicht",
-    "Break" to "Pause"
+    "Break" to "Pause",
+    "Existing shifts in this period" to "Vorhandene Schichten in diesem Zeitraum",
+    "Replace existing shifts in this period" to "Vorhandene Schichten in diesem Zeitraum ersetzen",
+    "Removes all existing entries for this job in the selected period, including days off and leave, when you confirm the new schedule." to "Beim Bestätigen des neuen Plans werden alle vorhandenen Einträge für diesen Job im gewählten Zeitraum entfernt, einschließlich freier Tage und Abwesenheiten.",
+    "Existing entries to remove" to "Zu entfernende vorhandene Einträge",
+    "Replace existing shifts?" to "Vorhandene Schichten ersetzen?",
+    "New shifts to add" to "Hinzuzufügende neue Schichten",
+    "Other jobs and dates outside this period stay unchanged." to "Andere Jobs und Daten außerhalb dieses Zeitraums bleiben unverändert.",
+    "Replace shifts" to "Schichten ersetzen",
+    "Schedule changed. Review the shifts again." to "Der Plan wurde geändert. Prüfe die Schichten erneut."
 )
