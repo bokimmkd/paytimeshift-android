@@ -661,7 +661,7 @@ private fun shiftLabel(shift: Shift): String {
                     Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(14.dp));Spacer(Modifier.width(4.dp));UiText("Website",fontSize=11.sp)
                 }
             }
-            TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/privacy.html")))}) {
+            TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/privacy-premium.html")))}) {
                 Icon(Icons.Outlined.PrivacyTip,null,Modifier.size(16.dp));Spacer(Modifier.width(6.dp));UiText("Privacy policy",fontSize=12.sp)
             }
         }

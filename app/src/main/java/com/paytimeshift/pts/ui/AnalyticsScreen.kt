@@ -47,7 +47,7 @@ import java.time.YearMonth
             catch(_:Exception) {error="File could not be saved."}}
     }
     val report=remember(data,selected,yearly) {if(yearly) yearlyAnalytics(data,selected.year) else monthlyAnalytics(data,selected)}
-    val lines=remember(data,selected,yearly) {reportLines(data,selected,yearly)}
+    val lines=remember(data,selected,yearly) {compactReportBlocks(reportLines(data,selected,yearly))}
     BrandedEditor(onDismissRequest=close,title={ScreenHeading("Work Analytics",Icons.Outlined.Insights,"Gross, costs and real earnings",compact=true)},error=error,
         text={LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)) {
             item {Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
@@ -75,12 +75,37 @@ import java.time.YearMonth
                     }
                 }
             }
-            items(lines) {line->
-                Surface(shape=RoundedCornerShape(8.dp),color=if(line.heading) MaterialTheme.colorScheme.primary.copy(alpha=.08f) else MaterialTheme.colorScheme.surface) {
-                    Row(Modifier.fillMaxWidth().padding(horizontal=9.dp,vertical=if(line.heading) 9.dp else 5.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                        if(line.literal) Text(line.label,Modifier.weight(1f),fontSize=if(line.heading) 14.sp else 11.sp,fontWeight=if(line.heading) FontWeight.Bold else FontWeight.Normal)
-                        else UiText(line.label,Modifier.weight(1f),fontSize=if(line.heading) 14.sp else 11.sp,fontWeight=if(line.heading) FontWeight.Bold else FontWeight.Normal,color=if(line.heading) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                        if(line.value.isNotEmpty()) Text(line.value,fontSize=12.sp,fontWeight=FontWeight.Medium)
+            items(lines) {block->
+                if(block.grid) {
+                    block.lines.chunked(2).forEach {pair->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                        pair.forEach {line->Surface(Modifier.weight(1f),shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.primary.copy(alpha=.06f)) {
+                            Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(3.dp)) {UiText(line.label,fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=2);Text(line.value,fontSize=14.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
+                        }}
+                    };Spacer(Modifier.height(6.dp))}
+                } else if(block.trend) {
+                    block.lines.chunked(8).forEach {pair->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                        pair.chunked(4).forEach {monthLines->Surface(Modifier.weight(1f),shape=RoundedCornerShape(8.dp),border=BorderStroke(.7.dp,MaterialTheme.colorScheme.outlineVariant)) {
+                            Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                                Text(monthLines[0].label,fontSize=11.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+                                Text(monthLines[0].value,fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                monthLines.drop(1).forEach {line->UiText(line.label,fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(line.value,fontSize=11.sp,fontWeight=if(line.label=="Real estimated earnings") FontWeight.Bold else FontWeight.Normal)}
+                            }
+                        }}
+                    };Spacer(Modifier.height(6.dp))}
+                } else {
+                    val line=block.lines.single()
+                    Surface(shape=RoundedCornerShape(8.dp),color=if(line.heading) MaterialTheme.colorScheme.primary.copy(alpha=.08f) else MaterialTheme.colorScheme.surface) {
+                        Column(Modifier.fillMaxWidth().padding(horizontal=9.dp,vertical=if(line.heading) 9.dp else 5.dp)) {
+                            Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                                if(line.literal) Text(line.label,Modifier.weight(1f),fontSize=if(line.heading) 14.sp else 11.sp,fontWeight=if(line.heading) FontWeight.Bold else FontWeight.Normal)
+                                else UiText(line.label,Modifier.weight(1f),fontSize=if(line.heading) 14.sp else 11.sp,fontWeight=if(line.heading) FontWeight.Bold else FontWeight.Normal,color=if(line.heading) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                if(line.value.isNotEmpty()) Text(line.value,Modifier.weight(1f,false),fontSize=12.sp,fontWeight=FontWeight.Medium,textAlign=androidx.compose.ui.text.style.TextAlign.End)
+                            }
+                            if(line.label in costCategories) {
+                                val percent=Regex("([0-9.,]+)%$").find(line.value)?.groupValues?.get(1)?.replace(',','.')?.toFloatOrNull() ?: 0f
+                                Spacer(Modifier.height(5.dp));LinearProgressIndicator(progress={percent.coerceIn(0f,100f)/100f},modifier=Modifier.fillMaxWidth().height(3.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -102,3 +127,16 @@ import java.time.YearMonth
 }
 
 private fun reportMoney(value: java.math.BigDecimal,code: String,language: String): String = code+" "+java.text.NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag(language)).apply {minimumFractionDigits=0;maximumFractionDigits=java.util.Currency.getInstance(code).defaultFractionDigits.coerceAtLeast(0)}.format(value)
+
+private data class AnalyticsBlock(val lines: List<ReportLine>,val grid: Boolean=false,val trend: Boolean=false)
+private fun compactReportBlocks(lines: List<ReportLine>): List<AnalyticsBlock> {
+    val result=mutableListOf<AnalyticsBlock>();var i=0
+    while(i<lines.size) {
+        when {
+            lines[i].label=="Total shifts" && i+8<=lines.size->{result+=AnalyticsBlock(lines.subList(i,i+8),grid=true);i+=8}
+            lines[i].label=="Monthly trend"->{result+=AnalyticsBlock(listOf(lines[i++]));val start=i;while(i<lines.size && lines[i].label!="Highlights") i++;result+=AnalyticsBlock(lines.subList(start,i),trend=true)}
+            else->result+=AnalyticsBlock(listOf(lines[i++]))
+        }
+    }
+    return result
+}

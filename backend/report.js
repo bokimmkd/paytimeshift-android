@@ -10,7 +10,7 @@ export function reportPdf(data,year,month,annual,language='en'){
   const doc=new PDFDocument({size:'A4',margin:36,bufferPages:true});const chunks=[];
   const finished=new Promise((resolve,reject)=>{doc.on('data',d=>chunks.push(d));doc.on('end',()=>resolve(Buffer.concat(chunks)));doc.on('error',reject);});
   const labels=translations(language);const tr=s=>labels[s] ?? s;
-  doc.font(font);
+  doc.font(readFileSync(font));
   function text(label,value='',heading=false,literal=false){
     if(doc.y>755) doc.addPage();doc.fontSize(heading?13:10).fillColor(heading?'#00857c':'#071c43');
     doc.text((literal?label:tr(label))+(value ? `  ·  ${value}` : ''),{lineGap:3});doc.moveDown(heading?.45:.15);
@@ -32,15 +32,15 @@ export function reportPdf(data,year,month,annual,language='en'){
     text('Breakdown by job','',true);for(const j of c.jobs){text(j.name,'',true,true);metrics(j.time);text('Gross estimated earnings',money(j.gross,c.currency));text('Work-related costs',money(j.costs,c.currency));text('Real estimated earnings',money(j.real,c.currency));text('Gross hourly value',j.grossHourly?money(j.grossHourly,c.currency)+' / '+tr('h'):'—');text('Real hourly value',j.realHourly?money(j.realHourly,c.currency)+' / '+tr('h'):'—');}
     if(annual){
       text('Average monthly real earnings',money(c.real.div(12),c.currency));text('Monthly trend','',true);
-      const entries=[];for(let m=1;m<=12;m++){const t=analyze(data,...monthBounds(year,m),cache).find(t=>t.currency===c.currency);entries.push({month:m,...(t ?? {gross:new Decimal(0),costs:new Decimal(0),real:new Decimal(0),time:{worked:0,overtime:0,shifts:0}})});
+      const entries=[];for(let m=1;m<=12;m++){const t=analyze(data,...monthBounds(year,m),cache).find(t=>t.currency===c.currency);entries.push({month:m,present:!!t,...(t ?? {gross:new Decimal(0),costs:new Decimal(0),real:new Decimal(0),time:{worked:0,overtime:0,shifts:0}})});
         text(new Intl.DateTimeFormat(language,{month:'long',timeZone:'UTC'}).format(new Date(Date.UTC(year,m-1,1))),hour(t?.time.worked ?? 0),true,true);
         text('Gross estimated earnings',money(t?.gross ?? 0,c.currency));text('Work-related costs',money(t?.costs ?? 0,c.currency));text('Real estimated earnings',money(t?.real ?? 0,c.currency));}
-      text('Highlights','',true);const active=entries.filter(t=>t.time.shifts>0);
+      text('Highlights','',true);const active=entries.filter(t=>t.present);
       const monthName=m=>new Intl.DateTimeFormat(language,{month:'long',timeZone:'UTC'}).format(new Date(Date.UTC(year,m-1,1)));
-      function high(label,key,highest=true){const sorted=[...active].sort((a,b)=>Number(a[key])-Number(b[key]));if(sorted.length) text(label,monthName((highest?sorted.at(-1):sorted[0]).month));}
+      function high(label,key,highest=true){const sorted=[...active].sort((a,b)=>(highest?-1:1)*(Number(a[key])-Number(b[key])));if(sorted.length) text(label,monthName(sorted[0].month));}
       high('Highest earning month','real');high('Lowest earning month','real',false);high('Month with highest work costs','costs');
-      const ot=active.toSorted((a,b)=>a.time.overtime-b.time.overtime).at(-1);if(ot) text('Month with most overtime',monthName(ot.month));
-      for(const [key,label] of [['gross','Job with highest gross earnings'],['real','Job with highest real earnings'],['realHourly','Job with highest real hourly value']]) {const j=c.jobs.filter(j=>j[key]!==null).toSorted((a,b)=>Number(a[key])-Number(b[key])).at(-1);if(j) text(label,j.name);}
+      const ot=active.toSorted((a,b)=>b.time.overtime-a.time.overtime)[0];if(ot) text('Month with most overtime',monthName(ot.month));
+      for(const [key,label] of [['gross','Job with highest gross earnings'],['real','Job with highest real earnings'],['realHourly','Job with highest real hourly value']]) {const j=c.jobs.filter(j=>j[key]!==null).toSorted((a,b)=>Number(b[key])-Number(a[key]))[0];if(j) text(label,j.name);}
     }else{
       const p=previous.find(v=>v.currency===c.currency);text('Compared with previous month','',true);
       function diff(label,value,old){text(label,old===undefined || Number(old)===0?'—':`${Number(value)>=Number(old)?'↑':'↓'} ${number(new Decimal(value).minus(old).times(100).div(new Decimal(old).abs()),language,1)}%`);}

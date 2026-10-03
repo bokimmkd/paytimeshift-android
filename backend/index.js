@@ -14,7 +14,7 @@ import {validateBackup} from './analytics.js';
 import {reportPdf} from './report.js';
 import {Resend} from 'resend';
 
-initializeApp();setGlobalOptions({region:'europe-west1',maxInstances:5,memory:'512MiB',timeoutSeconds:120});
+initializeApp();setGlobalOptions({serviceAccount:'pts-premium-runtime@pts-pay-time-shift.iam.gserviceaccount.com',region:'europe-west1',concurrency:8,maxInstances:5,memory:'512MiB',timeoutSeconds:120});
 const db=getFirestore(),auth=getAuth();const bucket=()=>getStorage().bucket();
 const PACKAGE='com.paytimeshift.pts',PRODUCT='pts_premium',BASE_PLAN='annual';
 const resendKey=defineSecret('PTS_RESEND_API_KEY');
@@ -78,7 +78,7 @@ export const deletePtsAccount=onCall(async request=>{
   const uid=identity(request);if(Date.now()/1000-Number(request.auth.token.auth_time)>300) throw new HttpsError('failed-precondition','Sign in again before deleting your account.');
   await bucket().deleteFiles({prefix:`backups/${uid}/`});
   const owners=await db.collection('purchaseOwners').where('uid','==',uid).get();
-  const batch=db.batch();owners.docs.forEach(doc=>batch.delete(doc.ref));batch.delete(profile(uid));await batch.commit();await auth.deleteUser(uid);
+  const batch=db.batch();owners.docs.forEach(doc=>batch.delete(doc.ref));batch.delete(profile(uid));for(const key of ['status','purchase','backup','restore','email']) batch.delete(db.doc(`limits/${hash(uid+':'+key)}`));await batch.commit();await auth.deleteUser(uid);
   return {deleted:true};
 });
 export const playSubscriptionNotifications=onMessagePublished({topic:'pts-play-subscriptions',retry:true},async event=>{
@@ -120,4 +120,13 @@ export const automaticReports=onSchedule({schedule:'0 * * * *',timeZone:'UTC',se
     }
     cursor=profiles.docs.at(-1);if(profiles.size<100) break;
   }while(cursor);
+});
+
+// Remove temporary abuse counters after their 24-hour retention window.
+export const purgeAbuseLimits=onSchedule({schedule:'15 * * * *',timeZone:'UTC'},async()=>{
+  for(let page=0;page<20;page++) {
+    const expired=await db.collection('limits').where('expires','<=',new Date()).limit(400).get();
+    if(expired.empty) return;const batch=db.batch();expired.docs.forEach(doc=>batch.delete(doc.ref));await batch.commit();
+    if(expired.size<400) return;
+  }
 });

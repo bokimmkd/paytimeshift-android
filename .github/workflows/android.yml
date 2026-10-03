@@ -96,5 +96,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: PTS-report-samples
-          path: backend/sample-reports/*.pdf
+          path: |
+            backend/sample-reports/*.pdf
+            backend/package-lock.json
           if-no-files-found: error
