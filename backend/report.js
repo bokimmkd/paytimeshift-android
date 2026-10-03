@@ -4,7 +4,7 @@ import Decimal from 'decimal.js';
 import {fileURLToPath} from 'node:url';
 import {readFileSync} from 'node:fs';
 const font=fileURLToPath(new URL('./fonts/PTSReportSans.ttf',import.meta.url));
-function translations(language){try {return JSON.parse(readFileSync(new URL('./translations.json',import.meta.url),'utf8'))[language] ?? {};} catch {return {};}}
+export function translations(language){try {return JSON.parse(readFileSync(new URL('./translations.json',import.meta.url),'utf8'))[language] ?? {};} catch {return {};}}
 const number=(value,language,places=2)=>Number(value).toLocaleString(language==='sr'?'sr-Latn':language,{minimumFractionDigits:0,maximumFractionDigits:places});
 export function reportPdf(data,year,month,annual,language='en'){
   const doc=new PDFDocument({size:'A4',margin:36,bufferPages:true});const chunks=[];

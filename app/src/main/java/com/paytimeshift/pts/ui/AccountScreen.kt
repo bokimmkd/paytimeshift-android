@@ -24,6 +24,8 @@ import kotlinx.coroutines.tasks.await
 @Composable fun AccountDialog(repo: PremiumRepository,status: AccountStatus,price: String?,refresh: ()->Unit,buy: ()->Unit,restorePurchase: ()->Unit,
     data: AppData,restoreData: suspend (AppData)->Unit,close: ()->Unit) {
     val scope=rememberCoroutineScope();val context=LocalContext.current
+    val language=LocalLanguage.current
+    LaunchedEffect(language) {repo.auth.setLanguageCode(language)}
     var email by remember {mutableStateOf("")};var password by remember {mutableStateOf("")};var signup by remember {mutableStateOf(false)}
     var busy by remember {mutableStateOf(false)};var error by remember {mutableStateOf<String?>(null)}
     var restoreConfirm by remember {mutableStateOf(false)};var deleteConfirm by remember {mutableStateOf(false)}

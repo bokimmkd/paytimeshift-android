@@ -11,7 +11,7 @@ import {google} from 'googleapis';
 import {createHash,randomUUID} from 'node:crypto';
 import {subscriptionEntitlement} from './entitlement.js';
 import {validateBackup} from './analytics.js';
-import {reportPdf} from './report.js';
+import {reportPdf,translations} from './report.js';
 import {Resend} from 'resend';
 
 initializeApp();setGlobalOptions({serviceAccount:'pts-premium-runtime@pts-pay-time-shift.iam.gserviceaccount.com',region:'europe-west1',concurrency:8,maxInstances:5,memory:'512MiB',timeoutSeconds:120});
@@ -89,10 +89,11 @@ async function sendReport(uid,year,month,annual,key){
   const user=await auth.getUser(uid);if(!user.emailVerified || !user.email) return;
   const p=await premium(uid);if(!p.backupObject) return;
   const [bytes]=await bucket().file(p.backupObject).download();const data=validateBackup(bytes.toString('utf8'));
-  const pdf=await reportPdf(data,year,month,annual,p.language ?? 'en');
+  const language=p.language ?? 'en';const labels=translations(language);const tr=s=>labels[s] ?? s;
+  const pdf=await reportPdf(data,year,month,annual,language);
   const result=await new Resend(resendKey.value()).emails.send({from:sender.value(),to:user.email,
-    subject:`PTS · ${annual?'Annual':'Monthly'} Work & Earnings Report — ${annual?year:`${year}-${String(month).padStart(2,'0')}`}`,
-    text:'Your estimated work and earnings report is attached. Work-related costs are deducted; taxes and payroll deductions are not included. You can disable automatic reports in PTS Account settings.',
+    subject:`PTS · ${tr(annual?'Annual Work & Earnings Report':'Monthly Work & Earnings Report')} — ${annual?year:`${year}-${String(month).padStart(2,'0')}`}`,
+    text:[tr('Estimated real earnings after work-related costs.'),tr('Taxes, government deductions and payroll deductions are not included.'),`${tr('Account & Premium')} · ${tr('Monthly Report Email')} / ${tr('Yearly Report Email')}`].join('\n\n'),
     attachments:[{filename:`PTS-${annual?year:`${year}-${month}`}-work-report.pdf`,content:pdf}]}, {idempotencyKey:key});
   if(result.error) throw Error('Report email delivery failed');return true;
 }
