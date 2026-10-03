@@ -16,7 +16,9 @@ class LauncherUiTest {
 
     private fun open(action: ShortcutAction, expected: String) {
         ui.activityRule.scenario.onActivity { it.startActivity(action.intent(it)) }
-        ui.waitUntil(10000) {ui.onAllNodesWithText(expected).fetchSemanticsNodes().isNotEmpty()}
+        // Shortcut navigation briefly replaces the Compose root. Wait for the new
+        // screen without requiring a root during that intermediate lifecycle state.
+        ui.waitUntil(10000) {ui.onAllNodesWithText(expected).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
     }
     @Test fun warmShortcutsNavigateAndAddJobOnAnEmptyInstall() {
         val activity=ui.activity
