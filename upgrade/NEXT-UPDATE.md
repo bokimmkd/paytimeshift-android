@@ -2,7 +2,7 @@
 
 Recorded: 2026-10-03. These are implementation requirements, not a claim that all features below are released.
 
-## 1. Change the status of a scheduled day (pending)
+## 1. Change the status of a scheduled day (implemented in 0.2.4 source; validation in progress)
 
 - In Add Shift / Edit Shift, support Work, Off, Vacation, Sick, and Non-working day.
 - A non-working status must be selectable even when that job already has shifts on the date. Do not reject it with "This shift already exists".
@@ -14,7 +14,7 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Preserve local storage, manual/cloud backup, colleague schedule export/import, translations, reminders and analytics compatibility.
 - "Non-working day" is a job-specific calendar status; it is distinct from the global Holiday flag used for holiday pay on worked shifts.
 
-## 2. Fixed monthly salary per job (pending)
+## 2. Fixed monthly salary per job (implemented in 0.2.4 source; validation in progress)
 
 - Add a pay basis selector: Hourly, Per shift / daily, Fixed monthly salary.
 - Monthly amount and currency belong to each job independently.
@@ -36,7 +36,7 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Exclude the edited entry itself and non-working statuses; handle overnight intervals and allow touching endpoints.
 - Android unit/UI validation and build workflows passed for that commit.
 
-## 4. Monthly deductions and bonuses per job (pending)
+## 4. Monthly deductions and bonuses per job (implemented in 0.2.4 source; validation in progress)
 
 - Add a compact Monthly adjustments section in Earnings for the selected month, grouped by job. Support hourly, daily/per-shift and fixed-monthly jobs.
 - Add deduction / Add monthly bonus: positive amount, job currency, reason/category and optional note. Support multiple entries and editing/removing individual entries.
@@ -52,7 +52,7 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Persist locally, include in manual and cloud backups, and maintain backward compatibility: missing adjustments mean an empty list. Keep Android/server calculations aligned.
 - Validate with examples including multiple jobs in one month, changing months, fixed monthly salary across month lengths, combined deductions and bonuses, legacy per-shift bonuses, separate work costs, and different currencies.
 
-## 5. Feature placement and localized dismissible hints (pending)
+## 5. Feature placement and localized dismissible hints (implemented in 0.2.4 source; validation in progress)
 
 - Add/Edit Job: a compact Pay basis selector in the existing Pay section. Show the amount input for Hourly, Per shift/daily, or Fixed monthly salary according to the chosen basis.
 - Add/Edit Shift: use the existing Day type selector for work/absence status. Present the job/date-specific replacement confirmation only when saving affects existing entries.
@@ -71,3 +71,13 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Keep at most one tooltip open. Dismiss its current presentation when focus moves to another field or the user taps outside; this transient closing does not mark it permanently dismissed. The X saves the individual dismissal as agreed.
 - Tooltip positioning must remain readable on small screens, avoid covering input/save controls, and respect accessibility/font scaling.
 - Validate independent dismissal, global hide/re-enable behavior, persistence, language switching, and compact layouts.
+
+
+
+## 0.2.4 calculation decisions
+
+- Effective salary periods are inclusive. A full month receives the configured amount once, even with no shifts or with absence statuses. Partial employment months and Week/Pay period views allocate by calendar days with eight-decimal half-up rounding. Salary history is retained when future pay changes. Archiving closes salary estimates at the archive date; restoring can open a new period.
+- For monthly salary shifts, blank overtime/weekend/holiday rates add nothing. Explicit rates are additional payments; night percentages use the separate reference hourly rate. The monthly amount is never treated as an hourly or per-shift rate.
+- Monthly bonus/deduction items belong to the final calendar day of their month for arbitrary reporting ranges. Monthly and yearly reports count them once. Attendance never creates a penalty automatically.
+- English remains default. All new controls and field help have reviewed entries for mk/de/it/es/fr/sr/pt-BR/el.
+- Cloud validation/report code must be deployed with this version before new absence statuses and salary/adjustment backups are tested in cloud restore.

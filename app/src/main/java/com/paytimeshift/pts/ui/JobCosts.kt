@@ -14,10 +14,11 @@ import com.paytimeshift.pts.domain.*
 
 @Composable fun JobCostsEditor(costs: List<JobCost>,currency: String,change: (List<JobCost>)->Unit) {
     var open by remember {mutableStateOf(false)}
+    HintAnchor("Job costs") {show,_ ->
     FormSection("Job costs") {
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
             UiText("Costs related to this job",Modifier.weight(1f),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            IconButton(onClick={open=!open},modifier=Modifier.size(30.dp)) {Icon(if(open) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,"Job costs",Modifier.size(20.dp))}
+            IconButton(onClick={show();open=!open},modifier=Modifier.size(30.dp)) {Icon(if(open) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,"Job costs",Modifier.size(20.dp))}
         }
         if(costs.isNotEmpty() && !open) UiText("${costs.count {it.enabled}} · ${translate("Enabled",LocalLanguage.current)}",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
         if(open) {
@@ -47,4 +48,5 @@ import com.paytimeshift.pts.domain.*
             UiText("Weekly: once per workweek, on its first workday. Monthly: once per working month. Current cost rules apply to report history.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
 }

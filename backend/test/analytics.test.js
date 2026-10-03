@@ -52,3 +52,26 @@ test('Google Play pending, hold, paused and expired never unlock Premium',()=>{
 test('all report languages create real PDF documents including Cyrillic and Greek',async()=>{
  for(const language of ['en','mk','de','it','es','fr','sr','pt-BR','el']) {const pdf=await reportPdf(data([shift()],[cost('Monthly','50')]),2026,10,false,language);assert.equal(pdf.subarray(0,4).toString(),'%PDF');assert.ok(pdf.length>1000);}
 });
+
+
+test('monthly salary is independent of month length and number of shifts; explicit extras only',()=>{
+ const job={id:'j',name:'Monthly',currency:'MKD',rate:'180',monthlyPay:true,salaryPeriods:[{from:'2026-01-01',until:'',amount:'40000',currency:'MKD'}]};
+ for(const m of [2,4,10]) for(const count of [0,1,20]) {
+  const rows=Array.from({length:count},(_,i)=>shift(`2026-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`,{monthlyPay:true,rules:{useHourlyRates:true}}));
+  const d={...data(rows),jobs:[job]};assert.equal(analyze(d,...monthBounds(2026,m))[0].gross.toString(),'40000');
+ }
+ const s=shift('2026-10-03',{end:'17:00',monthlyPay:true,rules:{useHourlyRates:true,saturdayRate:'20',overtimeRate:'100'}});
+ assert.equal(shiftValues(s).gross.toString(),'360');assert.equal(shiftValues({...s,monthlyPay:false}).gross.toString(),'360');
+});
+test('monthly salary employment dates, archive history, adjustments and currency separation',()=>{
+ const job={id:'j',name:'Salary',currency:'MKD',rate:'0',monthlyPay:true,archived:true,salaryPeriods:[{from:'2026-04-16',until:'2026-05-15',amount:'30000',currency:'MKD'}]};
+ const d={...data([]),jobs:[job],adjustments:[{id:'b',jobId:'j',month:'2026-04',type:'Bonus',amount:'1000',currency:'MKD',reason:'Performance',note:''},{id:'d',jobId:'j',month:'2026-04',type:'Deduction',amount:'500',currency:'MKD',reason:'Lateness',note:''},{id:'eur',jobId:'j',month:'2026-05',type:'Bonus',amount:'5',currency:'EUR',reason:'Other',note:''}]};
+ validateBackup(JSON.stringify(d));const april=analyze(d,...monthBounds(2026,4))[0];assert.equal(april.gross.toString(),'15000');assert.equal(april.adjusted.toString(),'15500');assert.equal(april.real.toString(),'15500');assert.equal(april.realHourly,null);
+ assert.equal(analyze(d,...monthBounds(2026,3)).length,0);assert.equal(analyze(d,...monthBounds(2026,6)).length,0);
+ assert.equal(analyze(d,'2026-04-01','2026-04-29')[0].monthlyBonuses.toString(),'0');
+ const year=analyze(d,'2026-01-01','2026-12-31');assert.deepEqual(year.map(c=>c.currency),['EUR','MKD']);assert.equal(year[1].monthlyBonuses.toString(),'1000');assert.equal(year[1].monthlyDeductions.toString(),'500');
+ for(const bad of [{...d,adjustments:[{...d.adjustments[0],amount:'-1'}]},{...d,adjustments:[{...d.adjustments[0],month:'2026-13'}]},{...d,jobs:[{...job,salaryPeriods:[{...job.salaryPeriods[0],until:'2026-01-01'}]}]}]) assert.throws(()=>validateBackup(JSON.stringify(bad)));
+});
+test('non-working day survives backups and never generates pay',()=>{
+ const d=data([shift('2026-10-01',{kind:'Non-working day'})]);validateBackup(JSON.stringify(d));assert.equal(analyze(d,...monthBounds(2026,10)).length,0);
+});

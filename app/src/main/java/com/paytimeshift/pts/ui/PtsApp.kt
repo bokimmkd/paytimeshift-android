@@ -168,6 +168,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     }
     val dark = data.preferences.appearance == "Dark" || (data.preferences.appearance == "System" && isSystemInDarkTheme())
     androidx.compose.runtime.CompositionLocalProvider(LocalLanguage provides data.preferences.language, LocalPremium provides account.premium, LocalAdsResolved provides accountResolved) {
+    HintProvider(data.preferences,{commit(data.copy(preferences=it))}) {
     MaterialTheme(colorScheme = if (dark) darkColorScheme(primary=Color(0xFF69D6C6), secondary=Color(0xFF69D6C6),primaryContainer=Color(0xFF104A49),onPrimaryContainer=Color(0xFFB8F4E8),secondaryContainer=Color(0xFF164440),onSecondaryContainer=Color(0xFFB8F4E8))
         else lightColorScheme(primary=Teal, secondary=Teal,primaryContainer=Color(0xFFD8EFEB),onPrimaryContainer=Navy,secondaryContainer=Color(0xFFD8EFEB),onSecondaryContainer=Navy, background=Pale, surface=Color.White, onSurface=Navy, onBackground=Navy, onSurfaceVariant=Color(0xFF4F5F7B), outlineVariant=Color(0xFFE5E8ED),surfaceVariant=Color(0xFFEBEDF1))) {
         BackHandler(settings || tab != Tab.Today) { if (settings) settings=false else tab=Tab.Today }
@@ -199,7 +200,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
                     Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it}) }
-                    Tab.Earnings -> item { EarningsScreen(data,reportMonthText,{reportMonthText=it},{if(account.premium) analyticsOpen=true else accountOpen=true}) }
+                    Tab.Earnings -> item { EarningsScreen(data,reportMonthText,{reportMonthText=it},{if(account.premium) analyticsOpen=true else accountOpen=true}) {commit(data.copy(adjustments=it))} }
                     Tab.Jobs -> item { JobsScreen(data,{jobEditor=it},{addJob=true},{message=it},{patterns=true},{accountOpen=true}) }
                 }
             }
@@ -215,7 +216,9 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         }
         if (addShift || shiftEditor != null) ShiftDialog(shiftEditor,data,newShiftDate,onClose={addShift=false;shiftEditor=null},onDelete={ id ->
             commit(data.copy(shifts=data.shifts.filterNot {it.id==id}));addShift=false;shiftEditor=null
-        }) { shift -> commit(data.copy(shifts=data.shifts.filterNot {it.id==shift.id} + shift));addShift=false;shiftEditor=null }
+        }) { change ->
+            val next=runCatching {data.withManualShiftChange(change)}.getOrElse {message="Schedule changed. Review the shifts again.";return@ShiftDialog}
+            commit(next);addShift=false;shiftEditor=null }
         if(patterns) PatternDialog(data,{patterns=false}) {change->
             val next=runCatching {data.withPatternChange(change)}.getOrElse {message="Schedule changed. Review the shifts again.";return@PatternDialog}
             commit(next);patterns=false
@@ -233,6 +236,8 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         message?.let { text -> AlertDialog(onDismissRequest={message=null},title={UiText("PTS")},text={UiText(text)},confirmButton={TextButton(onClick={message=null}){UiText("OK")}}) }
     }
 }
+}
+
 }
 
 @Composable private fun Stack(content: @Composable ColumnScope.()->Unit) {
@@ -481,16 +486,22 @@ private fun shiftLabel(shift: Shift): String {
         }
     }
 }
-@Composable private fun EarningsScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,openAnalytics:()->Unit) {
+@Composable private fun EarningsScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,openAnalytics:()->Unit,saveAdjustments:(List<MonthlyAdjustment>)->Unit) {
     val month=YearMonth.parse(monthText)
     var picker by remember {mutableStateOf(false)};var period by rememberSaveable(monthText) {mutableStateOf("Month")}
     var paymentDetails by remember {mutableStateOf<Job?>(null)}
+    var adjustmentJob by remember {mutableStateOf<Job?>(null)}
     val today=LocalDate.now();val weekStart=today.minusDays((today.dayOfWeek.value-(if(data.preferences.mondayFirst) 1 else 7)+7L)%7)
     val rows=if(period=="Month") shiftsForMonth(data.shifts,month) else data.shifts.filter {s->
         val date=s.begins.toLocalDate()
         when(period) {"Week"->date>=weekStart && date<weekStart.plusDays(7)
             "Pay period"->data.jobs.find {it.id==s.jobId}?.let {j->val (from,to)=payPeriod(j,nextPayday(j,today));date>=from && date<=to} ?: false
             else->YearMonth.from(s.begins)==month}
+    }
+    val analysis=when(period) {
+        "Week" -> analytics(data,weekStart,weekStart.plusDays(6))
+        "Pay period" -> WorkReport(month.atDay(1),month.atEndOfMonth(),data.jobs.flatMap {j->val (a,b)=payPeriod(j,nextPayday(j,today));analytics(data.copy(jobs=listOf(j)),a,b).currencies.flatMap {it.jobs}}.groupBy {it.currency}.map {(c,j)->CurrencyAnalysis(c,j)})
+        else -> monthlyAnalytics(data,month)
     }
     val payments=data.jobs.filter {j->data.shifts.any {it.jobId==j.id} && nextPayday(j,today)>=today}.sortedBy {nextPayday(it,today)}
     Column(verticalArrangement=Arrangement.spacedBy(5.dp)) {
@@ -505,8 +516,8 @@ private fun shiftLabel(shift: Shift): String {
             Row(Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(Color(0xFF005460),Color(0xFF00434F)))).padding(12.dp),verticalAlignment=Alignment.Top) {
                 Box(Modifier.padding(top=2.dp).size(40.dp).background(Color.White.copy(alpha=.12f),CircleShape),contentAlignment=Alignment.Center){Icon(Icons.Filled.AccountBalanceWallet,null,Modifier.size(26.dp),tint=Color.White)}
                 Spacer(Modifier.width(12.dp));Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
-                    if(rows.isEmpty()) UiText("No shifts added",fontSize=21.sp,fontWeight=FontWeight.Bold,color=Color.White)
-                    totals(rows).forEach {(c,a)->UiText(displayMoney(a,c),fontSize=33.sp,lineHeight=39.sp,fontWeight=FontWeight.Bold,color=Color.White)}
+                    if(analysis.currencies.isEmpty()) UiText("No shifts added",fontSize=21.sp,fontWeight=FontWeight.Bold,color=Color.White)
+                    analysis.currencies.forEach {c->UiText(displayMoney(c.adjusted,c.currency),fontSize=33.sp,lineHeight=39.sp,fontWeight=FontWeight.Bold,color=Color.White)}
                     UiText("${hours(rows.sumOf {it.paidMinutes})} scheduled ${if(period=="Week") "this week" else if(period=="Pay period") "in period" else "this month"}",fontSize=13.sp,color=Color.White)
                     UiText("Based on your pay rules",fontSize=11.sp,color=Color(0xFFB5D7DB))
                 }
@@ -515,7 +526,13 @@ private fun shiftLabel(shift: Shift): String {
         WorkAnalyticsCard(openAnalytics,LocalPremium.current)
         data.jobs.forEach {job->
             val jobRows=rows.filter {it.jobId==job.id}
-            if(jobRows.isNotEmpty()) EarningsBreakdown(job,jobRows)
+            val jobAnalysis=analysis.currencies.flatMap {it.jobs}.filter {it.jobId==job.id}
+            if(jobRows.isNotEmpty() || jobAnalysis.isNotEmpty()) EarningsBreakdown(job,jobRows,jobAnalysis)
+            if(period=="Month" && (!job.archived || jobAnalysis.isNotEmpty())) HintAnchor("Monthly adjustments") {show,_ ->
+                TextButton(onClick={show();adjustmentJob=job},contentPadding=PaddingValues(horizontal=8.dp,vertical=2.dp)) {
+                    Icon(Icons.Outlined.Tune,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Monthly adjustments",fontSize=11.sp);Text(" · "+job.name,fontSize=11.sp,maxLines=1)
+                }
+            }
         }
         Row(verticalAlignment=Alignment.Top) {Icon(Icons.Filled.Info,null,Modifier.size(15.dp),tint=Color(0xFF71859D));Spacer(Modifier.width(8.dp));UiText("Hourly prices applied. Unpaid breaks are deducted.",fontSize=10.sp,lineHeight=14.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         if(payments.isNotEmpty()) {
@@ -537,6 +554,9 @@ private fun shiftLabel(shift: Shift): String {
             }}
         }
     }
+    adjustmentJob?.let {j->MonthlyAdjustmentsDialog(j,month,data.adjustments,{adjustmentJob=null}) {items->
+        saveAdjustments(data.adjustments.filterNot {it.jobId==j.id && it.month==month.toString()}+items);adjustmentJob=null
+    }}
     if(picker) ReportMonthDialog(month,{onMonthChange(it.toString());period="Month";picker=false},{picker=false})
     paymentDetails?.let {job->PaymentDetailsDialog(job,today){paymentDetails=null}}
 }
@@ -588,25 +608,25 @@ private fun shiftLabel(shift: Shift): String {
             }
         }},confirmButton={Button(onClick=onClose,contentPadding=PaddingValues(horizontal=14.dp,vertical=7.dp)) {Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("OK",fontSize=12.sp)}})
 }
-@Composable private fun EarningsBreakdown(job: Job,rows: List<Shift>) {
+@Composable private fun EarningsBreakdown(job: Job,rows: List<Shift>,analysis:List<JobAnalysis>) {
     var expanded by rememberSaveable(job.id) {mutableStateOf(true)}
     Panel {
         Row(Modifier.fillMaxWidth().clickable {expanded=!expanded},verticalAlignment=Alignment.CenterVertically) {
             JobIcon(job,42.dp);Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(2.dp)) {
                 androidx.compose.material3.Text(job.name,lineHeight=15.sp,fontSize=12.sp,fontWeight=FontWeight.Medium)
-                UiText("${hours(rows.sumOf {it.paidMinutes})} · ${totals(rows).map {(c,a)->displayMoney(a,c)}.joinToString(" / ")}",fontSize=15.sp,fontWeight=FontWeight.Medium)
+                UiText("${hours(rows.sumOf {it.paidMinutes})} · ${analysis.map {displayMoney(it.adjusted,it.currency)}.joinToString(" / ")}",fontSize=15.sp,fontWeight=FontWeight.Medium)
             };Icon(if(expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,"${if(expanded) "Collapse" else "Expand"} ${job.name}",Modifier.size(18.dp))
         }
         if(expanded) Surface(shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.48f)) {
             Column(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=6.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-                rows.filter {it.fixedPay || !it.rules.useHourlyRates}.groupBy {Triple(it.currency,it.rate,it.fixedPay)}.forEach {(rule,group)->
+                rows.filter {!it.monthlyPay && (it.fixedPay || !it.rules.useHourlyRates)}.groupBy {Triple(it.currency,it.rate,it.fixedPay)}.forEach {(rule,group)->
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                         UiText(if(rule.third) "Fixed shifts" else "Regular base",Modifier.weight(1f),fontSize=10.sp)
                         UiText("${if(rule.third) group.count {it.kind=="Work"}.toString() else hours(group.sumOf {it.paidMinutes})} × ${displayMoney(java.math.BigDecimal(rule.second),rule.first)}",Modifier.weight(1f),fontSize=10.sp)
                         UiText(displayMoney(group.fold(java.math.BigDecimal.ZERO){a,s->a+s.baseEarnings()},rule.first),fontSize=11.sp)
                     }
                 }
-                rows.flatMap {it.hourlyLines()}.groupBy {Triple(it.label,it.currency,it.rate)}.forEach {(key,lines)->
+                rows.flatMap {it.hourlyLines()}.filter {it.amount.signum()!=0}.groupBy {Triple(it.label,it.currency,it.rate)}.forEach {(key,lines)->
                     Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                             UiText(key.first,Modifier.weight(1f),fontSize=11.sp)
@@ -618,8 +638,16 @@ private fun shiftLabel(shift: Shift): String {
                 rows.flatMap {s->s.additions().map {(label,amount)->Triple(label,s.currency,amount)}}.groupBy {it.first to it.second}.forEach {(key,values)->
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {UiText(key.first,fontSize=11.sp);UiText(displayMoney(values.fold(java.math.BigDecimal.ZERO){a,v->a+v.third},key.second),fontSize=11.sp)}
                 }
+                analysis.forEach {a->
+                    if(a.salaryBase.signum()!=0) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){UiText("Monthly salary",fontSize=11.sp);UiText(displayMoney(a.salaryBase,a.currency),fontSize=11.sp)}
+                    if(a.adjustments.isNotEmpty()) {
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){UiText("Gross estimated earnings",fontSize=11.sp);UiText(displayMoney(a.gross,a.currency),fontSize=11.sp)}
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){UiText("Monthly bonuses",fontSize=11.sp);UiText("+ "+displayMoney(a.monthlyBonuses,a.currency),fontSize=11.sp,color=MaterialTheme.colorScheme.primary)}
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){UiText("Monthly deductions",fontSize=11.sp);UiText("− "+displayMoney(a.monthlyDeductions,a.currency),fontSize=11.sp,color=MaterialTheme.colorScheme.error)}
+                    }
+                }
                 HorizontalDivider(thickness=.5.dp,color=MaterialTheme.colorScheme.outlineVariant)
-                totals(rows).forEach {(c,a)->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {UiText("Total",fontSize=11.sp,fontWeight=FontWeight.Bold);UiText(displayMoney(a,c),fontSize=11.sp,fontWeight=FontWeight.Bold)}}
+                analysis.forEach {a->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {UiText("Total",fontSize=11.sp,fontWeight=FontWeight.Bold);UiText(displayMoney(a.adjusted,a.currency),fontSize=11.sp,fontWeight=FontWeight.Bold)}}
             }
         }
     }
@@ -637,7 +665,7 @@ private fun shiftLabel(shift: Shift): String {
         data.jobs.filterNot {it.archived}.forEach {job->StripedCard(Color(job.color),{edit(job)}) {
             JobIcon(job,42.dp);Spacer(Modifier.width(13.dp));Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
                 androidx.compose.material3.Text(job.name,lineHeight=19.sp,fontSize=15.sp,fontWeight=FontWeight.Bold)
-                UiText("${displayMoney(java.math.BigDecimal(job.rate),job.currency)} / ${if(job.fixedPay) "shift" else "hour"}",fontSize=16.sp,fontWeight=FontWeight.Medium)
+                UiText("${displayMoney(java.math.BigDecimal(if(job.monthlyPay) job.salaryPeriods.lastOrNull()?.amount ?: "0" else job.rate),job.currency)} / ${if(job.monthlyPay) "month" else if(job.fixedPay) "shift" else "hour"}",fontSize=16.sp,fontWeight=FontWeight.Medium)
                 UiText(jobPayLabel(job),fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
             };Icon(Icons.Outlined.ChevronRight,null,Modifier.size(20.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
         }}
@@ -680,6 +708,7 @@ private fun shiftLabel(shift: Shift): String {
             CompactToggle("Start week on Monday",p.mondayFirst){change(p.copy(mondayFirst=it))}
             UiText("Used for new jobs. Each job keeps its own currency.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        FormSection("Field help") {CompactToggle("Show hints",p.showHints){change(p.copy(showHints=it))}}
         FormSection("Calendar warnings") {GapSetting(p,change)}
         FormSection("Reminders") {ReminderSetting(p,change)}
         FormSection("Premium & backup") {
@@ -691,10 +720,10 @@ private fun shiftLabel(shift: Shift): String {
         }
         FormSection("Android widget") {UiText("Add a widget from your phone home screen.",fontSize=11.sp)}
         FormSection("PTS · Pay Time Shift") {
-            UiText("0.2.3 · PTS Premium",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            FormPair(first={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/")))},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)) {
+            UiText("0.2.4 · PTS Premium",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            FormPair(first={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://pts-developer.bokimkd.chatgpt.site")))},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)) {
                 Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Website",fontSize=11.sp)
-            }},second={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/privacy-premium.html")))},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)) {
+            }},second={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://pts-developer.bokimkd.chatgpt.site/privacy.html")))},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)) {
                 Icon(Icons.Outlined.PrivacyTip,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Privacy policy",fontSize=11.sp)
             }})
         }
@@ -740,6 +769,13 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
     var name by remember {mutableStateOf(original?.name ?: "")};var rate by remember {mutableStateOf(original?.rate ?: "")}
     var currency by remember {mutableStateOf(original?.currency ?: defaultCurrency)};var currencyOpen by remember {mutableStateOf(false)}
     var fixed by remember {mutableStateOf(original?.fixedPay ?: false)};var cycle by remember {mutableStateOf(original?.payCycle ?: "Monthly")}
+    val previousSalary=original?.salaryPeriods?.lastOrNull()
+    val initialSalaryFrom=maxOf(YearMonth.now().atDay(1).toString(),previousSalary?.from ?: "0001-01-01")
+    var monthly by remember {mutableStateOf(original?.monthlyPay ?: false)}
+    var salary by remember {mutableStateOf(previousSalary?.amount ?: "")}
+    var salaryFrom by remember {mutableStateOf(initialSalaryFrom)}
+    var salaryUntil by remember {mutableStateOf(previousSalary?.until?.ifBlank {LocalDate.now().toString()} ?: LocalDate.now().toString())}
+    var salaryEnds by remember {mutableStateOf(previousSalary?.until?.isNotBlank() ?: false)}
     var anchor by remember {mutableStateOf(original?.paydayAnchor ?: LocalDate.now().withDayOfMonth(15).toString())}
     var color by remember {mutableStateOf(original?.color ?: 0xFF2488FF)}
     var shiftStart by remember {mutableStateOf(original?.defaultStart ?: "07:00")};var shiftEnd by remember {mutableStateOf(original?.defaultEnd ?: "15:00")}
@@ -760,9 +796,18 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         text={LazyColumn(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(8.dp)) {
         item {FormSection("Job & pay") {
             CompactField("Job name",name,{name=it})
-            FormPair(first={if(fixed) NumberField("Amount per shift",rate){rate=it} else RateField("Regular hourly rate",rate,currency){rate=it}},
+            SelectionField("Pay basis",if(monthly) "Fixed monthly salary" else if(fixed) "Per shift / daily" else "Hourly",listOf("Hourly","Per shift / daily","Fixed monthly salary")){monthly=it=="Fixed monthly salary";fixed=it=="Per shift / daily";if(monthly && rate.isBlank()) rate="0"}
+            FormPair(first={if(monthly) CompactField("Monthly salary",salary,{salary=it},keyboardType=androidx.compose.ui.text.input.KeyboardType.Decimal,suffix=currency) else if(fixed) NumberField("Amount per shift",rate){rate=it} else RateField("Regular hourly rate",rate,currency){rate=it}},
                 second={CompactChoice("Currency",currency,icon={Icon(Icons.Outlined.KeyboardArrowDown,null,Modifier.size(18.dp))}){currencyOpen=true}})
-            CompactToggle("Fixed amount per shift",fixed){fixed=it}
+            if(monthly || original?.salaryPeriods?.isNotEmpty()==true) {
+                DateControl("Effective from",salaryFrom){salaryFrom=it}
+                if(monthly) {
+                    CompactToggle("Employment ends",salaryEnds){salaryEnds=it}
+                    if(salaryEnds) DateControl("To",salaryUntil){salaryUntil=it}
+                    UiText("Full months use the fixed salary. Partial periods use calendar days. Attendance does not reduce the base.",fontSize=10.sp,lineHeight=14.sp,color=MaterialTheme.colorScheme.primary)
+                    RateField("Reference hourly rate",rate,currency){rate=it}
+                }
+            }
             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){listOf(0xFF2488FF,0xFFFFA000,0xFFA040C5,0xFF00857C,0xFFDE5353).forEach {c->
                 Box(Modifier.size(32.dp).clip(CircleShape).background(Color(c)).clickable {color=c},contentAlignment=Alignment.Center){if(color==c) Icon(Icons.Outlined.Check,translate("Selected color",LocalLanguage.current),Modifier.size(19.dp),tint=Color.White)}
             }}
@@ -774,7 +819,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
                 second={RateField("Sunday hourly rate",sunday,currency){sunday=it}})
             FormPair(first={RateField("Holiday hourly rate",holiday,currency){holiday=it}},
                 second={Column(verticalArrangement=Arrangement.spacedBy(3.dp)) {
-                    UiText("Blank = regular price",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    UiText(if(monthly) "Blank = no extra payment" else "Blank = regular price",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     UiText("Holiday: Calendar → date → ⋮",fontSize=10.sp,color=MaterialTheme.colorScheme.primary)
                 }})
             UiText("Holidays replace weekend prices. Overtime uses the higher price.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -813,27 +858,32 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         if(original!=null) item {FormSection("Existing shifts") {
             CompactToggle("Apply prices to today's and future shifts",applyUpcoming){applyUpcoming=it}
             UiText("Past shifts keep their saved prices. Shift times and breaks stay as entered.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            CompactToggle(if(archived) "Restore job" else "Archive job",archived){archived=it}
+            CompactToggle(if(archived) "Restore job" else "Archive job",archived){archived=it;if(!it) salaryEnds=false}
         }}
     }},confirmButton={Button(contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp),onClick={
+        val salaryAmount=salary.replace(',','.').toBigDecimalOrNull()
         val amount=rate.replace(',','.').toBigDecimalOrNull()
         val prices=listOf(overtime,saturday,sunday,holiday).map {it.trim().replace(',','.')}
         val hoursValue=overtimeAfter.replace(',','.').toDoubleOrNull();val nightValue=night.replace(',','.').toDoubleOrNull()
         val b=pause.toIntOrNull();val r=if(ownReminder) reminder.toIntOrNull() else -1;val gap=if(!ownRest) -1.0 else rest.replace(',','.').toDoubleOrNull()
         val duration=java.time.Duration.between(LocalTime.parse(shiftStart),LocalTime.parse(shiftEnd)).toMinutes().let {if(it<=0) it+1440 else it}
         when {
+            monthly && (salaryAmount==null || salaryAmount.signum()<0 || salary.length>32 || salaryEnds && salaryUntil<salaryFrom) -> error="Enter a valid monthly salary and date range."
             name.isBlank() || amount==null || amount.signum()<0 -> error="Enter a job name and a valid rate (0 or more)."
             prices.any {it.isNotBlank() && (it.toBigDecimalOrNull()?.signum() ?: -1)<0} || hoursValue==null || !hoursValue.isFinite() || hoursValue !in 0.0..168.0 || nightValue==null || !nightValue.isFinite() || nightValue !in 0.0..10000.0 || b==null || b<0 || b>=duration || r==null || r !in -1..10080 || (ownReminder && r<0) || gap==null || !gap.isFinite() || (gap!=-1.0 && gap !in 0.0..168.0) || (ownRest && gap<0) || shiftStart==shiftEnd -> error="Numbers must be valid and non-negative."
             extraShifts.any {runCatching {it.validate()}.isFailure} -> error="Break must be shorter than the shift."
             costs.any {it.amount.replace(',','.').toBigDecimalOrNull()?.signum()?.let {n->n<0} != false} -> error="Enter valid cost amounts (0 or more)."
             else -> save(Job(original?.id ?: java.util.UUID.randomUUID().toString(),name.trim(),color,currency,amount.toPlainString(),fixed,cycle,anchor,
                 PayRules(overtimeAfterHours=hoursValue,nightPercent=nightValue,nightStart=nightStart,nightEnd=nightEnd,useHourlyRates=true,
-                    overtimeRate=prices[0],saturdayRate=prices[1],sundayRate=prices[2],holidayRate=prices[3]),archived,shiftStart,shiftEnd,b,paid,r,gap,costs.map {it.copy(amount=it.amount.replace(',','.'))},extraShifts),original!=null && applyUpcoming)
+                    overtimeRate=prices[0],saturdayRate=prices[1],sundayRate=prices[2],holidayRate=prices[3]),archived,shiftStart,shiftEnd,b,paid,r,gap,costs.map {it.copy(amount=it.amount.replace(',','.'))},extraShifts,monthly,
+                    if(monthly!=(original?.monthlyPay ?: false) || monthly && (salaryAmount!!.compareTo(previousSalary?.amount?.toBigDecimal() ?: java.math.BigDecimal.valueOf(-1))!=0 || currency!=previousSalary?.currency || (if(salaryEnds) salaryUntil else "")!=(previousSalary?.until ?: "") || salaryFrom!=initialSalaryFrom) || archived!=(original?.archived ?: false) && monthly)
+                        if(archived) salaryPeriodsEnding(original?.salaryPeriods ?: emptyList(),LocalDate.now()) else salaryPeriodsAfterEdit(original?.salaryPeriods ?: emptyList(),salaryFrom,if(monthly) salaryAmount!!.toPlainString() else null,currency,if(salaryEnds) salaryUntil else "")
+                    else original?.salaryPeriods ?: emptyList()),original!=null && applyUpcoming)
         }
     }){Icon(Icons.Outlined.Save,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save job",fontSize=12.sp)}},dismissButton={TextButton(onClick=onClose,contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)){Icon(Icons.Outlined.Close,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Cancel",fontSize=12.sp)}})
     if(currencyOpen) CurrencyDialog(currency,{currencyOpen=false}){currency=it;currencyOpen=false}
 }
-@Composable internal fun ShiftDialog(original: Shift?,data: AppData,initialDate:String,onClose: ()->Unit,onDelete: (String)->Unit,save: (Shift)->Unit) {
+@Composable internal fun ShiftDialog(original: Shift?,data: AppData,initialDate:String,onClose: ()->Unit,onDelete: (String)->Unit,save: (ManualShiftChange)->Unit) {
     var jobId by remember {mutableStateOf(original?.jobId ?: data.jobs.first { !it.archived }.id)}
     var date by remember {mutableStateOf(original?.date ?: initialDate)}
     val initialJob=data.jobs.first {it.id==jobId}
@@ -853,18 +903,20 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
             jobId=id;start=selectedJob.defaultStart;end=selectedJob.defaultEnd;breakText=selectedJob.defaultBreakMinutes.toString();paid=selectedJob.paidBreak;currentPrices=true
         }
         if(kind=="Work") FlowRow(horizontalArrangement=Arrangement.spacedBy(5.dp)) {job.shiftTemplates().forEachIndexed {i,t->if(t.active) FilterChip(selected=start==t.start && end==t.end,onClick={start=t.start;end=t.end;breakText=t.breakMinutes.toString();paid=t.paidBreak},label={UiText(listOf("First shift","Second shift","Third shift")[i],fontSize=11.sp)})}}
-        FormPair(first={DateControl("Date",date){date=it}},second={SelectionField("Day type",kind,listOf("Work","Off","Vacation","Sick")){kind=it}})
-        if(kind!="Work") UiText("Days off, vacation and sick leave have no estimated pay.",fontSize=10.sp)
+        FormPair(first={DateControl("Date",date){date=it}},second={SelectionField("Day type",kind,dayKinds){kind=it}})
+        if(kind!="Work") UiText(if(job.monthlyPay) "Monthly salary stays unchanged. Enter any deduction in Earnings." else "Non-working statuses have no estimated shift pay.",fontSize=10.sp)
         if(date in data.holidays) UiText("Holiday",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
+        if(kind=="Work") {
         FormPair(first={TimeControl("Starts",start){start=it}},second={TimeControl("Ends",end){end=it}})
         if(LocalTime.parse(end)<LocalTime.parse(start)) UiText("Ends the following day",fontSize=10.sp)
         FormPair(first={CompactField("Break (minutes)",breakText,{breakText=it},keyboardType=androidx.compose.ui.text.input.KeyboardType.Number)},
             second={NumberField("Bonus amount",bonus){bonus=it}})
         FormPair(first={CompactToggle("Paid break",paid){paid=it}},second={if(original!=null) CompactToggle("Current job prices",currentPrices){currentPrices=it}})
+        }
         val preview=runCatching {
             val minutes=breakText.toInt();require(minutes>=0)
             Shift(jobId=jobId,date=date,start=start,end=end,breakMinutes=minutes,rate=if(keepPrices) original!!.rate else job.rate,currency=if(keepPrices) original!!.currency else job.currency,
-                fixedPay=if(keepPrices) original!!.fixedPay else job.fixedPay,rules=if(keepPrices) original!!.rules else job.hourlyRules(),bonus=bonus.replace(',','.').toBigDecimal().toPlainString(),kind=kind,paidBreak=paid)
+                fixedPay=if(keepPrices) original!!.fixedPay else job.fixedPay,rules=if(keepPrices) original!!.rules else job.hourlyRules(),bonus=bonus.replace(',','.').toBigDecimal().toPlainString(),kind=kind,paidBreak=paid,monthlyPay=if(keepPrices) original!!.monthlyPay else job.monthlySalaryOn(LocalDate.parse(date))!=null)
         }.getOrNull()
         preview?.let {s->Surface(shape=Round,color=MaterialTheme.colorScheme.primary.copy(alpha=.10f)){
             Row(Modifier.fillMaxWidth().padding(9.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -879,27 +931,30 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
             UiText("Delete shift",fontSize=11.sp,color=MaterialTheme.colorScheme.error)
         }
     }},confirmButton={Button(contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp),onClick={
-        val pause=breakText.toIntOrNull()
+        val pause=if(kind=="Work") breakText.toIntOrNull() else 0
         val candidate=Shift(original?.id ?: java.util.UUID.randomUUID().toString(),jobId,date,start,end,pause ?: 0,note,
             if(keepPrices) original!!.rate else job.rate,if(keepPrices) original!!.currency else job.currency,if(keepPrices) original!!.fixedPay else job.fixedPay,
-            if(keepPrices) original!!.rules else job.hourlyRules(),bonus.replace(',','.').toBigDecimalOrNull()?.toPlainString() ?: "0",kind,paid)
+            if(keepPrices) original!!.rules else job.hourlyRules(),bonus.replace(',','.').toBigDecimalOrNull()?.toPlainString() ?: "0",kind,paid,if(keepPrices) original!!.monthlyPay else job.monthlySalaryOn(LocalDate.parse(date))!=null).let {if(kind=="Work") it else it.copy(breakMinutes=0,bonus="0",paidBreak=false)}
         when {
-            bonus.replace(',','.').toBigDecimalOrNull()?.let {it.signum()<0} != false -> error="Numbers must be valid and non-negative."
-            start==end -> error="Start and end must differ."
+            kind=="Work" && bonus.replace(',','.').toBigDecimalOrNull()?.let {it.signum()<0} != false -> error="Numbers must be valid and non-negative."
+            kind=="Work" && start==end -> error="Start and end must differ."
             pause==null || pause<0 || pause>=java.time.Duration.between(candidate.begins,candidate.finishes).toMinutes() -> error="Break must be shorter than the shift."
-            data.shifts.any {it.id!=candidate.id && it.jobId==jobId && it.date==date && it.start==start && it.end==end} -> error="This shift already exists."
-            overlappingShifts(candidate,data.shifts).isNotEmpty() -> {error=null;pendingShift=candidate}
-            else -> save(candidate)
+            kind=="Work" && data.shifts.any {it.kind=="Work" && it.id!=candidate.id && it.jobId==jobId && it.date==date && it.start==start && it.end==end} -> error="This shift already exists."
+            dayStatusReplacements(candidate,data.shifts).isNotEmpty() || overlappingShifts(candidate,data.shifts).isNotEmpty() -> {error=null;pendingShift=candidate}
+            else -> save(ManualShiftChange(candidate))
         }
     }){Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save shift",fontSize=12.sp)}},dismissButton={TextButton(onClick=onClose,contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)){Icon(Icons.Outlined.Close,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Cancel",fontSize=12.sp)}})
     if(deleting) AlertDialog(onDismissRequest={deleting=false},title={UiText("Delete this shift?")},text={UiText("This removes the shift from your calendar and earnings.")},confirmButton={TextButton(onClick={onDelete(original!!.id)}){UiText("Delete")}},dismissButton={TextButton(onClick={deleting=false}){UiText("Cancel")}})
     pendingShift?.let {candidate->
+        val replacements=dayStatusReplacements(candidate,data.shifts)
+        val overlaps=overlappingShifts(candidate,data.shifts.filterNot {it.id in replacements.map {s->s.id}})
         AlertDialog(onDismissRequest={pendingShift=null},
             containerColor=MaterialTheme.colorScheme.surface,
-            title={ScreenHeading("Overlapping shifts",Icons.Outlined.WarningAmber,"Review before saving",compact=true)},
+            title={ScreenHeading(if(replacements.isNotEmpty()) "Replace this job’s day?" else "Overlapping shifts",Icons.Outlined.WarningAmber,"Review before saving",compact=true)},
             text={Column(Modifier.heightIn(max=240.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-                UiText("This shift overlaps with the following shifts:",fontSize=12.sp)
-                overlappingShifts(candidate,data.shifts).forEach {conflict->
+                if(replacements.isNotEmpty()) UiText("These entries for the selected job and date will be replaced. Other jobs are unchanged.",fontSize=12.sp)
+                if(overlaps.isNotEmpty()) UiText("This shift overlaps with the following shifts:",fontSize=12.sp)
+                (replacements+overlaps).distinctBy {it.id}.forEach {conflict->
                     Surface(shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.primary.copy(alpha=.07f)) {
                         Row(Modifier.fillMaxWidth().padding(9.dp),horizontalArrangement=Arrangement.spacedBy(7.dp),verticalAlignment=Alignment.CenterVertically) {
                             Icon(Icons.Outlined.Schedule,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.primary)
@@ -911,11 +966,12 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
                     }
                 }
             }},
-            confirmButton={Button(onClick={pendingShift=null;save(candidate)},contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {
-                Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save anyway",fontSize=12.sp)
+            confirmButton={Button(onClick={pendingShift=null;save(ManualShiftChange(candidate,replacements.map {it.id}.toSet()))},contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {
+                Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText(if(replacements.isNotEmpty()) "Replace entries" else "Save anyway",fontSize=12.sp)
             }},
             dismissButton={TextButton(onClick={pendingShift=null},contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)) {
                 Icon(Icons.Outlined.Edit,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Edit shift",fontSize=12.sp)
             }})
     }
 }
+

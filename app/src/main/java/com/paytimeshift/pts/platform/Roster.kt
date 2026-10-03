@@ -46,9 +46,10 @@ fun parseRoster(text:String,job:Job,existing:List<Shift>): List<Shift> {
         val date=if(dateText.contains('-')) LocalDate.parse(dateText) else dateText.split('.','/').let {LocalDate.of(it[2].toInt(),it[1].toInt(),it[0].toInt())}
         fun timeValue(v:String)=v.split(':').let {LocalTime.of(it[0].toInt(),it[1].toInt()).toString()}
         val start=timeValue(time.groupValues[1]);val end=timeValue(time.groupValues[2]);if(start==end) continue
-        val shift=Shift(jobId=job.id,date=date.toString(),start=start,end=end,breakMinutes=job.defaultBreakMinutes,rate=job.rate,currency=job.currency,fixedPay=job.fixedPay,rules=job.hourlyRules(),paidBreak=job.paidBreak)
+        val shift=Shift(jobId=job.id,date=date.toString(),start=start,end=end,breakMinutes=job.defaultBreakMinutes,rate=job.rate,currency=job.currency,fixedPay=job.fixedPay,rules=job.hourlyRules(),paidBreak=job.paidBreak,monthlyPay=job.monthlySalaryOn(date)!=null)
         if(shift.breakMinutes>=java.time.Duration.between(shift.begins,shift.finishes).toMinutes()) continue
         if((existing+output).none {it.jobId==shift.jobId && it.date==shift.date && it.start==shift.start && it.end==shift.end}) output.add(shift)
     } catch(_:Exception) {continue}
     return output
 }
+

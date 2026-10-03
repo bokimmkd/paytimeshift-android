@@ -45,15 +45,23 @@ fun Shift.workTime(): WorkTime {
 data class CostDetail(val cost: JobCost,val count: Int,val total: BigDecimal)
 data class CostTotal(val category: String, val amount: BigDecimal)
 data class JobAnalysis(val jobId: String, val name: String, val currency: String,
-    val gross: BigDecimal, val costs: BigDecimal, val time: WorkTime, val categories: List<CostTotal>, val details: List<CostDetail> = emptyList()) {
-    val real: BigDecimal get()=gross-costs
+    val gross: BigDecimal, val costs: BigDecimal, val time: WorkTime, val categories: List<CostTotal>, val details: List<CostDetail> = emptyList(),
+    val salaryBase: BigDecimal = BigDecimal.ZERO, val adjustments: List<MonthlyAdjustment> = emptyList()) {
+    val monthlyBonuses: BigDecimal get()=adjustments.filter {it.type=="Bonus"}.fold(BigDecimal.ZERO){a,i->a+i.amount.toBigDecimal()}
+    val monthlyDeductions: BigDecimal get()=adjustments.filter {it.type=="Deduction"}.fold(BigDecimal.ZERO){a,i->a+i.amount.toBigDecimal()}
+    val adjusted: BigDecimal get()=gross+monthlyBonuses-monthlyDeductions
+    val real: BigDecimal get()=adjusted-costs
     val grossHourly: BigDecimal? get()=hourlyValue(gross,time.worked)
     val realHourly: BigDecimal? get()=hourlyValue(real,time.worked)
 }
 data class CurrencyAnalysis(val currency: String, val jobs: List<JobAnalysis>) {
+    val salaryBase: BigDecimal get()=jobs.fold(BigDecimal.ZERO){a,j->a+j.salaryBase}
+    val monthlyBonuses: BigDecimal get()=jobs.fold(BigDecimal.ZERO){a,j->a+j.monthlyBonuses}
+    val monthlyDeductions: BigDecimal get()=jobs.fold(BigDecimal.ZERO){a,j->a+j.monthlyDeductions}
+    val adjusted: BigDecimal get()=gross+monthlyBonuses-monthlyDeductions
     val gross: BigDecimal get()=jobs.fold(BigDecimal.ZERO){a,j->a+j.gross}
     val costs: BigDecimal get()=jobs.fold(BigDecimal.ZERO){a,j->a+j.costs}
-    val real: BigDecimal get()=gross-costs
+    val real: BigDecimal get()=adjusted-costs
     val time: WorkTime get()=jobs.fold(WorkTime()){a,j->a+j.time}
     val categories: List<CostTotal> get()=jobs.flatMap {it.categories}.groupBy {it.category}
         .map {(category,rows)->CostTotal(category,rows.fold(BigDecimal.ZERO){a,r->a+r.amount})}.sortedByDescending {it.amount}
@@ -75,6 +83,8 @@ fun percentChange(now: BigDecimal, previous: BigDecimal): BigDecimal? = if(previ
 fun analytics(data: AppData, from: LocalDate, until: LocalDate): WorkReport {
     require(until>=from)
     val jobs=data.jobs.flatMap {job->
+        val salary=salaryTotals(job,from,until)
+        val adjustments=data.adjustments.filter {it.jobId==job.id && it.inPeriod(from,until)}
         val all=data.shifts.filter {it.jobId==job.id && it.kind=="Work"}.sortedBy {it.begins}
         val rows=all.filter {it.begins.toLocalDate() in from..until}
         val dates=all.map {it.begins.toLocalDate()}.distinct()
@@ -91,12 +101,12 @@ fun analytics(data: AppData, from: LocalDate, until: LocalDate): WorkReport {
             CostDetail(c,count,c.amount.toBigDecimal().multiply(BigDecimal(count)))
         }.filter {it.count>0}
         val categoryAmounts=details.groupBy {it.cost.category}.map {(category,items)->CostTotal(category,items.fold(BigDecimal.ZERO){a,d->a+d.total})}.filter {it.amount.signum()!=0}
-        val currencies=(rows.map {it.currency}+if(categoryAmounts.isNotEmpty()) listOf(job.currency) else emptyList()).distinct()
+        val currencies=(rows.map {it.currency}+salary.keys+adjustments.map {it.currency}+if(categoryAmounts.isNotEmpty()) listOf(job.currency) else emptyList()).distinct()
         currencies.map {currency->
             val currencyRows=rows.filter {it.currency==currency}
             val categories=if(currency==job.currency) categoryAmounts else emptyList()
-            JobAnalysis(job.id,job.name,currency,currencyRows.fold(BigDecimal.ZERO){a,s->a+s.earnings()},
-                categories.fold(BigDecimal.ZERO){a,c->a+c.amount},currencyRows.fold(WorkTime()){a,s->a+s.workTime()},categories,if(currency==job.currency) details else emptyList())
+            JobAnalysis(job.id,job.name,currency,(salary[currency] ?: BigDecimal.ZERO)+currencyRows.fold(BigDecimal.ZERO){a,s->a+s.earnings()},
+                categories.fold(BigDecimal.ZERO){a,c->a+c.amount},currencyRows.fold(WorkTime()){a,s->a+s.workTime()},categories,if(currency==job.currency) details else emptyList(), salary[currency] ?: BigDecimal.ZERO, adjustments.filter {it.currency==currency})
         }
     }
     return WorkReport(from,until,jobs.groupBy {it.currency}.toSortedMap().map {(currency,rows)->CurrencyAnalysis(currency,rows)})
@@ -104,3 +114,4 @@ fun analytics(data: AppData, from: LocalDate, until: LocalDate): WorkReport {
 fun monthlyAnalytics(data: AppData, month: YearMonth)=analytics(data,month.atDay(1),month.atEndOfMonth())
 fun yearlyAnalytics(data: AppData,year: Int)=analytics(data,LocalDate.of(year,1,1),LocalDate.of(year,12,31))
 fun yearlyTrend(data: AppData,year: Int)=(1..12).map {monthlyAnalytics(data,YearMonth.of(year,it))}
+

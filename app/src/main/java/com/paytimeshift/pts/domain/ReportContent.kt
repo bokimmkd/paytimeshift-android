@@ -15,7 +15,7 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
     result+=ReportLine(if(yearly) "Annual Work & Earnings Report" else "Monthly Work & Earnings Report",heading=true)
     result+=ReportLine("Period","${report.from} – ${report.until}")
     result+=ReportLine("Estimated real earnings after work-related costs.")
-    result+=ReportLine("Taxes, government deductions and payroll deductions are not included.")
+    result+=ReportLine("Taxes and government deductions are not calculated. Only entered adjustments are included.")
     if(report.currencies.isEmpty()) result+=ReportLine("No shifts added")
     fun time(t: WorkTime) {
         result+=listOf(ReportLine("Total shifts",t.shifts.toString()),ReportLine("Worked hours",decimalHours(t.worked)),
@@ -25,6 +25,7 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
     report.currencies.forEach {c->
         result+=ReportLine(c.currency,heading=true,literal=true)
         time(c.time)
+        result+=listOf(ReportLine("Monthly salary",money(c.salaryBase,c.currency)),ReportLine("Monthly bonuses",money(c.monthlyBonuses,c.currency)),ReportLine("Monthly deductions",money(c.monthlyDeductions,c.currency)),ReportLine("Adjusted estimated earnings",money(c.adjusted,c.currency)))
         result+=listOf(ReportLine("Gross estimated earnings",money(c.gross,c.currency)),ReportLine("Work-related costs",money(c.costs,c.currency)),
             ReportLine("Real estimated earnings",money(c.real,c.currency)),ReportLine("Gross hourly value",c.grossHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"),
             ReportLine("Real hourly value",c.realHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"))
@@ -34,6 +35,12 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
         c.jobs.forEach {j->
             result+=ReportLine(j.name,heading=true,literal=true)
             time(j.time)
+            result+=listOf(ReportLine("Monthly salary",money(j.salaryBase,c.currency)),ReportLine("Monthly bonuses",money(j.monthlyBonuses,c.currency)),ReportLine("Monthly deductions",money(j.monthlyDeductions,c.currency)),ReportLine("Adjusted estimated earnings",money(j.adjusted,c.currency)))
+            if(j.adjustments.isNotEmpty()) result+=ReportLine("Monthly adjustments",heading=true)
+            j.adjustments.sortedWith(compareBy({it.month},{it.type},{it.id})).forEach {a->
+                val reason=com.paytimeshift.pts.ui.translate(a.reason,data.preferences.language)
+                result+=ReportLine(a.month+" · "+reason,(if(a.type=="Bonus") "+ " else "− ")+money(a.amount.toBigDecimal(),a.currency)+(if(a.note.isBlank()) "" else " · "+a.note),literal=true)
+            }
             result+=listOf(ReportLine("Gross estimated earnings",money(j.gross,c.currency)),ReportLine("Work-related costs",money(j.costs,c.currency)),
                 ReportLine("Real estimated earnings",money(j.real,c.currency)),
                 ReportLine("Gross hourly value",j.grossHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"),
@@ -51,6 +58,9 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
             trend.forEach {(date,entry)->
                 result+=ReportLine(YearMonth.from(date).format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy",locale)),decimalHours(entry?.time?.worked ?: 0.0),heading=true,literal=true)
                 result+=ReportLine("Gross estimated earnings",money(entry?.gross ?: BigDecimal.ZERO,c.currency))
+                result+=ReportLine("Monthly bonuses",money(entry?.monthlyBonuses ?: BigDecimal.ZERO,c.currency))
+                result+=ReportLine("Monthly deductions",money(entry?.monthlyDeductions ?: BigDecimal.ZERO,c.currency))
+                result+=ReportLine("Adjusted estimated earnings",money(entry?.adjusted ?: BigDecimal.ZERO,c.currency))
                 result+=ReportLine("Work-related costs",money(entry?.costs ?: BigDecimal.ZERO,c.currency))
                 result+=ReportLine("Real estimated earnings",money(entry?.real ?: BigDecimal.ZERO,c.currency))
             }
@@ -83,3 +93,4 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
     result+=ReportLine("Different currencies are shown separately.")
     return result
 }
+

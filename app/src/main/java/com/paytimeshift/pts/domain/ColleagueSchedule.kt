@@ -21,8 +21,9 @@ fun decodeColleagueSchedule(text: String,job: Job,existing: List<Shift>): List<S
     val rows=(0 until list.length()).map {i->
         val s=list.getJSONObject(i)
         val t=ShiftTemplate(s.getString("start"),s.getString("end"),s.getInt("breakMinutes"),s.optBoolean("paidBreak",false),true)
-        t.validate();val kind=s.optString("kind","Work");require(kind in listOf("Work","Off","Vacation","Sick"))
+        t.validate();val kind=s.optString("kind","Work");require(kind in dayKinds)
         job.templateShift(LocalDate.parse(s.getString("date")),t).copy(kind=kind)
     }
     return newScheduleRows(rows,existing)
 }
+

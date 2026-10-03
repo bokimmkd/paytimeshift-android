@@ -70,7 +70,7 @@ class PremiumUiTest {
         val existing=first.templateShift(java.time.LocalDate.of(2026,10,3),first.shiftTemplates().first())
         val data=AppData(jobs=listOf(second,first),shifts=listOf(existing))
         var saved:Shift?=null
-        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {ShiftDialog(null,data,"2026-10-03",{},{}) {saved=it}}}}
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {ShiftDialog(null,data,"2026-10-03",{},{}) {saved=it.shift}}}}
         ui.onNodeWithText("Save shift").performClick()
         ui.onNodeWithText("Overlapping shifts").assertIsDisplayed()
         ui.onNodeWithText("Morning job").assertIsDisplayed()
@@ -90,10 +90,63 @@ class PremiumUiTest {
         val existing=first.templateShift(java.time.LocalDate.of(2026,10,3),first.shiftTemplates().first())
         val data=AppData(jobs=listOf(second,first),shifts=listOf(existing))
         var saved:Shift?=null
-        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {ShiftDialog(null,data,"2026-10-03",{},{}) {saved=it}}}}
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {ShiftDialog(null,data,"2026-10-03",{},{}) {saved=it.shift}}}}
         ui.onNodeWithText("Save shift").performClick()
         ui.onNodeWithText("Overlapping shifts").assertDoesNotExist()
         ui.runOnIdle {org.junit.Assert.assertNotNull(saved)}
+    }
+
+    @Test fun dayStatusReplacementKeepsTheSecondJob() {
+        val first=Job(id="first",name="First job",rate="10")
+        val second=Job(id="second",name="Second job",rate="12")
+        val date=java.time.LocalDate.of(2026,10,3)
+        val a=first.templateShift(date,first.shiftTemplates().first())
+        val b=a.copy(id="late",start="18:00",end="21:00")
+        val other=second.templateShift(date,second.shiftTemplates().first())
+        val data=AppData(listOf(first,second),listOf(a,b,other))
+        var saved:ManualShiftChange?=null
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {ShiftDialog(a,data,date.toString(),{},{}) {saved=it}}}}
+        ui.onNodeWithText("Work").performClick();ui.onNodeWithText("Off").performClick()
+        ui.onNodeWithText("Starts").assertDoesNotExist()
+        ui.onNodeWithText("Save shift").performClick()
+        ui.onNodeWithText("Replace this job’s day?").assertIsDisplayed()
+        ui.runOnIdle {org.junit.Assert.assertNull(saved)}
+        screenshot("day-status-replacement")
+        ui.onNodeWithText("Replace entries").performClick()
+        ui.runOnIdle {
+            val next=data.withManualShiftChange(saved!!)
+            org.junit.Assert.assertEquals(setOf(a.id,b.id),saved!!.replacedIds)
+            org.junit.Assert.assertEquals(other,next.shifts.first {it.jobId=="second"})
+            org.junit.Assert.assertEquals("Off",next.shifts.single {it.jobId=="first"}.kind)
+        }
+    }
+
+    @Test fun fieldHintsDismissIndependentlyAndUseSelectedLanguage() {
+        var preferences by mutableStateOf(Preferences())
+        var value by mutableStateOf("")
+        val explanation=fieldHints.getValue("Monthly salary")
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides preferences.language) {Theme {
+            HintProvider(preferences,{preferences=it}) {androidx.compose.foundation.layout.Column {
+                CompactField("Monthly salary",value,{value=it})
+                CompactField("Rest (hours, e.g. 1.5)","1.5",{})
+            }}
+        }}}
+        ui.onNodeWithText(explanation).assertDoesNotExist()
+        ui.onNodeWithContentDescription("Monthly salary").performClick()
+        ui.onNodeWithText(explanation).assertIsDisplayed()
+        ui.onNodeWithContentDescription("Monthly salary").performTextInput("40000")
+        ui.runOnIdle {org.junit.Assert.assertEquals("40000",value);preferences=preferences.copy(language="mk")}
+        ui.onNodeWithText(translate(explanation,"mk")).assertIsDisplayed()
+        screenshot("localized-field-hint")
+        ui.onNodeWithContentDescription(translate("Hide this hint","mk")).performClick()
+        ui.runOnIdle {org.junit.Assert.assertTrue("field:Monthly salary" in preferences.hiddenHintIds);preferences=preferences.copy(language="en")}
+        ui.onNodeWithContentDescription("Rest (hours, e.g. 1.5)").performClick()
+        ui.onNodeWithText(fieldHints.getValue("Rest (hours, e.g. 1.5)")).assertIsDisplayed()
+        ui.runOnIdle {preferences=preferences.copy(showHints=false)}
+        ui.onNodeWithText(fieldHints.getValue("Rest (hours, e.g. 1.5)")).assertDoesNotExist()
+        ui.runOnIdle {preferences=preferences.copy(showHints=true)}
+        ui.onNodeWithContentDescription("Monthly salary").performClick()
+        ui.onNodeWithText(explanation).assertDoesNotExist()
     }
 
     @Test fun nativeTableReportsRenderInEveryLanguage() {
@@ -121,7 +174,7 @@ class PremiumUiTest {
         val other=otherJob.templateShift(date,otherJob.shiftTemplates().first())
         val data=fixture.copy(jobs=listOf(job,otherJob),shifts=listOf(old,other))
         var saved:PatternChange?=null
-        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(data,{}) {saved=it}}}}
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(data,{}) {saved=it.shift}}}}
         ui.onNodeWithText("Replace existing shifts in this period").performScrollTo().performClick()
         ui.onNodeWithText("Preview shifts").performClick()
         ui.runOnIdle {org.junit.Assert.assertNull(saved)}
@@ -141,3 +194,4 @@ class PremiumUiTest {
         }
     }
 }
+

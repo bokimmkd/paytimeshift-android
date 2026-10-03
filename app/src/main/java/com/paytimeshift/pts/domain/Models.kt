@@ -19,13 +19,14 @@ data class Job(
     val rules: PayRules = PayRules(useHourlyRates = true), val archived: Boolean = false,
     val defaultStart: String = "07:00", val defaultEnd: String = "15:00", val defaultBreakMinutes: Int = 0,
     val paidBreak: Boolean = false, val reminderMinutes: Int = -1, val minGapHours: Double = -1.0,
-    val costs: List<JobCost> = emptyList(), val extraShifts: List<ShiftTemplate> = emptyList()
+    val costs: List<JobCost> = emptyList(), val extraShifts: List<ShiftTemplate> = emptyList(),
+    val monthlyPay: Boolean = false, val salaryPeriods: List<SalaryPeriod> = emptyList()
 )
 data class Shift(
     val id: String = UUID.randomUUID().toString(), val jobId: String,
     val date: String, val start: String, val end: String, val breakMinutes: Int = 0,
     val note: String = "", val rate: String, val currency: String, val fixedPay: Boolean = false,
-    val rules: PayRules = PayRules(), val bonus: String = "0", val kind: String = "Work", val paidBreak: Boolean = false
+    val rules: PayRules = PayRules(), val bonus: String = "0", val kind: String = "Work", val paidBreak: Boolean = false, val monthlyPay: Boolean = false
 ) {
     val begins: LocalDateTime get() = LocalDate.parse(date).atTime(LocalTime.parse(start))
     val finishes: LocalDateTime get() {
@@ -35,16 +36,17 @@ data class Shift(
     val paidMinutes: Long get() = if(kind != "Work") 0 else (Duration.between(begins, finishes).toMinutes() - (if(paidBreak) 0 else breakMinutes)).coerceAtLeast(0)
     fun baseEarnings(): BigDecimal = when {
         kind != "Work" -> BigDecimal.ZERO
-        fixedPay -> BigDecimal(rate)
+        fixedPay && !monthlyPay -> BigDecimal(rate)
         rules.useHourlyRates -> hourlyLines().fold(BigDecimal.ZERO) { a, line -> a + line.amount }
+        monthlyPay -> BigDecimal.ZERO
         else -> BigDecimal(rate).multiply(BigDecimal(paidMinutes)).divide(BigDecimal(60), 8, RoundingMode.HALF_UP)
     }
     fun earnings(): BigDecimal = baseEarnings() + additions().values.fold(BigDecimal.ZERO, BigDecimal::add)
 }
 data class Preferences(val currency: String = "EUR", val time24: Boolean = true,
-    val mondayFirst: Boolean = true, val appearance: String = "Light", val gapHours: Double = 8.0, val language: String = "en", val reminderMinutes: Int = 0)
+    val mondayFirst: Boolean = true, val appearance: String = "Light", val gapHours: Double = 8.0, val language: String = "en", val reminderMinutes: Int = 0, val showHints: Boolean = true, val hiddenHintIds: List<String> = emptyList())
 data class AppData(val jobs: List<Job> = emptyList(), val shifts: List<Shift> = emptyList(), val preferences: Preferences = Preferences(),
-    val holidays: List<String> = emptyList())
+    val holidays: List<String> = emptyList(), val adjustments: List<MonthlyAdjustment> = emptyList())
 
 /** Holiday dates are user-selected, and update only holiday classification, never saved rates. */
 fun AppData.withHoliday(date: String): AppData {
@@ -57,10 +59,17 @@ fun AppData.withHoliday(date: String): AppData {
 fun AppData.withJob(job: Job, applyUpcoming: Boolean, today: LocalDate): AppData {
     val saved = job.copy(rules = job.rules.copy(holidayDates = holidays))
     val updatedJobs = if (jobs.any { it.id == job.id }) jobs.map { if (it.id == job.id) saved else it } else jobs + saved
+    val previous=jobs.find {it.id==job.id}
     return copy(jobs = updatedJobs, shifts = shifts.map { shift ->
-        if (applyUpcoming && shift.jobId == job.id && shift.begins.toLocalDate() >= today)
-            shift.copy(rate = saved.rate, currency = saved.currency, fixedPay = saved.fixedPay, rules = saved.hourlyRules())
-        else shift
+        if(shift.jobId!=job.id) shift else {
+            val date=shift.begins.toLocalDate()
+            val wasMonthly=previous?.monthlySalaryOn(date)!=null
+            val isMonthly=saved.monthlySalaryOn(date)!=null
+            val basisChanged=wasMonthly!=isMonthly
+            if(basisChanged || applyUpcoming && date>=today && (!saved.monthlyPay || isMonthly))
+                shift.copy(rate=saved.rate,currency=saved.currency,fixedPay=if(isMonthly) false else saved.fixedPay,rules=saved.hourlyRules(),monthlyPay=isMonthly)
+            else shift
+        }
     })
 }
 
@@ -156,7 +165,7 @@ fun Shift.hourlyLines(): List<PayLine> {
     val proportion = paidMinutes.toDouble() / total
     val threshold = rules.overtimeAfterHours * 60
     val grouped = linkedMapOf<Pair<String, String>, Double>()
-    fun price(value: String) = (value.ifBlank { rate }).toBigDecimal()
+    fun price(value: String) = (value.ifBlank { if(monthlyPay) "0" else rate }).toBigDecimal()
     fun add(label: String, minutes: Double, value: BigDecimal) {
         if (minutes <= 1e-9) return
         val key = label to value.stripTrailingZeros().toPlainString()
@@ -171,7 +180,7 @@ fun Shift.hourlyLines(): List<PayLine> {
             t.toLocalDate().toString() in rules.holidayDates -> "Holiday work" to price(rules.holidayRate)
             t.dayOfWeek.value == 7 -> "Sunday work" to price(rules.sundayRate)
             t.dayOfWeek.value == 6 -> "Saturday work" to price(rules.saturdayRate)
-            else -> "Regular hours" to BigDecimal(rate)
+            else -> "Regular hours" to price("")
         }
         val regular = (threshold - paidSoFar).coerceIn(0.0, segmentMinutes)
         add(label, regular, value)
@@ -220,6 +229,7 @@ fun generatePattern(job: Job, from: LocalDate, until: LocalDate, weekdays: Set<I
     require(until>=from && java.time.temporal.ChronoUnit.DAYS.between(from,until)<=366)
     return generateSequence(from) {it.plusDays(1)}.takeWhile {it<=until}
         .filter {it.dayOfWeek.value in weekdays}.map {d->Shift(jobId=job.id,date=d.toString(),start=start,end=end,
-            breakMinutes=breakMinutes,rate=job.rate,currency=job.currency,fixedPay=job.fixedPay,rules=job.hourlyRules(),paidBreak=job.paidBreak)}
+            breakMinutes=breakMinutes,rate=job.rate,currency=job.currency,fixedPay=job.fixedPay,rules=job.hourlyRules(),paidBreak=job.paidBreak,monthlyPay=job.monthlySalaryOn(d)!=null)}
         .filter {s->existing.none {it.jobId==s.jobId && it.date==s.date && it.start==s.start && it.end==s.end}}.toList()
 }
+

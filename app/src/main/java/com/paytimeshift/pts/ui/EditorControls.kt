@@ -122,6 +122,8 @@ import androidx.compose.ui.window.DialogProperties
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val translatedLabel = translate(label, LocalLanguage.current)
+    HintAnchor(label) { show, close ->
+    LaunchedEffect(focused) { if(focused) show() else close() }
     BasicTextField(value, change, Modifier.fillMaxWidth().heightIn(min = 54.dp)
         .border(1.dp, if (focused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
         .padding(horizontal = 9.dp, vertical = 6.dp).semantics { contentDescription = translatedLabel },
@@ -137,11 +139,13 @@ import androidx.compose.ui.window.DialogProperties
                 }
             }
         })
+    }
 }
 
 @Composable fun CompactChoice(label: String, value: String, modifier: Modifier = Modifier,
     translateValue: Boolean = true, icon: @Composable () -> Unit = {}, click: () -> Unit) {
-    Surface(onClick = click, modifier = modifier.fillMaxWidth().heightIn(min = 54.dp), shape = RoundedCornerShape(8.dp),
+    HintAnchor(label) { show, _ ->
+    Surface(onClick = { show(); click() }, modifier = modifier.fillMaxWidth().heightIn(min = 54.dp), shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Column(Modifier.padding(horizontal = 9.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             UiText(label, fontSize = 10.sp, lineHeight = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -154,14 +158,17 @@ import androidx.compose.ui.window.DialogProperties
             }
         }
     }
+    }
 }
 
 @Composable fun CompactToggle(label: String, checked: Boolean, enabled: Boolean = true, change: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = change)
+    HintAnchor(label) { show, _ ->
+    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = { show(); change(it) })
         .padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Checkbox(checked, null, Modifier.size(24.dp), enabled = enabled)
         UiText(label, Modifier.weight(1f), fontSize = 11.sp, lineHeight = 14.sp)
+    }
     }
 }
 
@@ -179,3 +186,4 @@ import androidx.compose.ui.window.DialogProperties
 @Composable fun RateField(label: String, value: String, currency: String, change: (String) -> Unit) {
     CompactField(label, value, change, keyboardType = KeyboardType.Decimal, suffix = "$currency / hour")
 }
+

@@ -47,7 +47,7 @@ import java.time.YearMonth
             catch(_:Exception) {error="File could not be saved."}}
     }
     val report=remember(data,selected,yearly) {if(yearly) yearlyAnalytics(data,selected.year) else monthlyAnalytics(data,selected)}
-    val lines=remember(data,selected,yearly) {compactReportBlocks(reportLines(data,selected,yearly).filterNot {it.label in listOf("Annual Work & Earnings Report","Monthly Work & Earnings Report","Period","Estimated real earnings after work-related costs.","Taxes, government deductions and payroll deductions are not included.")})}
+    val lines=remember(data,selected,yearly) {compactReportBlocks(reportLines(data,selected,yearly).filterNot {it.label in listOf("Annual Work & Earnings Report","Monthly Work & Earnings Report","Period","Estimated real earnings after work-related costs.","Taxes and government deductions are not calculated. Only entered adjustments are included.")})}
     BrandedEditor(onDismissRequest=close,title={ScreenHeading("Work Analytics",Icons.Outlined.Insights,"Gross, costs and real earnings",compact=true)},error=error,
         text={LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)) {
             item {Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
@@ -109,7 +109,7 @@ import java.time.YearMonth
                     }
                 }
             }
-            item {UiText("Taxes, government deductions and payroll deductions are not included.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+            item {UiText("Taxes and government deductions are not calculated. Only entered adjustments are included.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             item {FormSection("Report export") {
                 FlowRow(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
                     listOf("View","PDF","Share","Print","Email").forEach {action->
@@ -141,3 +141,4 @@ private fun compactReportBlocks(lines: List<ReportLine>): List<AnalyticsBlock> {
     }
     return result
 }
+

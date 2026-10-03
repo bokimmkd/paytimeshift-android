@@ -21,20 +21,21 @@ export function reportPdf(data,year,month,annual,language='en'){
   const hour=v=>`${number(v/60,language)} ${tr('h')}`;
   const metrics=t=>{for(const [key,label] of [['shifts','Total shifts'],['worked','Worked hours'],['paid','Paid hours'],['regular','Regular hours'],['overtime','Overtime'],['night','Night hours'],['weekend','Weekend hours'],['holiday','Holiday hours']]) text(label,key==='shifts'?String(t[key]):hour(t[key]));};
   text('PTS · Pay Time Shift','',true,true);text(annual?'Annual Work & Earnings Report':'Monthly Work & Earnings Report','',true);
-  text('Period',`${from} – ${until}`);text('Estimated real earnings after work-related costs.');text('Taxes, government deductions and payroll deductions are not included.');
+  text('Period',`${from} – ${until}`);text('Estimated real earnings after work-related costs.');text('Taxes and government deductions are not calculated. Only entered adjustments are included.');
   if(!report.length) text('No shifts added');
   for(const c of report){
     text(c.currency,'',true,true);metrics(c.time);
+    text('Monthly salary',money(c.salaryBase,c.currency));text('Monthly bonuses',money(c.monthlyBonuses,c.currency));text('Monthly deductions',money(c.monthlyDeductions,c.currency));text('Adjusted estimated earnings',money(c.adjusted,c.currency));
     text('Gross estimated earnings',money(c.gross,c.currency));text('Work-related costs',money(c.costs,c.currency));text('Real estimated earnings',money(c.real,c.currency),true);
     text('Gross hourly value',c.time.worked?`${money(c.gross.times(60).div(c.time.worked),c.currency)} / ${tr('h')}`:'—');
     text('Real hourly value',c.time.worked?`${money(c.real.times(60).div(c.time.worked),c.currency)} / ${tr('h')}`:'—');
     text('Cost breakdown','',true);for(const [category,cost] of Object.entries(c.categories)) text(category,`${money(cost,c.currency)} · ${c.costs.gt(0)?number(cost.times(100).div(c.costs),language,1):0}%`);
-    text('Breakdown by job','',true);for(const j of c.jobs){text(j.name,'',true,true);metrics(j.time);text('Gross estimated earnings',money(j.gross,c.currency));text('Work-related costs',money(j.costs,c.currency));text('Real estimated earnings',money(j.real,c.currency));text('Gross hourly value',j.grossHourly?money(j.grossHourly,c.currency)+' / '+tr('h'):'—');text('Real hourly value',j.realHourly?money(j.realHourly,c.currency)+' / '+tr('h'):'—');}
+    text('Breakdown by job','',true);for(const j of c.jobs){text(j.name,'',true,true);metrics(j.time);text('Monthly salary',money(j.salaryBase,c.currency));text('Monthly bonuses',money(j.monthlyBonuses,c.currency));text('Monthly deductions',money(j.monthlyDeductions,c.currency));text('Adjusted estimated earnings',money(j.adjusted,c.currency));for(const a of j.adjustments) text(a.month+' · '+tr(a.reason),(a.type==='Bonus'?'+ ':'− ')+money(a.amount,c.currency)+(a.note?' · '+a.note:''),false,true);text('Gross estimated earnings',money(j.gross,c.currency));text('Work-related costs',money(j.costs,c.currency));text('Real estimated earnings',money(j.real,c.currency));text('Gross hourly value',j.grossHourly?money(j.grossHourly,c.currency)+' / '+tr('h'):'—');text('Real hourly value',j.realHourly?money(j.realHourly,c.currency)+' / '+tr('h'):'—');}
     if(annual){
       text('Average monthly real earnings',money(c.real.div(12),c.currency));text('Monthly trend','',true);
       const entries=[];for(let m=1;m<=12;m++){const t=analyze(data,...monthBounds(year,m),cache).find(t=>t.currency===c.currency);entries.push({month:m,present:!!t,...(t ?? {gross:new Decimal(0),costs:new Decimal(0),real:new Decimal(0),time:{worked:0,overtime:0,shifts:0}})});
         text(new Intl.DateTimeFormat(locale,{month:'long',timeZone:'UTC'}).format(new Date(Date.UTC(year,m-1,1))),hour(t?.time.worked ?? 0),true,true);
-        text('Gross estimated earnings',money(t?.gross ?? 0,c.currency));text('Work-related costs',money(t?.costs ?? 0,c.currency));text('Real estimated earnings',money(t?.real ?? 0,c.currency));}
+        text('Gross estimated earnings',money(t?.gross ?? 0,c.currency));text('Monthly bonuses',money(t?.monthlyBonuses ?? 0,c.currency));text('Monthly deductions',money(t?.monthlyDeductions ?? 0,c.currency));text('Adjusted estimated earnings',money(t?.adjusted ?? 0,c.currency));text('Work-related costs',money(t?.costs ?? 0,c.currency));text('Real estimated earnings',money(t?.real ?? 0,c.currency));}
       text('Highlights','',true);const active=entries.filter(t=>t.present);
       const monthName=m=>new Intl.DateTimeFormat(locale,{month:'long',timeZone:'UTC'}).format(new Date(Date.UTC(year,m-1,1)));
       function high(label,key,highest=true){const sorted=[...active].sort((a,b)=>(highest?-1:1)*(Number(a[key])-Number(b[key])));if(sorted.length) text(label,monthName(sorted[0].month));}
@@ -52,3 +53,4 @@ export function reportPdf(data,year,month,annual,language='en'){
   const pages=doc.bufferedPageRange();for(let i=0;i<pages.count;i++){doc.switchToPage(i);doc.fontSize(8).fillColor('#6b778b').text(`PTS · Pay Time Shift | ${i+1}/${pages.count}`,36,810,{lineBreak:false});}
   doc.end();return finished;
 }
+
