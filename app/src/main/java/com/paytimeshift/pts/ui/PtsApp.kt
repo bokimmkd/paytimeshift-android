@@ -71,7 +71,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     Earnings("Earnings", Icons.Outlined.BarChart), Jobs("Jobs", Icons.Outlined.WorkOutline)
 }
 
-@Composable fun PtsApp(shortcutAction: ShortcutAction? = null, onShortcutHandled: () -> Unit = {}) {
+@Composable fun PtsApp(shortcutAction: ShortcutAction? = null, updates: PlayUpdates? = null, onShortcutHandled: () -> Unit = {}) {
     val context = LocalContext.current
     val store = remember { LocalStore(context) }
     val scope = rememberCoroutineScope()
@@ -232,6 +232,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),false)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("Image")}
         }},confirmButton={TextButton(onClick={shareMonth=null}){UiText("Cancel")}})}
         if(sampleConfirm) AlertDialog(onDismissRequest={sampleConfirm=false},title={UiText("Load example schedule?")},text={UiText("Add Factory, Taxi and Restaurant with example shifts. You can edit them or start with your own jobs instead.")},confirmButton={TextButton(onClick={if(data.jobs.isEmpty()) commit(sampleData().copy(preferences=data.preferences)) else message="Examples are available only before adding jobs.";sampleConfirm=false}){UiText("Load examples")}},dismissButton={TextButton(onClick={sampleConfirm=false}){UiText("Cancel")}})
+        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()})
         if (saving) androidx.compose.ui.window.Dialog(onDismissRequest={}) { Surface(shape=Round) { Row(Modifier.padding(24.dp),verticalAlignment=Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(24.dp)); Spacer(Modifier.width(12.dp)); UiText("Saving…") } } }
         message?.let { text -> AlertDialog(onDismissRequest={message=null},title={UiText("PTS")},text={UiText(text)},confirmButton={TextButton(onClick={message=null}){UiText("OK")}}) }
     }
@@ -306,7 +307,7 @@ private fun jobGlyph(job: Job): ImageVector = when {
         }
     }
 }
-@Composable private fun displayMoney(value: java.math.BigDecimal,code: String): String {
+@Composable internal fun displayMoney(value: java.math.BigDecimal,code: String): String {
     val currency=java.util.Currency.getInstance(code)
     val formatter=java.text.NumberFormat.getNumberInstance(uiLocale()).apply {minimumFractionDigits=0;maximumFractionDigits=currency.defaultFractionDigits.coerceAtLeast(0)}
     val symbol=currency.getSymbol(uiLocale())
@@ -921,10 +922,11 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         preview?.let {s->Surface(shape=Round,color=MaterialTheme.colorScheme.primary.copy(alpha=.10f)){
             Row(Modifier.fillMaxWidth().padding(9.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Outlined.AccountBalanceWallet,null,Modifier.size(22.dp),tint=MaterialTheme.colorScheme.primary)
-                Column(Modifier.weight(1f)){UiText("Estimated daily earnings",fontSize=10.sp);UiText(displayMoney(s.earnings(),s.currency),fontSize=18.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
+                Column(Modifier.weight(1f)){UiText(if(s.monthlyPay) "Estimated shift extras" else "Estimated daily earnings",fontSize=10.sp);UiText(displayMoney(s.earnings(),s.currency),fontSize=18.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
                 UiText("${hours(s.paidMinutes)} paid",fontSize=10.sp)
             }
         }}
+        if(preview?.monthlyPay==true) UiText("Monthly salary is shown in Earnings.",fontSize=10.sp,color=MaterialTheme.colorScheme.primary)
         CompactField("Note (optional)",note,{note=it},singleLine=false)
         if(original!=null) TextButton(onClick={deleting=true},contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)) {
             Icon(Icons.Outlined.DeleteOutline,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.error);Spacer(Modifier.width(5.dp))

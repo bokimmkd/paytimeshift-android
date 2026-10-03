@@ -456,7 +456,16 @@
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work.": "По смена ја брои секоја смена; по работен ден го брои датумот еднаш. Неделните и месечните трошоци се бројат еднаш кога работиш.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate.": "Внеси позитивен износ во валутата на работата. Различните валути се прикажуваат одвоено.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation.": "Избери кога се врши исплата. Ова не го менува месецот на платата или пресметката по час.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Дополнителен процент од редовната или референтната сатница во зададените ноќни часови."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Дополнителен процент од редовната или референтната сатница во зададените ноќни часови.",
+    "New version available": "Достапна е нова верзија",
+    "Update ready": "Ажурирањето е подготвено",
+    "Update": "Ажурирај",
+    "Later": "Подоцна",
+    "Restart to update": "Рестартирај за ажурирање",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app.": "Достапна е нова верзија на PTS на Google Play. Преземи ја во позадина и продолжи да ја користиш апликацијата.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone.": "Ажурирањето е преземено. Рестартирај PTS за да се инсталира. Зачуваните податоци остануваат на телефонот.",
+    "Estimated shift extras": "Проценети додатоци за смената",
+    "Monthly salary is shown in Earnings.": "Месечната плата е прикажана во Заработка."
   },
   "de": {
     "Today": "Heute",
@@ -915,7 +924,16 @@
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work.": "Pro Schicht zählt jede Schicht; pro Arbeitstag jeden Tag einmal. Wochen- und Monatskosten einmal bei Arbeit.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate.": "Positiven Betrag in der Job-Währung eingeben. Währungen bleiben getrennt.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation.": "Wähle den Auszahlungstermin. Gehaltsmonat und Stundenberechnung bleiben gleich.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Zusätzlicher Prozentsatz des regulären oder Referenz-Stundenlohns während der festgelegten Nachtstunden."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Zusätzlicher Prozentsatz des regulären oder Referenz-Stundenlohns während der festgelegten Nachtstunden.",
+    "New version available": "Neue Version verfügbar",
+    "Update ready": "Update bereit",
+    "Update": "Aktualisieren",
+    "Later": "Später",
+    "Restart to update": "Zum Aktualisieren neu starten",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app.": "Eine neue PTS-Version ist bei Google Play verfügbar. Im Hintergrund herunterladen und die App weiter nutzen.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone.": "Das Update ist heruntergeladen. PTS neu starten, um die Installation abzuschließen. Gespeicherte Daten bleiben auf dem Telefon.",
+    "Estimated shift extras": "Geschätzte Schichtzuschläge",
+    "Monthly salary is shown in Earnings.": "Das Monatsgehalt wird unter Verdienst angezeigt."
   },
   "it": {
     "Today": "Oggi",
@@ -1374,7 +1392,16 @@
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work.": "Per turno conta ogni turno; per giorno lavorativo ogni data una volta. I costi settimanali e mensili si applicano una volta se lavori.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate.": "Inserisci un importo positivo nella valuta del lavoro. Le valute restano separate.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation.": "Scegli quando ricevere il pagamento. Non cambia il mese dello stipendio o il calcolo orario.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Percentuale aggiuntiva della tariffa oraria regolare o di riferimento durante le ore notturne impostate."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Percentuale aggiuntiva della tariffa oraria regolare o di riferimento durante le ore notturne impostate.",
+    "New version available": "Nuova versione disponibile",
+    "Update ready": "Aggiornamento pronto",
+    "Update": "Aggiorna",
+    "Later": "Più tardi",
+    "Restart to update": "Riavvia per aggiornare",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app.": "Una nuova versione di PTS è disponibile su Google Play. Scaricala in background e continua a usare l’app.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone.": "L’aggiornamento è stato scaricato. Riavvia PTS per completare l’installazione. I dati salvati restano sul telefono.",
+    "Estimated shift extras": "Supplementi stimati del turno",
+    "Monthly salary is shown in Earnings.": "Lo stipendio mensile è mostrato in Guadagni."
   },
   "es": {
     "Today": "Hoy",
@@ -1833,7 +1860,16 @@
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work.": "Por turno cuenta cada turno; por día laborable cada fecha una vez. Los gastos semanales y mensuales se cobran una vez si trabajas.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate.": "Introduce un importe positivo en la moneda de este trabajo. Las monedas se mantienen separadas.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation.": "Elige cuándo recibes el pago. No cambia el mes salarial ni el cálculo por hora.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Porcentaje adicional de la tarifa normal o de referencia durante las horas nocturnas configuradas."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Porcentaje adicional de la tarifa normal o de referencia durante las horas nocturnas configuradas.",
+    "New version available": "Nueva versión disponible",
+    "Update ready": "Actualización lista",
+    "Update": "Actualizar",
+    "Later": "Más tarde",
+    "Restart to update": "Reiniciar para actualizar",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app.": "Hay una nueva versión de PTS en Google Play. Descárgala en segundo plano y sigue usando la app.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone.": "La actualización se ha descargado. Reinicia PTS para instalarla. Los datos guardados permanecen en el teléfono.",
+    "Estimated shift extras": "Complementos estimados del turno",
+    "Monthly salary is shown in Earnings.": "El salario mensual se muestra en Ingresos."
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -2292,7 +2328,16 @@
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work.": "Par poste compte chaque poste ; par jour travaillé compte chaque date une fois. Frais hebdomadaires et mensuels comptés une fois si vous travaillez.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate.": "Saisissez un montant positif dans la devise de l’emploi. Les devises restent séparées.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation.": "Choisissez quand recevoir le paiement. Cela ne change ni le mois du salaire ni le calcul horaire.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Pourcentage supplémentaire du taux horaire normal ou de référence pendant les heures de nuit définies."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Pourcentage supplémentaire du taux horaire normal ou de référence pendant les heures de nuit définies.",
+    "New version available": "Nouvelle version disponible",
+    "Update ready": "Mise à jour prête",
+    "Update": "Mettre à jour",
+    "Later": "Plus tard",
+    "Restart to update": "Redémarrer pour mettre à jour",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app.": "Une nouvelle version de PTS est disponible sur Google Play. Téléchargez-la en arrière-plan et continuez à utiliser l’application.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone.": "La mise à jour est téléchargée. Redémarrez PTS pour terminer l’installation. Vos données enregistrées restent sur ce téléphone.",
+    "Estimated shift extras": "Suppléments estimés du poste",
+    "Monthly salary is shown in Earnings.": "Le salaire mensuel est affiché dans Revenus."
   },
   "sr": {
     "Today": "Danas",
@@ -2751,7 +2796,16 @@
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work.": "Po smeni broji svaku smenu; po radnom danu datum jednom. Nedeljni i mesečni troškovi se računaju jednom kada radiš.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate.": "Unesi pozitivan iznos u valuti posla. Različite valute ostaju odvojene.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation.": "Izaberi kada primaš isplatu. Ovo ne menja mesec plate niti obračun po satu.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Dodatni procenat redovne ili referentne satnice tokom podešenih noćnih sati."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Dodatni procenat redovne ili referentne satnice tokom podešenih noćnih sati.",
+    "New version available": "Dostupna je nova verzija",
+    "Update ready": "Ažuriranje je spremno",
+    "Update": "Ažuriraj",
+    "Later": "Kasnije",
+    "Restart to update": "Ponovo pokreni za ažuriranje",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app.": "Nova verzija PTS-a je dostupna na Google Play-u. Preuzmi je u pozadini i nastavi da koristiš aplikaciju.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone.": "Ažuriranje je preuzeto. Ponovo pokreni PTS da završiš instalaciju. Sačuvani podaci ostaju na telefonu.",
+    "Estimated shift extras": "Procenjeni dodaci za smenu",
+    "Monthly salary is shown in Earnings.": "Mesečna plata je prikazana u Zarada."
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -3210,7 +3264,16 @@
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work.": "Por turno conta cada turno; por dia trabalhado cada data uma vez. Custos semanais e mensais são cobrados uma vez quando há trabalho.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate.": "Informe um valor positivo na moeda deste trabalho. Moedas diferentes ficam separadas.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation.": "Escolha quando recebe o pagamento. Isso não altera o mês salarial nem o cálculo por hora.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Percentual adicional do valor horário normal ou de referência durante as horas noturnas configuradas."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Percentual adicional do valor horário normal ou de referência durante as horas noturnas configuradas.",
+    "New version available": "Nova versão disponível",
+    "Update ready": "Atualização pronta",
+    "Update": "Atualizar",
+    "Later": "Depois",
+    "Restart to update": "Reiniciar para atualizar",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app.": "Uma nova versão do PTS está disponível no Google Play. Baixe em segundo plano e continue usando o aplicativo.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone.": "A atualização foi baixada. Reinicie o PTS para concluir a instalação. Seus dados salvos permanecem no telefone.",
+    "Estimated shift extras": "Adicionais estimados do turno",
+    "Monthly salary is shown in Earnings.": "O salário mensal aparece em Ganhos."
   },
   "el": {
     "Today": "Σήμερα",
@@ -3669,6 +3732,15 @@
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work.": "Ανά βάρδια μετρά κάθε βάρδια· ανά εργάσιμη ημέρα κάθε ημερομηνία μία φορά. Εβδομαδιαία και μηνιαία έξοδα χρεώνονται μία φορά όταν εργάζεστε.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate.": "Εισαγάγετε θετικό ποσό στο νόμισμα της εργασίας. Τα διαφορετικά νομίσματα παραμένουν χωριστά.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation.": "Επιλέξτε πότε πληρώνεστε. Δεν αλλάζει τον μήνα μισθού ή τον ωριαίο υπολογισμό.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Πρόσθετο ποσοστό του κανονικού ωρομισθίου ή του ωρομισθίου αναφοράς στις καθορισμένες νυχτερινές ώρες."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours.": "Πρόσθετο ποσοστό του κανονικού ωρομισθίου ή του ωρομισθίου αναφοράς στις καθορισμένες νυχτερινές ώρες.",
+    "New version available": "Διαθέσιμη νέα έκδοση",
+    "Update ready": "Η ενημέρωση είναι έτοιμη",
+    "Update": "Ενημέρωση",
+    "Later": "Αργότερα",
+    "Restart to update": "Επανεκκίνηση για ενημέρωση",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app.": "Μια νέα έκδοση του PTS είναι διαθέσιμη στο Google Play. Κατεβάστε την στο παρασκήνιο και συνεχίστε να χρησιμοποιείτε την εφαρμογή.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone.": "Η ενημέρωση κατέβηκε. Επανεκκινήστε το PTS για να ολοκληρωθεί η εγκατάσταση. Τα αποθηκευμένα δεδομένα παραμένουν στο τηλέφωνο.",
+    "Estimated shift extras": "Εκτιμώμενες προσαυξήσεις βάρδιας",
+    "Monthly salary is shown in Earnings.": "Ο μηνιαίος μισθός εμφανίζεται στα Έσοδα."
   }
 }

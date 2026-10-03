@@ -458,5 +458,14 @@ internal val catalogde = mapOf(
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work." to "Pro Schicht zählt jede Schicht; pro Arbeitstag jeden Tag einmal. Wochen- und Monatskosten einmal bei Arbeit.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate." to "Positiven Betrag in der Job-Währung eingeben. Währungen bleiben getrennt.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation." to "Wähle den Auszahlungstermin. Gehaltsmonat und Stundenberechnung bleiben gleich.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours." to "Zusätzlicher Prozentsatz des regulären oder Referenz-Stundenlohns während der festgelegten Nachtstunden."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours." to "Zusätzlicher Prozentsatz des regulären oder Referenz-Stundenlohns während der festgelegten Nachtstunden.",
+    "New version available" to "Neue Version verfügbar",
+    "Update ready" to "Update bereit",
+    "Update" to "Aktualisieren",
+    "Later" to "Später",
+    "Restart to update" to "Zum Aktualisieren neu starten",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app." to "Eine neue PTS-Version ist bei Google Play verfügbar. Im Hintergrund herunterladen und die App weiter nutzen.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone." to "Das Update ist heruntergeladen. PTS neu starten, um die Installation abzuschließen. Gespeicherte Daten bleiben auf dem Telefon.",
+    "Estimated shift extras" to "Geschätzte Schichtzuschläge",
+    "Monthly salary is shown in Earnings." to "Das Monatsgehalt wird unter Verdienst angezeigt."
 )

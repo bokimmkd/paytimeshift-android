@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.paytimeshift.pts.platform.ShortcutAction
+import com.paytimeshift.pts.platform.PlayUpdates
 import com.paytimeshift.pts.ui.PtsApp
 
 class MainActivity : ComponentActivity() {
@@ -18,7 +19,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) shortcutAction = ShortcutAction.fromIntent(intent)
         enableEdgeToEdge()
-        setContent { PtsApp(shortcutAction) { shortcutAction = null } }
+        val updates=PlayUpdates(this)
+        setContent { PtsApp(shortcutAction, updates) { shortcutAction = null } }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -27,3 +29,4 @@ class MainActivity : ComponentActivity() {
         shortcutAction = ShortcutAction.fromIntent(intent)
     }
 }
+

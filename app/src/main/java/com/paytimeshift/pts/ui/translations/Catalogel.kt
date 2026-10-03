@@ -458,5 +458,14 @@ internal val catalogel = mapOf(
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work." to "Ανά βάρδια μετρά κάθε βάρδια· ανά εργάσιμη ημέρα κάθε ημερομηνία μία φορά. Εβδομαδιαία και μηνιαία έξοδα χρεώνονται μία φορά όταν εργάζεστε.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate." to "Εισαγάγετε θετικό ποσό στο νόμισμα της εργασίας. Τα διαφορετικά νομίσματα παραμένουν χωριστά.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation." to "Επιλέξτε πότε πληρώνεστε. Δεν αλλάζει τον μήνα μισθού ή τον ωριαίο υπολογισμό.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours." to "Πρόσθετο ποσοστό του κανονικού ωρομισθίου ή του ωρομισθίου αναφοράς στις καθορισμένες νυχτερινές ώρες."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours." to "Πρόσθετο ποσοστό του κανονικού ωρομισθίου ή του ωρομισθίου αναφοράς στις καθορισμένες νυχτερινές ώρες.",
+    "New version available" to "Διαθέσιμη νέα έκδοση",
+    "Update ready" to "Η ενημέρωση είναι έτοιμη",
+    "Update" to "Ενημέρωση",
+    "Later" to "Αργότερα",
+    "Restart to update" to "Επανεκκίνηση για ενημέρωση",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app." to "Μια νέα έκδοση του PTS είναι διαθέσιμη στο Google Play. Κατεβάστε την στο παρασκήνιο και συνεχίστε να χρησιμοποιείτε την εφαρμογή.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone." to "Η ενημέρωση κατέβηκε. Επανεκκινήστε το PTS για να ολοκληρωθεί η εγκατάσταση. Τα αποθηκευμένα δεδομένα παραμένουν στο τηλέφωνο.",
+    "Estimated shift extras" to "Εκτιμώμενες προσαυξήσεις βάρδιας",
+    "Monthly salary is shown in Earnings." to "Ο μηνιαίος μισθός εμφανίζεται στα Έσοδα."
 )

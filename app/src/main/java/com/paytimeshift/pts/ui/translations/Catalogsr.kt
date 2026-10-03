@@ -458,5 +458,14 @@ internal val catalogsr = mapOf(
     "Per shift counts every shift; per workday counts each date once. Weekly and monthly costs are charged once when you work." to "Po smeni broji svaku smenu; po radnom danu datum jednom. Nedeljni i mesečni troškovi se računaju jednom kada radiš.",
     "Enter a positive amount in this job's currency. Different currencies are kept separate." to "Unesi pozitivan iznos u valuti posla. Različite valute ostaju odvojene.",
     "Choose when you receive payment. This does not change the salary month or hourly calculation." to "Izaberi kada primaš isplatu. Ovo ne menja mesec plate niti obračun po satu.",
-    "Additional percentage of the regular or reference hourly rate during the configured night hours." to "Dodatni procenat redovne ili referentne satnice tokom podešenih noćnih sati."
+    "Additional percentage of the regular or reference hourly rate during the configured night hours." to "Dodatni procenat redovne ili referentne satnice tokom podešenih noćnih sati.",
+    "New version available" to "Dostupna je nova verzija",
+    "Update ready" to "Ažuriranje je spremno",
+    "Update" to "Ažuriraj",
+    "Later" to "Kasnije",
+    "Restart to update" to "Ponovo pokreni za ažuriranje",
+    "A new PTS version is available on Google Play. Download it in the background and keep using the app." to "Nova verzija PTS-a je dostupna na Google Play-u. Preuzmi je u pozadini i nastavi da koristiš aplikaciju.",
+    "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone." to "Ažuriranje je preuzeto. Ponovo pokreni PTS da završiš instalaciju. Sačuvani podaci ostaju na telefonu.",
+    "Estimated shift extras" to "Procenjeni dodaci za smenu",
+    "Monthly salary is shown in Earnings." to "Mesečna plata je prikazana u Zarada."
 )

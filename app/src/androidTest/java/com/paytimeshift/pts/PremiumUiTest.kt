@@ -149,6 +149,19 @@ class PremiumUiTest {
         ui.onNodeWithText(explanation).assertDoesNotExist()
     }
 
+    @Test fun updateOfferCanBeDeferredWithoutBlockingTheApp() {
+        var visible by mutableStateOf(true)
+        var downloads=0
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "mk") {Theme {
+            if(visible) UpdateOffer(false,{downloads++},{visible=false}) else UiText("Today")
+        }}}
+        ui.onNodeWithText(translate("New version available","mk")).assertIsDisplayed()
+        screenshot("branded-update-offer")
+        ui.onNodeWithText(translate("Later","mk")).performClick()
+        ui.onNodeWithText(translate("Today","mk")).assertIsDisplayed()
+        ui.runOnIdle {org.junit.Assert.assertEquals(0,downloads)}
+    }
+
     @Test fun nativeTableReportsRenderInEveryLanguage() {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         languageNames.keys.forEach {language->

@@ -54,6 +54,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.core:core-ktx:1.15.0")
+    implementation("com.google.android.play:app-update:2.1.0")
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("com.android.billingclient:billing:9.1.0")
     implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
