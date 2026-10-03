@@ -15,7 +15,11 @@ class LauncherUiTest {
     @get:Rule val ui=createAndroidComposeRule<MainActivity>()
 
     private fun open(action: ShortcutAction, expected: String) {
-        ui.activityRule.scenario.onActivity { it.startActivity(action.intent(it)) }
+        // ActivityScenario owns an explicit test task, not the launcher's MAIN task.
+        // Exercise warm onNewIntent delivery in that task so the rule can close it.
+        ui.activityRule.scenario.onActivity {
+            it.startActivity(action.intent(it).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+        }
         ui.waitUntil(10000) {ui.onAllNodesWithText(expected).fetchSemanticsNodes().isNotEmpty()}
     }
     @Test fun warmShortcutsNavigateAndAddJobOnAnEmptyInstall() {
