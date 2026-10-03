@@ -51,4 +51,33 @@ class PremiumUiTest {
         ui.onNodeWithText("No Ads").assertIsDisplayed()
         screenshot("free-premium-gate")
     }
+    @Test fun threeShiftRotationUsesJobTemplatesAndPreviewsBeforeSaving() {
+        val job=fixture.jobs.single().copy(extraShifts=listOf(ShiftTemplate("15:00","23:00",30,true,true),ShiftTemplate("23:00","07:00",15,false,true)))
+        var saved:List<Shift>?=null
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(fixture.copy(jobs=listOf(job),shifts=emptyList()),{}) {saved=it}}}}
+        ui.onNode(isToggleable() and hasAnySibling(hasAnyDescendant(hasText("Second shift")))).performClick()
+        ui.onNode(isToggleable() and hasAnySibling(hasAnyDescendant(hasText("Third shift")))).performClick()
+        ui.onNodeWithText("Rotation").performClick()
+        screenshot("three-shift-rotation")
+        ui.onNodeWithText("Preview shifts").performClick()
+        ui.runOnIdle {org.junit.Assert.assertNull(saved)}
+        ui.onNodeWithText("Add these shifts").performClick()
+        ui.runOnIdle {org.junit.Assert.assertEquals(setOf("07:00","15:00","23:00"),saved!!.map {it.start}.toSet());org.junit.Assert.assertTrue(saved!!.size>20)}
+    }
+    @Test fun nativeTableReportsRenderInEveryLanguage() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        languageNames.keys.forEach {language->
+            val file=com.paytimeshift.pts.platform.createWorkReportPdf(context,fixture.copy(preferences=Preferences(language=language)),YearMonth.of(2026,10),false)
+            val destination=File(context.getExternalFilesDir("screenshots"),"table-report-$language.pdf")
+            destination.parentFile!!.mkdirs();file.copyTo(destination,overwrite=true)
+            android.graphics.pdf.PdfRenderer(android.os.ParcelFileDescriptor.open(file,android.os.ParcelFileDescriptor.MODE_READ_ONLY)).use {pdf->
+                org.junit.Assert.assertTrue(pdf.pageCount>0)
+                pdf.openPage(0).use {page->
+                    val bitmap=Bitmap.createBitmap(page.width*2,page.height*2,Bitmap.Config.ARGB_8888)
+                    bitmap.useBitmap {image->page.render(image,null,null,android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        File(destination.parentFile,"table-report-$language.png").outputStream().use {image.compress(Bitmap.CompressFormat.PNG,100,it)}}
+                }
+            }
+        }
+    }
 }
