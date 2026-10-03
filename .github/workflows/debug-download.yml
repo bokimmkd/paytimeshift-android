@@ -48,3 +48,24 @@ jobs:
           compression-level: 0
           if-no-files-found: error
           retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PTS-debug-part02
+          path: parts/debug-apk.part02
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PTS-debug-part03
+          path: parts/debug-apk.part03
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PTS-debug-part04
+          path: parts/debug-apk.part04
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 7
