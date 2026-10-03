@@ -15,22 +15,27 @@ class LauncherUiTest {
     @get:Rule val ui=createAndroidComposeRule<MainActivity>()
 
     private fun open(action: ShortcutAction, expected: String) {
-        // ActivityScenario owns an explicit test task, not the launcher's MAIN task.
-        // Exercise warm onNewIntent delivery in that task so the rule can close it.
-        ui.activityRule.scenario.onActivity {
-            it.startActivity(action.intent(it).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
-        }
+        ui.activityRule.scenario.onActivity { it.startActivity(action.intent(it)) }
         ui.waitUntil(10000) {ui.onAllNodesWithText(expected).fetchSemanticsNodes().isNotEmpty()}
     }
     @Test fun warmShortcutsNavigateAndAddJobOnAnEmptyInstall() {
-        open(ShortcutAction.Calendar,"Plan shifts and mark holidays")
-        ui.onNodeWithText("Plan shifts and mark holidays").assertIsDisplayed()
-        open(ShortcutAction.Earnings,"Estimated earnings")
-        ui.onNodeWithText("Estimated earnings").assertIsDisplayed()
-        open(ShortcutAction.Jobs,"Your jobs")
-        ui.onNodeWithText("Your jobs").assertIsDisplayed()
-        open(ShortcutAction.AddShift,"Pay and shift rules")
-        ui.onNodeWithText("Pay and shift rules").assertIsDisplayed()
+        val activity=ui.activity
+        val launchIntent=Intent(activity.intent)
+        try {
+            open(ShortcutAction.Calendar,"Plan shifts and mark holidays")
+            ui.onNodeWithText("Plan shifts and mark holidays").assertIsDisplayed()
+            open(ShortcutAction.Earnings,"Estimated earnings")
+            ui.onNodeWithText("Estimated earnings").assertIsDisplayed()
+            open(ShortcutAction.Jobs,"Your jobs")
+            ui.onNodeWithText("Your jobs").assertIsDisplayed()
+            open(ShortcutAction.AddShift,"Pay and shift rules")
+            ui.onNodeWithText("Pay and shift rules").assertIsDisplayed()
+        } finally {
+            // MainActivity.setIntent correctly retains the shortcut intent. ActivityScenario
+            // filters lifecycle events by its original launch intent, so restore that intent
+            // only in the test before the rule destroys its activity.
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {activity.intent=launchIntent}
+        }
     }
     @Test fun profileButtonOpensTheAccountFromTheHeader() {
         ui.waitUntil(10000) {ui.onAllNodes(hasContentDescription("Account & Premium") and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
