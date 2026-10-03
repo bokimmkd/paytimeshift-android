@@ -10,9 +10,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import java.util.Locale
+import com.paytimeshift.pts.ui.translations.*
 
-val LocalLanguage=staticCompositionLocalOf {"mk"}
-@Composable fun uiLocale(): Locale = if(LocalLanguage.current=="mk") Locale.forLanguageTag("mk") else Locale.ENGLISH
+val languageNames=linkedMapOf("en" to "English", "mk" to "Македонски", "de" to "Deutsch", "it" to "Italiano", "es" to "Español", "fr" to "Français", "sr" to "Srpski", "pt-BR" to "Português (Brasil)", "el" to "Ελληνικά")
+val LocalLanguage=staticCompositionLocalOf {"en"}
+fun localeForLanguage(language: String): Locale = Locale.forLanguageTag(if(language=="sr") "sr-Latn" else language)
+@Composable fun uiLocale(): Locale = localeForLanguage(LocalLanguage.current)
+fun translationCatalog(language: String): Map<String,String> = when(language) {
+    "mk" -> catalogmk; "de" -> catalogde; "it" -> catalogit; "es" -> cataloges; "fr" -> catalogfr
+    "sr" -> catalogsr; "pt-BR" -> catalogptBR; "el" -> catalogel; else -> emptyMap()
+}
 @Composable fun UiText(text: String,modifier: Modifier=Modifier,color: Color=Color.Unspecified,
     fontSize: TextUnit=14.sp,fontWeight: FontWeight?=null,lineHeight: TextUnit=TextUnit.Unspecified,
     maxLines: Int=Int.MAX_VALUE,overflow: TextOverflow=TextOverflow.Clip,textAlign: TextAlign?=null) {
@@ -23,11 +30,24 @@ val LocalLanguage=staticCompositionLocalOf {"mk"}
     androidx.compose.material3.Text(text,modifier,lineHeight=lineHeight)
 }
 fun translate(text: String,language: String): String {
-    if(language!="mk") return text
-    labels[text]?.let {return it}
+    if(language=="en") return text
+    val catalog=translationCatalog(language)
+    catalog[text]?.let {return it}
+    if(language=="mk") labels[text]?.let {return it}
+    // Only known UI fragments; never replace arbitrary dictionary words inside user job names.
     var value=text
-    fragments.forEach {(en,mk)->value=value.replace(en,mk)}
-    return value.replace(Regex("(\\d)h\\b"),"$1 ч")
+    val dynamic=listOf(" between shifts", "Overlapping shifts", " scheduled this month", " scheduled this week", " scheduled in period",
+        "Monthly pay", "Weekly pay", "Biweekly pay", "Custom pay", " paid", " shifts", " currencies", " at ", "Only ")
+    dynamic.forEach {part->catalog[part.trim()]?.let {translated->
+        value=value.replace(part,(if(part.startsWith(" ")) " " else "")+translated+(if(part.endsWith(" ")) " " else ""))
+    }}
+    listOf("Currency", "Day of month", "Next / anchor payday", "Date", "Starts", "Ends", "From", "Repeat until", "Night starts", "Night ends", "Weekly", "Biweekly", "Monthly").forEach {key->
+        catalog[key]?.let {value=value.replace("$key · ","$it · ")}
+    }
+    listOf("Access until", "Last cloud backup", "Collapse", "Expand").forEach {key->catalog[key]?.let {value=value.replace("$key:","$it:").replace("$key ","$it ")}}
+    catalog["Payday"]?.let {value=value.replace("Payday ","$it ")}
+    catalog["h"]?.let {unit->value=value.replace(Regex("(\\d+(?:[.,]\\d+)?)h\\b")) {match->match.groupValues[1]+" "+unit}}
+    return value
 }
 private val labels=mapOf(
     "Website" to "Веб-страница",

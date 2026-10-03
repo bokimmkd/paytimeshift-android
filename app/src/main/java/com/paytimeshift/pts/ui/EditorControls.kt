@@ -156,11 +156,11 @@ import androidx.compose.ui.window.DialogProperties
     }
 }
 
-@Composable fun CompactToggle(label: String, checked: Boolean, change: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).toggleable(checked, role = Role.Checkbox, onValueChange = change)
+@Composable fun CompactToggle(label: String, checked: Boolean, enabled: Boolean = true, change: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = change)
         .padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Checkbox(checked, null, Modifier.size(24.dp))
+        Checkbox(checked, null, Modifier.size(24.dp), enabled = enabled)
         UiText(label, Modifier.weight(1f), fontSize = 11.sp, lineHeight = 14.sp)
     }
 }

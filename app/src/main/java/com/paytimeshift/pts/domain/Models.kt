@@ -18,7 +18,8 @@ data class Job(
     val payCycle: String = "Monthly", val paydayAnchor: String = LocalDate.now().withDayOfMonth(15).toString(),
     val rules: PayRules = PayRules(useHourlyRates = true), val archived: Boolean = false,
     val defaultStart: String = "07:00", val defaultEnd: String = "15:00", val defaultBreakMinutes: Int = 0,
-    val paidBreak: Boolean = false, val reminderMinutes: Int = -1, val minGapHours: Double = -1.0
+    val paidBreak: Boolean = false, val reminderMinutes: Int = -1, val minGapHours: Double = -1.0,
+    val costs: List<JobCost> = emptyList()
 )
 data class Shift(
     val id: String = UUID.randomUUID().toString(), val jobId: String,
@@ -41,7 +42,7 @@ data class Shift(
     fun earnings(): BigDecimal = baseEarnings() + additions().values.fold(BigDecimal.ZERO, BigDecimal::add)
 }
 data class Preferences(val currency: String = "EUR", val time24: Boolean = true,
-    val mondayFirst: Boolean = true, val appearance: String = "Light", val gapHours: Double = 8.0, val language: String = "mk", val reminderMinutes: Int = 0)
+    val mondayFirst: Boolean = true, val appearance: String = "Light", val gapHours: Double = 8.0, val language: String = "en", val reminderMinutes: Int = 0)
 data class AppData(val jobs: List<Job> = emptyList(), val shifts: List<Shift> = emptyList(), val preferences: Preferences = Preferences(),
     val holidays: List<String> = emptyList())
 
