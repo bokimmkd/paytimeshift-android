@@ -61,11 +61,13 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 
 ### Contextual help
 
-- Add short, branded speech-bubble hints at key fields: pay basis, monthly salary, overtime/weekend/holiday rates, paid break, minimum rest gap, day type, pattern replacement, monthly adjustments, and work costs.
-- Hints explain the field in plain language and belong next to their field/section; do not create a blocking tutorial or permanent tall help cards.
+- Add short, branded field-anchored tooltips, like Excel input help, at key fields: pay basis, monthly salary, overtime/weekend/holiday rates, paid break, minimum rest gap, day type, pattern replacement, monthly adjustments, and work costs.
+- Show a tooltip only when the user taps or focuses its field; do not open hints automatically on first use or when opening a screen. Keep normal typing, date/time pickers and dropdown actions working on the same interaction.
+- Tooltips explain the field in plain language and appear beside their field, rather than as permanent cards below it. Do not create a blocking tutorial.
 - Each visible bubble has a small X to dismiss that individual hint. Keep a usable touch target despite the compact visual X.
 - Add one Settings toggle, Show hints, to hide all help bubbles globally. Save both the global setting and per-hint dismissal locally across app restarts and upgrades.
 - Use stable semantic hint IDs; changing language must not reset dismissals or couple the preference to translated strings.
 - Hint content and controls use the currently selected app language, including all supported translations and English default. Update visible hints immediately when the user changes language.
-- Show help sparingly on first use, at most one expanded bubble at a time. Bubble positioning must remain readable on small screens, avoid covering input/save controls, and respect accessibility/font scaling.
+- Keep at most one tooltip open. Dismiss its current presentation when focus moves to another field or the user taps outside; this transient closing does not mark it permanently dismissed. The X saves the individual dismissal as agreed.
+- Tooltip positioning must remain readable on small screens, avoid covering input/save controls, and respect accessibility/font scaling.
 - Validate independent dismissal, global hide/re-enable behavior, persistence, language switching, and compact layouts.
