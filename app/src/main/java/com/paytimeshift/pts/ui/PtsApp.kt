@@ -86,10 +86,13 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var accountOpen by remember {mutableStateOf(false)}
     var analyticsOpen by remember {mutableStateOf(false)}
     var annualPrice by remember {mutableStateOf<String?>(null)}
-    fun refreshAccount() {scope.launch {
-        try {account=premiumRepo.status();accountResolved=true}
-        catch(_:Exception) {accountResolved=premiumRepo.auth.currentUser==null}
-    }}
+    fun refreshAccount() {
+        val requestedUid=premiumRepo.auth.currentUser?.uid
+        scope.launch {
+            try {val refreshed=premiumRepo.status();if(premiumRepo.auth.currentUser?.uid==requestedUid) {account=refreshed;accountResolved=true}}
+            catch(_:Exception) {if(premiumRepo.auth.currentUser?.uid==requestedUid) accountResolved=requestedUid==null}
+        }
+    }
     val billing=remember {PlayBilling(context as android.app.Activity,{premiumRepo.auth.currentUser?.uid},{token->scope.launch {
         try {premiumRepo.verifyPurchase(token);refreshAccount()}
         catch(e:Exception) {message=cloudError(e)}
@@ -102,8 +105,8 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         premiumRepo.auth.addAuthStateListener(listener);billing.start()
         onDispose {premiumRepo.auth.removeAuthStateListener(listener);billing.close()}
     }
-    LaunchedEffect(account.uid,accountResolved,data.preferences.language) {
-        if(account.uid!=null && accountResolved) try {premiumRepo.reportPreferences(account.monthlyEmail,account.yearlyEmail,data.preferences.language)} catch(_:Exception) { }
+    LaunchedEffect(account.uid,accountResolved,loaded,data.preferences.language) {
+        if(account.uid!=null && accountResolved && loaded) try {premiumRepo.reportPreferences(account.monthlyEmail,account.yearlyEmail,data.preferences.language)} catch(_:Exception) { }
     }
     LaunchedEffect(account.premium,account.uid) {if(account.premium && premiumRepo.bound(account.uid!!)) queueCloudBackup(context,account.uid)}
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
@@ -262,8 +265,8 @@ private fun jobGlyph(job: Job): ImageVector = when {
 }
 @Composable private fun displayMoney(value: java.math.BigDecimal,code: String): String {
     val currency=java.util.Currency.getInstance(code)
-    val formatter=java.text.NumberFormat.getNumberInstance(Locale.US).apply {minimumFractionDigits=0;maximumFractionDigits=currency.defaultFractionDigits.coerceAtLeast(0)}
-    val symbol=currency.getSymbol(Locale.US)
+    val formatter=java.text.NumberFormat.getNumberInstance(uiLocale()).apply {minimumFractionDigits=0;maximumFractionDigits=currency.defaultFractionDigits.coerceAtLeast(0)}
+    val symbol=currency.getSymbol(uiLocale())
     return (if(symbol.length>3 || symbol==code) "$code " else symbol)+formatter.format(value)
 }
 @Composable private fun timeLabel(time: String,p: Preferences)=LocalTime.parse(time).format(DateTimeFormatter.ofPattern(if(p.time24) "HH:mm" else "h:mm a",uiLocale()))
@@ -680,14 +683,14 @@ private fun shiftLabel(shift: Shift): String {
     }},confirmButton={TextButton(onClick=close){UiText("Close")}})
 }
 @Composable fun DateControl(label: String, date: String, change: (String)->Unit) {
-    val context=LocalContext.current;val value=LocalDate.parse(date)
+    val base=LocalContext.current;val locale=uiLocale();val context=remember(base,locale) {base.createConfigurationContext(android.content.res.Configuration(base.resources.configuration).apply {setLocale(locale)})};val value=LocalDate.parse(date)
     CompactChoice(label,value.format(DateTimeFormatter.ofPattern("d MMM yyyy",uiLocale())),
         icon={Icon(Icons.Outlined.CalendarMonth,null,Modifier.size(17.dp))}) {
         DatePickerDialog(context,{_,y,m,d->change(LocalDate.of(y,m+1,d).toString())},value.year,value.monthValue-1,value.dayOfMonth).show()
     }
 }
 @Composable fun TimeControl(label: String, time: String, modifier: Modifier=Modifier, change: (String)->Unit) {
-    val context=LocalContext.current;val value=LocalTime.parse(time)
+    val base=LocalContext.current;val locale=uiLocale();val context=remember(base,locale) {base.createConfigurationContext(android.content.res.Configuration(base.resources.configuration).apply {setLocale(locale)})};val value=LocalTime.parse(time)
     CompactChoice(label,time,modifier,icon={Icon(Icons.Outlined.Schedule,null,Modifier.size(17.dp))}) {
         TimePickerDialog(context,{_,h,m->change(LocalTime.of(h,m).toString())},value.hour,value.minute,true).show()
     }

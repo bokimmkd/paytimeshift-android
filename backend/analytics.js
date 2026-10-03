@@ -92,6 +92,6 @@ export function analyze(data,from,until,cache=new Map()){
       for(const [category,cost] of Object.entries(item.categories)) total.categories[category]=D(total.categories[category] ?? 0).plus(cost);
     }
   }
-  return [...totals.values()].sort((a,b)=>a.currency.localeCompare(b.currency));
+  return [...totals.values()].map(total=>({...total,grossHourly:total.time.worked?total.gross.times(60).div(total.time.worked):null,realHourly:total.time.worked?total.real.times(60).div(total.time.worked):null})).sort((a,b)=>a.currency.localeCompare(b.currency));
 }
 export function monthBounds(year,month){const start=new Date(Date.UTC(year,month-1,1));const end=new Date(Date.UTC(year,month,0));return [day(start),day(end)];}

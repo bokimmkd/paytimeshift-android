@@ -92,3 +92,9 @@ jobs:
           npm install --ignore-scripts --no-audit --no-fund
           npm run check
           npm test
+          node tools/sample-reports.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PTS-report-samples
+          path: backend/sample-reports/*.pdf
+          if-no-files-found: error
