@@ -51,3 +51,21 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Include individual adjustment details and totals in monthly/yearly analysis and branded PDF/email reports.
 - Persist locally, include in manual and cloud backups, and maintain backward compatibility: missing adjustments mean an empty list. Keep Android/server calculations aligned.
 - Validate with examples including multiple jobs in one month, changing months, fixed monthly salary across month lengths, combined deductions and bonuses, legacy per-shift bonuses, separate work costs, and different currencies.
+
+## 5. Feature placement and localized dismissible hints (pending)
+
+- Add/Edit Job: a compact Pay basis selector in the existing Pay section. Show the amount input for Hourly, Per shift/daily, or Fixed monthly salary according to the chosen basis.
+- Add/Edit Shift: use the existing Day type selector for work/absence status. Present the job/date-specific replacement confirmation only when saving affects existing entries.
+- Earnings: under each job's selected-month summary, add a compact Monthly adjustments entry. Its editor lists deductions and bonuses with small icon buttons for adding/editing/removing entries. Keep the main tab compact.
+- Reports: display adjustment details and separate summary lines in the existing branded report layout.
+
+### Contextual help
+
+- Add short, branded speech-bubble hints at key fields: pay basis, monthly salary, overtime/weekend/holiday rates, paid break, minimum rest gap, day type, pattern replacement, monthly adjustments, and work costs.
+- Hints explain the field in plain language and belong next to their field/section; do not create a blocking tutorial or permanent tall help cards.
+- Each visible bubble has a small X to dismiss that individual hint. Keep a usable touch target despite the compact visual X.
+- Add one Settings toggle, Show hints, to hide all help bubbles globally. Save both the global setting and per-hint dismissal locally across app restarts and upgrades.
+- Use stable semantic hint IDs; changing language must not reset dismissals or couple the preference to translated strings.
+- Hint content and controls use the currently selected app language, including all supported translations and English default. Update visible hints immediately when the user changes language.
+- Show help sparingly on first use, at most one expanded bubble at a time. Bubble positioning must remain readable on small screens, avoid covering input/save controls, and respect accessibility/font scaling.
+- Validate independent dismissal, global hide/re-enable behavior, persistence, language switching, and compact layouts.
