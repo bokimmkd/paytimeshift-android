@@ -5,6 +5,9 @@ on:
     branches: [main, premium-analytics-upgrade]
     paths:
       - "app/**"
+      - "backend/**"
+      - "translations/**"
+      - "tools/**"
       - ".github/workflows/**"
       - "gradle/**"
       - "gradlew*"
@@ -70,3 +73,22 @@ jobs:
             app/build/test-results/test*UnitTest/*.xml
             app/build/reports/lint-results-*.html
           if-no-files-found: error
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check generated language catalogs
+        run: |
+          python tools/generate_translations.py
+          git diff --exit-code -- app/src/main/java/com/paytimeshift/pts/ui/translations backend/translations.json
+      - name: Check and test Premium backend
+        working-directory: backend
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run check
+          npm test

@@ -102,6 +102,9 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         premiumRepo.auth.addAuthStateListener(listener);billing.start()
         onDispose {premiumRepo.auth.removeAuthStateListener(listener);billing.close()}
     }
+    LaunchedEffect(account.uid,accountResolved,data.preferences.language) {
+        if(account.uid!=null && accountResolved) try {premiumRepo.reportPreferences(account.monthlyEmail,account.yearlyEmail,data.preferences.language)} catch(_:Exception) { }
+    }
     LaunchedEffect(account.premium,account.uid) {if(account.premium && premiumRepo.bound(account.uid!!)) queueCloudBackup(context,account.uid)}
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     var reportMonthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
@@ -631,7 +634,7 @@ private fun shiftLabel(shift: Shift): String {
     Stack {
         Heading("Settings")
         FormSection("Display") {
-            FormPair(first={SelectionField("Language",if(p.language=="mk") "Македонски" else "English",listOf("Македонски","English")){change(p.copy(language=if(it=="Македонски") "mk" else "en"))}},
+            FormPair(first={SelectionField("Language",languageNames[p.language] ?: "English",languageNames.values.toList()){choice->change(p.copy(language=languageNames.entries.first {it.value==choice}.key))}},
                 second={SelectionField("Appearance",p.appearance,listOf("Light","Dark","System")){change(p.copy(appearance=it))}})
             FormPair(first={CompactChoice("Default currency",p.currency,icon={Icon(Icons.Outlined.KeyboardArrowDown,null,Modifier.size(18.dp))}){currencyOpen=true}},
                 second={Column {CompactToggle("24-hour time",p.time24){change(p.copy(time24=it))}}})

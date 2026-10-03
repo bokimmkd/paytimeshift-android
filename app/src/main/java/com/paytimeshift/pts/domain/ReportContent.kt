@@ -5,6 +5,11 @@ import java.time.YearMonth
 
 data class ReportLine(val label: String, val value: String = "", val heading: Boolean = false, val literal: Boolean = false)
 fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLine> {
+    val locale=java.util.Locale.forLanguageTag(data.preferences.language)
+    val unit=com.paytimeshift.pts.ui.translate("h",data.preferences.language)
+    fun number(value: BigDecimal,places: Int=2)=java.text.NumberFormat.getNumberInstance(locale).apply {maximumFractionDigits=places;minimumFractionDigits=0}.format(value)
+    fun money(value: BigDecimal,code: String)=code+" "+number(value,java.util.Currency.getInstance(code).defaultFractionDigits.coerceAtLeast(0))
+    fun decimalHours(minutes: Double)=number(BigDecimal.valueOf(minutes).divide(BigDecimal(60),2,java.math.RoundingMode.HALF_UP))+" "+unit
     val result=mutableListOf<ReportLine>()
     val report=if(yearly) yearlyAnalytics(data,month.year) else monthlyAnalytics(data,month)
     result+=ReportLine(if(yearly) "Annual Work & Earnings Report" else "Monthly Work & Earnings Report",heading=true)
@@ -21,25 +26,25 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
         result+=ReportLine(c.currency,heading=true,literal=true)
         time(c.time)
         result+=listOf(ReportLine("Gross estimated earnings",money(c.gross,c.currency)),ReportLine("Work-related costs",money(c.costs,c.currency)),
-            ReportLine("Real estimated earnings",money(c.real,c.currency)),ReportLine("Gross hourly value",c.grossHourly?.let {money(it,c.currency)+" / h"} ?: "—"),
-            ReportLine("Real hourly value",c.realHourly?.let {money(it,c.currency)+" / h"} ?: "—"))
+            ReportLine("Real estimated earnings",money(c.real,c.currency)),ReportLine("Gross hourly value",c.grossHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"),
+            ReportLine("Real hourly value",c.realHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"))
         result+=ReportLine("Cost breakdown",heading=true)
-        c.categories.forEach {result+=ReportLine(it.category,money(it.amount,c.currency)+" · "+costPercentage(it.amount,c.costs)+"%")}
+        c.categories.forEach {result+=ReportLine(it.category,money(it.amount,c.currency)+" · "+number(costPercentage(it.amount,c.costs),1)+"%")}
         result+=ReportLine("Breakdown by job",heading=true)
         c.jobs.forEach {j->
             result+=ReportLine(j.name,heading=true,literal=true)
             time(j.time)
             result+=listOf(ReportLine("Gross estimated earnings",money(j.gross,c.currency)),ReportLine("Work-related costs",money(j.costs,c.currency)),
-                ReportLine("Real estimated earnings",money(j.real,c.currency)),ReportLine("Worked hours",decimalHours(j.time.worked)),
-                ReportLine("Gross hourly value",j.grossHourly?.let {money(it,c.currency)+" / h"} ?: "—"),
-                ReportLine("Real hourly value",j.realHourly?.let {money(it,c.currency)+" / h"} ?: "—"))
+                ReportLine("Real estimated earnings",money(j.real,c.currency)),
+                ReportLine("Gross hourly value",j.grossHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"),
+                ReportLine("Real hourly value",j.realHourly?.let {money(it,c.currency)+" / "+unit} ?: "—"))
         }
         if(yearly) {
             val trend=yearlyTrend(data,month.year).map {it.from to it.currencies.find {r->r.currency==c.currency}}
             result+=ReportLine("Average monthly real earnings",money(c.real.divide(BigDecimal(12),8,java.math.RoundingMode.HALF_UP),c.currency))
             result+=ReportLine("Monthly trend",heading=true)
             trend.forEach {(date,entry)->
-                result+=ReportLine(YearMonth.from(date).toString(),decimalHours(entry?.time?.worked ?: 0.0),heading=true,literal=true)
+                result+=ReportLine(YearMonth.from(date).format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy",locale)),decimalHours(entry?.time?.worked ?: 0.0),heading=true,literal=true)
                 result+=ReportLine("Gross estimated earnings",money(entry?.gross ?: BigDecimal.ZERO,c.currency))
                 result+=ReportLine("Work-related costs",money(entry?.costs ?: BigDecimal.ZERO,c.currency))
                 result+=ReportLine("Real estimated earnings",money(entry?.real ?: BigDecimal.ZERO,c.currency))
@@ -48,7 +53,7 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
             result+=ReportLine("Highlights",heading=true)
             fun monthHighlight(label: String,selector: (CurrencyAnalysis)->BigDecimal,highest: Boolean=true) {
                 val chosen=if(highest) active.maxByOrNull {selector(it.second!!)} else active.minByOrNull {selector(it.second!!)}
-                chosen?.let {result+=ReportLine(label,YearMonth.from(it.first).toString())}
+                chosen?.let {result+=ReportLine(label,YearMonth.from(it.first).format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy",locale)))}
             }
             monthHighlight("Highest earning month",{it.real});monthHighlight("Lowest earning month",{it.real},false)
             monthHighlight("Month with highest work costs",{it.costs});monthHighlight("Month with most overtime",{BigDecimal.valueOf(it.time.overtime)})
@@ -60,7 +65,7 @@ fun reportLines(data: AppData, month: YearMonth, yearly: Boolean): List<ReportLi
             result+=ReportLine("Compared with previous month",heading=true)
             fun diff(label: String,now: BigDecimal,old: BigDecimal?) {
                 val p=old?.let {percentChange(now,it)}
-                result+=ReportLine(label,if(p==null) "—" else (if(p.signum()>0) "↑ +" else if(p.signum()<0) "↓ " else "")+p.toPlainString()+"%")
+                result+=ReportLine(label,if(p==null) "—" else (if(p.signum()>0) "↑ +" else if(p.signum()<0) "↓ " else "")+number(p,1)+"%")
             }
             diff("Worked hours",BigDecimal.valueOf(c.time.worked),previous?.time?.worked?.let {BigDecimal.valueOf(it)})
             diff("Gross estimated earnings",c.gross,previous?.gross);diff("Work-related costs",c.costs,previous?.costs)

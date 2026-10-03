@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+Decimal.set({precision:80,rounding:Decimal.ROUND_HALF_UP});
 const D=v=>new Decimal(v ?? 0);
 const date=s=>new Date(`${s}T00:00:00.000Z`);
 const day=d=>d.toISOString().slice(0,10);
@@ -17,10 +18,10 @@ export function validateBackup(text){
     ids.add(j.id);validateRules(j.rules);
     if(j.costs!==undefined && (!Array.isArray(j.costs) || j.costs.length>100)) throw Error('Invalid costs');
     const costs=new Set();
-    for(const c of j.costs ?? []) {if(typeof c.id!=='string' || costs.has(c.id) || !categories.includes(c.category) || !frequencies.includes(c.frequency) || !decimalValid(c.amount) || typeof c.enabled!=='boolean' || typeof c.name!=='string' || c.name.length>120) throw Error('Invalid cost');costs.add(c.id);}
+    for(const c of j.costs ?? []) {if(typeof c.id!=='string' || !c.id || costs.has(c.id) || !categories.includes(c.category) || !frequencies.includes(c.frequency) || !decimalValid(c.amount) || typeof c.enabled!=='boolean' || typeof c.name!=='string' || c.name.length>120) throw Error('Invalid cost');costs.add(c.id);}
   }
   for(const s of d.shifts){
-    if(!ids.has(s.jobId) || typeof s.id!=='string' || sids.has(s.id) || !validDate(s.date) || !validTime(s.start) || !validTime(s.end) || !decimalValid(s.rate) || !/^[A-Z]{3}$/.test(s.currency) || (s.bonus!==undefined && !decimalValid(s.bonus))) throw Error('Invalid shift');
+    if(!ids.has(s.jobId) || !['Work','Off','Vacation','Sick'].includes(s.kind ?? 'Work') || typeof s.fixedPay!=='boolean' || (s.paidBreak!==undefined && typeof s.paidBreak!=='boolean') || typeof s.id!=='string' || sids.has(s.id) || !validDate(s.date) || !validTime(s.start) || !validTime(s.end) || !decimalValid(s.rate) || !/^[A-Z]{3}$/.test(s.currency) || (s.bonus!==undefined && !decimalValid(s.bonus))) throw Error('Invalid shift');
     sids.add(s.id);validateRules(s.rules);
     const duration=times(s).duration;
     if(!Number.isInteger(s.breakMinutes) || s.breakMinutes<0 || s.breakMinutes>=duration) throw Error('Invalid break');
@@ -36,31 +37,44 @@ export function shiftValues(s){
   if((s.kind ?? 'Work')!=='Work') return {gross:D(0),time:emptyTime()};
   const {start,end,duration,paid}=times(s);const r=s.rules ?? {};const proportion=paid/duration;
   const ot=Math.max(0,paid-(r.overtimeAfterHours ?? 8)*60);const t=emptyTime();Object.assign(t,{shifts:1,worked:duration-s.breakMinutes,paid,regular:paid-ot,overtime:ot});
-  let gross=D(0);let paidSoFar=0;let night=0;let sunday=0;
+  let gross=D(0);let night=0;let sunday=0;
   for(let at=new Date(start);at<end;at=new Date(+at+60000)){
     const clock=at.toISOString().slice(11,16);const ns=r.nightStart ?? '22:00',ne=r.nightEnd ?? '06:00';
     if(ns>ne ? clock>=ns || clock<ne : clock>=ns && clock<ne) night++;
     const dow=at.getUTCDay();if(dow===0) sunday++;
     if(dow===0 || dow===6) t.weekend+=proportion;
     const holiday=(r.holidayDates ?? []).includes(day(at));if(holiday) t.holiday+=proportion;
-    if(r.useHourlyRates && !s.fixedPay){
-      let price=D(holiday ? r.holidayRate || s.rate : dow===0 ? r.sundayRate || s.rate : dow===6 ? r.saturdayRate || s.rate : s.rate);
-      const normal=Math.max(0,Math.min(proportion,(r.overtimeAfterHours ?? 8)*60-paidSoFar));
-      gross=gross.plus(price.times(normal).div(60));
-      if(proportion>normal) gross=gross.plus((r.overtimeRate ? Decimal.max(price,D(r.overtimeRate)) : price).times(proportion-normal).div(60));
-      paidSoFar+=proportion;
-    }
+
   }
   t.night=night*proportion;
+  const rounded=v=>v.toDecimalPlaces(8,Decimal.ROUND_HALF_UP);
+  const addition=(minutes,percent)=>rounded(D(s.rate).times(D(String(minutes))).times(percent).div(6000));
   if(s.fixedPay) gross=D(s.rate);
   else {
-    if(!r.useHourlyRates) gross=D(s.rate).times(paid).div(60).plus(D(s.rate).times(ot).times(r.overtimePercent ?? 0).div(6000)).plus(D(s.rate).times(sunday*proportion).times(r.sundayPercent ?? 0).div(6000));
-    gross=gross.plus(D(s.rate).times(night*proportion).times(r.nightPercent ?? 0).div(6000));
+    if(r.useHourlyRates){
+      const grouped=new Map();let at=new Date(start);let paidSoFar=0;
+      const add=(label,minutes,price)=>{if(minutes<=1e-9) return;const key=label+':'+price.toString();const prior=grouped.get(key);grouped.set(key,{price,minutes:(prior?.minutes ?? 0)+minutes});};
+      while(at<end){
+        const midnight=new Date(Date.UTC(at.getUTCFullYear(),at.getUTCMonth(),at.getUTCDate()+1));const until=new Date(Math.min(+midnight,+end));
+        const minutes=(until-at)/60000*proportion;const dow=at.getUTCDay();const holiday=(r.holidayDates ?? []).includes(day(at));
+        const label=holiday?'Holiday work':dow===0?'Sunday work':dow===6?'Saturday work':'Regular hours';
+        const price=D(holiday?r.holidayRate || s.rate:dow===0?r.sundayRate || s.rate:dow===6?r.saturdayRate || s.rate:s.rate);
+        const normal=Math.max(0,Math.min(minutes,(r.overtimeAfterHours ?? 8)*60-paidSoFar));
+        add(label,normal,price);add('Overtime',minutes-normal,r.overtimeRate?Decimal.max(price,D(r.overtimeRate)):price);
+        paidSoFar+=minutes;at=until;
+      }
+      for(const line of grouped.values()) gross=gross.plus(rounded(line.price.times(D(String(line.minutes))).div(60)));
+    }else {
+      gross=rounded(D(s.rate).times(paid).div(60));
+      if((r.overtimePercent ?? 0)>0 && ot>0) gross=gross.plus(addition(ot,r.overtimePercent));
+      if((r.sundayPercent ?? 0)>0 && sunday>0) gross=gross.plus(addition(sunday*proportion,r.sundayPercent));
+    }
+    if((r.nightPercent ?? 0)>0 && night>0) gross=gross.plus(addition(night*proportion,r.nightPercent));
   }
   return {gross:gross.plus(D(s.bonus ?? 0)),time:t};
 }
 function addTime(a,b){for(const key of Object.keys(a)) a[key]+=b[key];return a;}
-export function analyze(data,from,until){
+export function analyze(data,from,until,cache=new Map()){
   const totals=new Map();
   for(const job of data.jobs){
     const all=data.shifts.filter(s=>s.jobId===job.id && (s.kind ?? 'Work')==='Work').sort((a,b)=>a.date.localeCompare(b.date));
@@ -70,7 +84,7 @@ export function analyze(data,from,until){
     for(const c of job.costs ?? []){if(!c.enabled) continue;const count=c.frequency==='Per shift' ? rows.length : (c.frequency==='Per workday' ? dates : c.frequency==='Weekly' ? weeks : months).filter(d=>d>=from && d<=until).length;costs[c.category]=D(costs[c.category] ?? 0).plus(D(c.amount).times(count));}
     for(const currency of new Set([...rows.map(s=>s.currency),...(Object.values(costs).some(c=>c.gt(0)) ? [job.currency] : [])])){
       const item={id:job.id,name:job.name,currency,gross:D(0),costs:D(0),categories:currency===job.currency ? costs : {},time:emptyTime()};
-      for(const s of rows.filter(s=>s.currency===currency)){const value=shiftValues(s);item.gross=item.gross.plus(value.gross);addTime(item.time,value.time);}
+      for(const s of rows.filter(s=>s.currency===currency)){const value=cache.get(s) ?? shiftValues(s);cache.set(s,value);item.gross=item.gross.plus(value.gross);addTime(item.time,value.time);}
       for(const cost of Object.values(item.categories)) item.costs=item.costs.plus(cost);
       item.real=item.gross.minus(item.costs);item.grossHourly=item.time.worked ? item.gross.times(60).div(item.time.worked) : null;item.realHourly=item.time.worked ? item.real.times(60).div(item.time.worked) : null;
       if(!totals.has(currency)) totals.set(currency,{currency,gross:D(0),costs:D(0),real:D(0),time:emptyTime(),categories:{},jobs:[]});

@@ -25,6 +25,16 @@ val LocalAdsResolved=staticCompositionLocalOf {false}
         },{consentReady=consent.canRequestAds()})
         onDispose {ad?.destroy();ad=null}
     }
+    val lifecycle=(activity as? androidx.lifecycle.LifecycleOwner)?.lifecycle
+    DisposableEffect(lifecycle,ad) {
+        val observer=androidx.lifecycle.LifecycleEventObserver {_,event->when(event) {
+            androidx.lifecycle.Lifecycle.Event.ON_RESUME->ad?.resume()
+            androidx.lifecycle.Lifecycle.Event.ON_PAUSE->ad?.pause()
+            else->Unit
+        }}
+        lifecycle?.addObserver(observer)
+        onDispose {lifecycle?.removeObserver(observer)}
+    }
     if(consentReady) BoxWithConstraints(Modifier.fillMaxWidth()) {
         val width=maxWidth.value.toInt().coerceAtLeast(1)
         AndroidView(factory={

@@ -49,7 +49,7 @@ import kotlinx.coroutines.tasks.await
             if(status.uid==null) item {FormSection(if(signup) "Create account" else "Sign in") {
                 CompactField("Email address",email,{email=it.trim()},KeyboardType.Email)
                 OutlinedTextField(value=password,onValueChange={password=it},singleLine=true,modifier=Modifier.fillMaxWidth(),label={UiText("Password",fontSize=11.sp)},visualTransformation=PasswordVisualTransformation(),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Password))
-                FormPair(first={Button(enabled=!busy && email.isNotBlank() && password.length>=if(signup) 8 else 6,onClick={task {
+                FormPair(first={Button(enabled=!busy && email.isNotBlank() && password.length>=(if(signup) 8 else 6),onClick={task {
                     if(signup) {val user=repo.auth.createUserWithEmailAndPassword(email,password).await().user;user?.sendEmailVerification()?.await()} else repo.auth.signInWithEmailAndPassword(email,password).await()
                     password=""
                 }},contentPadding=PaddingValues(8.dp)){UiText(if(signup) "Create account" else "Sign in",fontSize=12.sp)}},

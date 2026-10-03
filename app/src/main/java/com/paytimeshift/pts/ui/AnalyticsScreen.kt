@@ -2,6 +2,8 @@
 
 package com.paytimeshift.pts.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,6 +41,12 @@ import java.time.YearMonth
     var loading by remember {mutableStateOf(false)}
     var error by remember {mutableStateOf<String?>(null)}
     val context=LocalContext.current;val scope=rememberCoroutineScope()
+    var savedPdf by remember {mutableStateOf<java.io.File?>(null)}
+    val savePdf=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) {uri->
+        if(uri!=null) scope.launch {try {withContext(Dispatchers.IO) {context.contentResolver.openOutputStream(uri)?.use {out->savedPdf?.inputStream()?.use {it.copyTo(out)}} ?: error("Could not save")}}
+            catch(_:Exception) {error="File could not be saved."}}
+    }
+    val report=remember(data,selected,yearly) {if(yearly) yearlyAnalytics(data,selected.year) else monthlyAnalytics(data,selected)}
     val lines=remember(data,selected,yearly) {reportLines(data,selected,yearly)}
     BrandedEditor(onDismissRequest=close,title={ScreenHeading("Work Analytics",Icons.Outlined.Insights,"Gross, costs and real earnings",compact=true)},error=error,
         text={LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)) {
@@ -51,6 +59,22 @@ import java.time.YearMonth
                 FilterChip(selected=!yearly,onClick={yearly=false},label={UiText("Monthly report",fontSize=11.sp)})
                 FilterChip(selected=yearly,onClick={yearly=true},label={UiText("Yearly report",fontSize=11.sp)})
             }}
+            items(report.currencies) {currency->
+                Surface(shape=RoundedCornerShape(12.dp),color=androidx.compose.ui.graphics.Color(0xFF034C57)) {
+                    Column(Modifier.fillMaxWidth().padding(13.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                        Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(7.dp)) {
+                            Icon(Icons.Outlined.AccountBalanceWallet,null,tint=androidx.compose.ui.graphics.Color.White,modifier=Modifier.size(22.dp))
+                            UiText("Real estimated earnings",color=androidx.compose.ui.graphics.Color.White,fontSize=12.sp,fontWeight=FontWeight.Bold)
+                        }
+                        Text(reportMoney(currency.real,currency.currency,data.preferences.language),fontSize=24.sp,fontWeight=FontWeight.Bold,color=androidx.compose.ui.graphics.Color.White)
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                            Column(Modifier.weight(1f)) {UiText("Gross estimated earnings",fontSize=10.sp,color=androidx.compose.ui.graphics.Color.White.copy(alpha=.75f));Text(reportMoney(currency.gross,currency.currency,data.preferences.language),fontSize=13.sp,color=androidx.compose.ui.graphics.Color.White)}
+                            Column(Modifier.weight(1f)) {UiText("Work-related costs",fontSize=10.sp,color=androidx.compose.ui.graphics.Color.White.copy(alpha=.75f));Text("− "+reportMoney(currency.costs,currency.currency,data.preferences.language),fontSize=13.sp,color=androidx.compose.ui.graphics.Color.White)}
+                        }
+                        UiText("Estimated real earnings after work-related costs.",fontSize=10.sp,color=androidx.compose.ui.graphics.Color.White.copy(alpha=.75f))
+                    }
+                }
+            }
             items(lines) {line->
                 Surface(shape=RoundedCornerShape(8.dp),color=if(line.heading) MaterialTheme.colorScheme.primary.copy(alpha=.08f) else MaterialTheme.colorScheme.surface) {
                     Row(Modifier.fillMaxWidth().padding(horizontal=9.dp,vertical=if(line.heading) 9.dp else 5.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -64,7 +88,7 @@ import java.time.YearMonth
                 FlowRow(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
                     listOf("View","PDF","Share","Print","Email").forEach {action->
                         OutlinedButton(enabled=!loading,onClick={loading=true;scope.launch {
-                            try {val file=withContext(Dispatchers.Default){createWorkReportPdf(context,data,selected,yearly)};openWorkReport(context,file,if(action=="PDF") "View" else action,data.preferences.language)}
+                            try {val file=withContext(Dispatchers.Default){createWorkReportPdf(context,data,selected,yearly)};if(action=="PDF") {savedPdf=file;savePdf.launch(file.name)} else openWorkReport(context,file,action,data.preferences.language)}
                             catch(_:Exception) {error="No app could open this report. Please install a PDF viewer or try Share."}
                             finally {loading=false}
                         }},contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
@@ -76,3 +100,5 @@ import java.time.YearMonth
             }}
         }},confirmButton={TextButton(onClick=close){UiText("Close",fontSize=12.sp)}},dismissButton={})
 }
+
+private fun reportMoney(value: java.math.BigDecimal,code: String,language: String): String = code+" "+java.text.NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag(language)).apply {minimumFractionDigits=0;maximumFractionDigits=java.util.Currency.getInstance(code).defaultFractionDigits.coerceAtLeast(0)}.format(value)

@@ -9,6 +9,7 @@ import {defineSecret,defineString} from 'firebase-functions/params';
 import {setGlobalOptions} from 'firebase-functions/v2';
 import {google} from 'googleapis';
 import {createHash,randomUUID} from 'node:crypto';
+import {subscriptionEntitlement} from './entitlement.js';
 import {validateBackup} from './analytics.js';
 import {reportPdf} from './report.js';
 import {Resend} from 'resend';
@@ -25,18 +26,12 @@ function identity(request){if(!request.auth) throw new HttpsError('unauthenticat
 async function limited(uid,key,seconds=2){
   const ref=db.doc(`limits/${hash(uid+':'+key)}`);await db.runTransaction(async tx=>{const previous=await tx.get(ref);const now=Date.now();if(previous.exists && now-previous.data().at<seconds*1000) throw new HttpsError('resource-exhausted','Please wait and try again.');tx.set(ref,{at:now,expires:new Date(now+86400000)});});
 }
-function entitlement(subscription){
-  const line=subscription.lineItems?.find(l=>l.productId===PRODUCT && l.offerDetails?.basePlanId===BASE_PLAN);
-  if(!line) throw new HttpsError('invalid-argument','This is not the PTS annual subscription.');
-  const expiresAt=Date.parse(line.expiryTime ?? '');
-  const active=['SUBSCRIPTION_STATE_ACTIVE','SUBSCRIPTION_STATE_IN_GRACE_PERIOD','SUBSCRIPTION_STATE_CANCELED'].includes(subscription.subscriptionState) && Number.isFinite(expiresAt) && expiresAt>Date.now();
-  return {active,expiresAt:Number.isFinite(expiresAt)?expiresAt:0,state:subscription.subscriptionState ?? 'UNKNOWN',autoRenew:line.autoRenewingPlan?.autoRenewEnabled===true};
-}
+
 async function verify(uid,token){
   if(typeof token!=='string' || token.length<10 || token.length>4096) throw new HttpsError('invalid-argument','Invalid purchase token.');
   const api=play();const {data}=await api.purchases.subscriptionsv2.get({packageName:PACKAGE,token});
   if(data.externalAccountIdentifiers?.obfuscatedExternalAccountId!==hash(uid)) throw new HttpsError('permission-denied','This purchase belongs to another account.');
-  const next=entitlement(data);const ref=db.doc(`purchaseOwners/${hash(token)}`);
+  let next;try {next=subscriptionEntitlement(data);} catch {throw new HttpsError('invalid-argument','This is not the PTS annual subscription.');}const ref=db.doc(`purchaseOwners/${hash(token)}`);
   await db.runTransaction(async tx=>{const owner=await tx.get(ref);if(owner.exists && owner.data().uid!==uid) throw new HttpsError('permission-denied','Purchase already linked.');
     tx.set(ref,{uid,token,updatedAt:Date.now()});tx.set(profile(uid),{premium:next,purchaseToken:token,verifiedAt:Date.now()},{merge:true});});
   if(next.active && data.acknowledgementState==='ACKNOWLEDGEMENT_STATE_PENDING') await api.purchases.subscriptions.acknowledge({packageName:PACKAGE,subscriptionId:PRODUCT,token,requestBody:{}});

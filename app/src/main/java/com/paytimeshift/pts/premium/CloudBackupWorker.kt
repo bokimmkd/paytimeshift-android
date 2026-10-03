@@ -17,7 +17,7 @@ class CloudBackupWorker(context: Context,params: WorkerParameters): CoroutineWor
     }
 }
 fun queueCloudBackup(context: Context,uid: String?) {
-    if(uid==null) return
+    if(uid==null || !PremiumRepository(context).bound(uid)) return
     val constraints=Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
     val args=workDataOf("uid" to uid);val manager=WorkManager.getInstance(context)
     manager.enqueueUniqueWork("pts-backup-$uid",ExistingWorkPolicy.KEEP,OneTimeWorkRequestBuilder<CloudBackupWorker>().setInputData(args).setConstraints(constraints).setInitialDelay(10,TimeUnit.SECONDS).build())
