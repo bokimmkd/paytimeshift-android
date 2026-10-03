@@ -2,7 +2,7 @@
 
 Recorded: 2026-10-03. These are implementation requirements, not a claim that all features below are released.
 
-## 1. Change the status of a scheduled day (implemented in 0.2.4 source; validation in progress)
+## 1. Change the status of a scheduled day (implemented and CI-validated in 0.2.4; live deployment pending)
 
 - In Add Shift / Edit Shift, support Work, Off, Vacation, Sick, and Non-working day.
 - A non-working status must be selectable even when that job already has shifts on the date. Do not reject it with "This shift already exists".
@@ -14,7 +14,7 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Preserve local storage, manual/cloud backup, colleague schedule export/import, translations, reminders and analytics compatibility.
 - "Non-working day" is a job-specific calendar status; it is distinct from the global Holiday flag used for holiday pay on worked shifts.
 
-## 2. Fixed monthly salary per job (implemented in 0.2.4 source; validation in progress)
+## 2. Fixed monthly salary per job (implemented and CI-validated in 0.2.4; live deployment pending)
 
 - Add a pay basis selector: Hourly, Per shift / daily, Fixed monthly salary.
 - Monthly amount and currency belong to each job independently.
@@ -36,7 +36,7 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Exclude the edited entry itself and non-working statuses; handle overnight intervals and allow touching endpoints.
 - Android unit/UI validation and build workflows passed for that commit.
 
-## 4. Monthly deductions and bonuses per job (implemented in 0.2.4 source; validation in progress)
+## 4. Monthly deductions and bonuses per job (implemented and CI-validated in 0.2.4; live deployment pending)
 
 - Add a compact Monthly adjustments section in Earnings for the selected month, grouped by job. Support hourly, daily/per-shift and fixed-monthly jobs.
 - Add deduction / Add monthly bonus: positive amount, job currency, reason/category and optional note. Support multiple entries and editing/removing individual entries.
@@ -52,7 +52,7 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Persist locally, include in manual and cloud backups, and maintain backward compatibility: missing adjustments mean an empty list. Keep Android/server calculations aligned.
 - Validate with examples including multiple jobs in one month, changing months, fixed monthly salary across month lengths, combined deductions and bonuses, legacy per-shift bonuses, separate work costs, and different currencies.
 
-## 5. Feature placement and localized dismissible hints (implemented in 0.2.4 source; validation in progress)
+## 5. Feature placement and localized dismissible hints (implemented and CI-validated in 0.2.4; live deployment pending)
 
 - Add/Edit Job: a compact Pay basis selector in the existing Pay section. Show the amount input for Hourly, Per shift/daily, or Fixed monthly salary according to the chosen basis.
 - Add/Edit Shift: use the existing Day type selector for work/absence status. Present the job/date-specific replacement confirmation only when saving affects existing entries.
@@ -81,3 +81,23 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Monthly bonus/deduction items belong to the final calendar day of their month for arbitrary reporting ranges. Monthly and yearly reports count them once. Attendance never creates a penalty automatically.
 - English remains default. All new controls and field help have reviewed entries for mk/de/it/es/fr/sr/pt-BR/el.
 - Cloud validation/report code must be deployed with this version before new absence statuses and salary/adjustment backups are tested in cloud restore.
+
+## Optional Google Play update offer and AAB procedure
+
+- Version 0.2.4 (code 14) includes a localized, branded Update / Later offer backed by Google Play flexible updates. Downloading happens in the background; installation is offered when the download is ready.
+- Later postpones the same available version for 24 hours. A newer available version can be offered immediately. Local work remains available without accepting an update.
+- For each AAB release, increment versionCode, run debug/release unit and lint checks, instrumented UI checks, and verify the signed bundle. Deploy compatible backend validation/report code before cloud restore testing.
+- Upload the signed AAB to the existing closed-testing track and retain all three configured tester groups. Review release notes and the live integration gate before rollout.
+- Test the real update flow with a Play-installed eligible older build and a higher version on the same tester track, using the same app identity/signing. Verify Update, Later, background download, ready-to-install/restart, and saved-data preservation. A sideloaded debug APK alone cannot prove Google Play eligibility.
+- This build does not claim that its new AAB has been uploaded or that the physical Google Play update flow has been verified.
+
+## Final 0.2.4 build validation
+
+- Build source: 672f67321d218ec35a0d2184a4f941bb5ea137b8 on premium-analytics-upgrade.
+- GitHub build run 37153289660: 69 debug unit tests, 69 release unit tests, debug/release lint, APK build, signed AAB build and bundle signature verification passed.
+- Backend: 17 tests passed; translation generation verified 466 messages across eight translated languages.
+- GitHub UI run 37153289651: 14 instrumented tests passed, including field hints, language switching, independent hint dismissal/global hide, job-specific day replacement and optional update offer.
+- APK SHA-256: b152c8b158a19ed5dc124983ba6eb008ca08bf5f740bc2b129f5ada5220f3403.
+- AAB SHA-256: 1e6f6dd971c62d5093c45ffd1b6a37e56f396a1d90350e559e2eef752d09a263.
+- PTS-Firebase-v14.zip contains compatible source, private rules and a project-scoped deploy script; it does not seed jobs/shifts or contain private keys. Deploy with bash deploy.sh core, then verify new-field cloud backup/restore.
+- No new Firebase deployment, Play upload/closed-test rollout or physical Google Play update flow is claimed by this validation. Automatic report emails still require a verified sender/secret and report-mode deployment.
