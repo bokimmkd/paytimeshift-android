@@ -40,12 +40,21 @@ fun shareSchedule(context:Context,data:AppData,month:YearMonth,pdf:Boolean) {
     context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {type=if(pdf) "application/pdf" else "image/png";putExtra(Intent.EXTRA_STREAM,uri);addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);clipData=android.content.ClipData.newRawUri("PTS",uri)},translate("Share schedule",data.preferences.language)))
 }
 
-fun shareColleagueSchedule(context: Context,job: Job,data: AppData,from: java.time.LocalDate,until: java.time.LocalDate) {
-    val file=File(File(context.cacheDir,"shared").apply {mkdirs()},"PTS-$from-$until.pts-schedule")
-    file.writeText(encodeColleagueSchedule(job,data.shifts,from,until))
+/** A standard text document avoids rejection of unknown extensions by chat clients.
+ * The versioned PTS payload is unchanged, so older exports remain importable. */
+internal fun colleagueScheduleShareIntent(context: Context,job: Job,data: AppData,from: java.time.LocalDate,until: java.time.LocalDate): Intent {
+    val file=File(File(context.cacheDir,"shared").apply {mkdirs()},"PTS-schedule-$from-$until.txt")
+    file.writeText(encodeColleagueSchedule(job,data.shifts,from,until),Charsets.UTF_8)
     val uri=FileProvider.getUriForFile(context,"${context.packageName}.files",file)
-    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-        type="application/json";putExtra(Intent.EXTRA_STREAM,uri);addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        clipData=android.content.ClipData.newRawUri("PTS",uri)
-    },translate("Export schedule for colleague",data.preferences.language)))
+    return Intent(Intent.ACTION_SEND).apply {
+        type="text/plain"
+        putExtra(Intent.EXTRA_STREAM,uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        clipData=android.content.ClipData.newUri(context.contentResolver,"PTS",uri)
+    }
+}
+
+fun shareColleagueSchedule(context: Context,job: Job,data: AppData,from: java.time.LocalDate,until: java.time.LocalDate) {
+    context.startActivity(Intent.createChooser(colleagueScheduleShareIntent(context,job,data,from,until),
+        translate("Export schedule for colleague",data.preferences.language)))
 }
