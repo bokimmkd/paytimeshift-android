@@ -183,14 +183,17 @@ private enum class Tab(val title: String, val icon: ImageVector) {
                 }
                 IconButton(onClick={settings=!settings}) { Icon(if(settings) Icons.Outlined.Close else Icons.Outlined.Settings,translate(if(settings) "Close settings" else "Settings",LocalLanguage.current)) }
             } },
-            bottomBar = { if (!settings) BrandNavigation(tab) {tab=it} },
+            bottomBar = { if (!settings) Column {
+                Box(Modifier.fillMaxWidth().padding(horizontal=16.dp)) { PtsBanner() }
+                BrandNavigation(tab) {tab=it}
+            } },
             floatingActionButton = { if (!settings && tab in listOf(Tab.Today,Tab.Calendar) && loaded && writable)
                 ShiftButton(if(data.jobs.none { !it.archived }) "Job" else "Shift") {if(data.jobs.none { !it.archived }) addJob=true else {if(tab==Tab.Today) newShiftDate=LocalDate.now().toString();addShift=true}}
             }
 
         ) { inset ->
             if (!loaded) Box(Modifier.fillMaxSize().padding(inset),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
-            else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab==Tab.Calendar && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+            else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab in listOf(Tab.Today,Tab.Calendar) && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                 if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium);FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
@@ -338,7 +341,6 @@ private fun shiftLabel(shift: Shift): String {
         Icon(icon,null,Modifier.size(23.dp),tint=tint);Spacer(Modifier.width(10.dp));content();Spacer(Modifier.width(4.dp));Icon(Icons.Outlined.ChevronRight,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
-@Composable private fun AdSlot() { PtsBanner() }
 @Composable private fun TodayScreen(data: AppData,edit: (Shift)->Unit,add: ()->Unit,sample: ()->Unit,openEarnings: ()->Unit) {
     val today=LocalDate.now();val rows=data.shifts.filter {it.date==today.toString()}.sortedBy {it.begins}
     val month=data.shifts.filter {YearMonth.from(it.begins)==YearMonth.from(today)}
@@ -389,7 +391,6 @@ private fun shiftLabel(shift: Shift): String {
                     }}
                 }
             }
-            Spacer(Modifier.height(4.dp));AdSlot()
         }
     }
 }
