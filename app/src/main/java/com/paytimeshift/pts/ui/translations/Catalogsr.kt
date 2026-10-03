@@ -390,5 +390,7 @@ internal val catalogsr = mapOf(
     "New shifts to add" to "Nove smene za dodavanje",
     "Other jobs and dates outside this period stay unchanged." to "Drugi poslovi i datumi van ovog perioda ostaju nepromenjeni.",
     "Replace shifts" to "Zameni smene",
-    "Schedule changed. Review the shifts again." to "Raspored je promenjen. Ponovo pregledaj smene."
+    "Schedule changed. Review the shifts again." to "Raspored je promenjen. Ponovo pregledaj smene.",
+    "This shift overlaps with the following shifts:" to "Ova smena se preklapa sa sledećim smenama:",
+    "Save anyway" to "Ipak sačuvaj"
 )

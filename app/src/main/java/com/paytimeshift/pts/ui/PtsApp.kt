@@ -833,7 +833,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
     }){Icon(Icons.Outlined.Save,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save job",fontSize=12.sp)}},dismissButton={TextButton(onClick=onClose,contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)){Icon(Icons.Outlined.Close,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Cancel",fontSize=12.sp)}})
     if(currencyOpen) CurrencyDialog(currency,{currencyOpen=false}){currency=it;currencyOpen=false}
 }
-@Composable private fun ShiftDialog(original: Shift?,data: AppData,initialDate:String,onClose: ()->Unit,onDelete: (String)->Unit,save: (Shift)->Unit) {
+@Composable internal fun ShiftDialog(original: Shift?,data: AppData,initialDate:String,onClose: ()->Unit,onDelete: (String)->Unit,save: (Shift)->Unit) {
     var jobId by remember {mutableStateOf(original?.jobId ?: data.jobs.first { !it.archived }.id)}
     var date by remember {mutableStateOf(original?.date ?: initialDate)}
     val initialJob=data.jobs.first {it.id==jobId}
@@ -845,6 +845,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
     var bonus by remember {mutableStateOf(original?.bonus ?: "0")}
     var kind by remember {mutableStateOf(original?.kind ?: "Work")}
     var currentPrices by remember {mutableStateOf(original==null)}
+    var pendingShift by remember {mutableStateOf<Shift?>(null)}
     val keepPrices=original?.jobId==jobId && !currentPrices
     BrandedEditor(onDismissRequest=onClose,error=error,heightFraction=.82f,title={ScreenHeading(if(original==null) "Add shift" else "Edit shift", Icons.Outlined.Schedule, "Times, breaks and earnings", compact=true)},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
         JobPicker(data.jobs.filterNot {it.archived && it.id!=original?.jobId},jobId){id->
@@ -887,8 +888,34 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
             start==end -> error="Start and end must differ."
             pause==null || pause<0 || pause>=java.time.Duration.between(candidate.begins,candidate.finishes).toMinutes() -> error="Break must be shorter than the shift."
             data.shifts.any {it.id!=candidate.id && it.jobId==jobId && it.date==date && it.start==start && it.end==end} -> error="This shift already exists."
+            overlappingShifts(candidate,data.shifts).isNotEmpty() -> {error=null;pendingShift=candidate}
             else -> save(candidate)
         }
     }){Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save shift",fontSize=12.sp)}},dismissButton={TextButton(onClick=onClose,contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)){Icon(Icons.Outlined.Close,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Cancel",fontSize=12.sp)}})
     if(deleting) AlertDialog(onDismissRequest={deleting=false},title={UiText("Delete this shift?")},text={UiText("This removes the shift from your calendar and earnings.")},confirmButton={TextButton(onClick={onDelete(original!!.id)}){UiText("Delete")}},dismissButton={TextButton(onClick={deleting=false}){UiText("Cancel")}})
+    pendingShift?.let {candidate->
+        AlertDialog(onDismissRequest={pendingShift=null},
+            containerColor=MaterialTheme.colorScheme.surface,
+            title={ScreenHeading("Overlapping shifts",Icons.Outlined.WarningAmber,"Review before saving",compact=true)},
+            text={Column(Modifier.heightIn(max=240.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
+                UiText("This shift overlaps with the following shifts:",fontSize=12.sp)
+                overlappingShifts(candidate,data.shifts).forEach {conflict->
+                    Surface(shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.primary.copy(alpha=.07f)) {
+                        Row(Modifier.fillMaxWidth().padding(9.dp),horizontalArrangement=Arrangement.spacedBy(7.dp),verticalAlignment=Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Schedule,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.primary)
+                            Column(Modifier.weight(1f)) {
+                                Text(data.jobs.find {it.id==conflict.jobId}?.name ?: conflict.jobId,fontSize=12.sp,fontWeight=FontWeight.Bold)
+                                Text(conflict.begins.format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm",uiLocale()))+" – "+conflict.finishes.format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm",uiLocale())),fontSize=11.sp)
+                            }
+                        }
+                    }
+                }
+            }},
+            confirmButton={Button(onClick={pendingShift=null;save(candidate)},contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {
+                Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save anyway",fontSize=12.sp)
+            }},
+            dismissButton={TextButton(onClick={pendingShift=null},contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)) {
+                Icon(Icons.Outlined.Edit,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Edit shift",fontSize=12.sp)
+            }})
+    }
 }

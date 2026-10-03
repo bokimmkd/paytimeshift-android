@@ -390,5 +390,7 @@ internal val catalogel = mapOf(
     "New shifts to add" to "Νέες βάρδιες προς προσθήκη",
     "Other jobs and dates outside this period stay unchanged." to "Οι άλλες εργασίες και οι ημερομηνίες εκτός αυτής της περιόδου παραμένουν αμετάβλητες.",
     "Replace shifts" to "Αντικατάσταση βαρδιών",
-    "Schedule changed. Review the shifts again." to "Το πρόγραμμα άλλαξε. Ελέγξτε ξανά τις βάρδιες."
+    "Schedule changed. Review the shifts again." to "Το πρόγραμμα άλλαξε. Ελέγξτε ξανά τις βάρδιες.",
+    "This shift overlaps with the following shifts:" to "Αυτή η βάρδια συμπίπτει χρονικά με τις ακόλουθες βάρδιες:",
+    "Save anyway" to "Αποθήκευση ούτως ή άλλως"
 )

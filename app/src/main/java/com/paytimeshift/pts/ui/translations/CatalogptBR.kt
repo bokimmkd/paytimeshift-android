@@ -390,5 +390,7 @@ internal val catalogptBR = mapOf(
     "New shifts to add" to "Novos turnos a adicionar",
     "Other jobs and dates outside this period stay unchanged." to "Outros trabalhos e datas fora deste período permanecem inalterados.",
     "Replace shifts" to "Substituir turnos",
-    "Schedule changed. Review the shifts again." to "A escala mudou. Revise os turnos novamente."
+    "Schedule changed. Review the shifts again." to "A escala mudou. Revise os turnos novamente.",
+    "This shift overlaps with the following shifts:" to "Este turno se sobrepõe aos seguintes turnos:",
+    "Save anyway" to "Salvar mesmo assim"
 )

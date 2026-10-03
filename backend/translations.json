@@ -388,7 +388,9 @@
     "New shifts to add": "Нови смени за додавање",
     "Other jobs and dates outside this period stay unchanged.": "Другите работи и датумите надвор од овој период остануваат непроменети.",
     "Replace shifts": "Замени смени",
-    "Schedule changed. Review the shifts again.": "Распоредот е променет. Прегледај ги смените повторно."
+    "Schedule changed. Review the shifts again.": "Распоредот е променет. Прегледај ги смените повторно.",
+    "This shift overlaps with the following shifts:": "Оваа смена се преклопува со следните смени:",
+    "Save anyway": "Сепак зачувај"
   },
   "de": {
     "Today": "Heute",
@@ -779,7 +781,9 @@
     "New shifts to add": "Hinzuzufügende neue Schichten",
     "Other jobs and dates outside this period stay unchanged.": "Andere Jobs und Daten außerhalb dieses Zeitraums bleiben unverändert.",
     "Replace shifts": "Schichten ersetzen",
-    "Schedule changed. Review the shifts again.": "Der Plan wurde geändert. Prüfe die Schichten erneut."
+    "Schedule changed. Review the shifts again.": "Der Plan wurde geändert. Prüfe die Schichten erneut.",
+    "This shift overlaps with the following shifts:": "Diese Schicht überschneidet sich mit den folgenden Schichten:",
+    "Save anyway": "Trotzdem speichern"
   },
   "it": {
     "Today": "Oggi",
@@ -1170,7 +1174,9 @@
     "New shifts to add": "Nuovi turni da aggiungere",
     "Other jobs and dates outside this period stay unchanged.": "Gli altri lavori e le date fuori da questo periodo rimangono invariati.",
     "Replace shifts": "Sostituisci turni",
-    "Schedule changed. Review the shifts again.": "Il programma è cambiato. Controlla di nuovo i turni."
+    "Schedule changed. Review the shifts again.": "Il programma è cambiato. Controlla di nuovo i turni.",
+    "This shift overlaps with the following shifts:": "Questo turno si sovrappone ai seguenti turni:",
+    "Save anyway": "Salva comunque"
   },
   "es": {
     "Today": "Hoy",
@@ -1561,7 +1567,9 @@
     "New shifts to add": "Turnos nuevos que se añadirán",
     "Other jobs and dates outside this period stay unchanged.": "Los demás trabajos y las fechas fuera de este período no cambian.",
     "Replace shifts": "Reemplazar turnos",
-    "Schedule changed. Review the shifts again.": "El horario ha cambiado. Revisa los turnos de nuevo."
+    "Schedule changed. Review the shifts again.": "El horario ha cambiado. Revisa los turnos de nuevo.",
+    "This shift overlaps with the following shifts:": "Este turno se superpone con los siguientes turnos:",
+    "Save anyway": "Guardar de todos modos"
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -1952,7 +1960,9 @@
     "New shifts to add": "Nouveaux services à ajouter",
     "Other jobs and dates outside this period stay unchanged.": "Les autres emplois et les dates hors de cette période restent inchangés.",
     "Replace shifts": "Remplacer les services",
-    "Schedule changed. Review the shifts again.": "Le planning a changé. Vérifiez à nouveau les services."
+    "Schedule changed. Review the shifts again.": "Le planning a changé. Vérifiez à nouveau les services.",
+    "This shift overlaps with the following shifts:": "Ce poste chevauche les postes suivants :",
+    "Save anyway": "Enregistrer quand même"
   },
   "sr": {
     "Today": "Danas",
@@ -2343,7 +2353,9 @@
     "New shifts to add": "Nove smene za dodavanje",
     "Other jobs and dates outside this period stay unchanged.": "Drugi poslovi i datumi van ovog perioda ostaju nepromenjeni.",
     "Replace shifts": "Zameni smene",
-    "Schedule changed. Review the shifts again.": "Raspored je promenjen. Ponovo pregledaj smene."
+    "Schedule changed. Review the shifts again.": "Raspored je promenjen. Ponovo pregledaj smene.",
+    "This shift overlaps with the following shifts:": "Ova smena se preklapa sa sledećim smenama:",
+    "Save anyway": "Ipak sačuvaj"
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -2734,7 +2746,9 @@
     "New shifts to add": "Novos turnos a adicionar",
     "Other jobs and dates outside this period stay unchanged.": "Outros trabalhos e datas fora deste período permanecem inalterados.",
     "Replace shifts": "Substituir turnos",
-    "Schedule changed. Review the shifts again.": "A escala mudou. Revise os turnos novamente."
+    "Schedule changed. Review the shifts again.": "A escala mudou. Revise os turnos novamente.",
+    "This shift overlaps with the following shifts:": "Este turno se sobrepõe aos seguintes turnos:",
+    "Save anyway": "Salvar mesmo assim"
   },
   "el": {
     "Today": "Σήμερα",
@@ -3125,6 +3139,8 @@
     "New shifts to add": "Νέες βάρδιες προς προσθήκη",
     "Other jobs and dates outside this period stay unchanged.": "Οι άλλες εργασίες και οι ημερομηνίες εκτός αυτής της περιόδου παραμένουν αμετάβλητες.",
     "Replace shifts": "Αντικατάσταση βαρδιών",
-    "Schedule changed. Review the shifts again.": "Το πρόγραμμα άλλαξε. Ελέγξτε ξανά τις βάρδιες."
+    "Schedule changed. Review the shifts again.": "Το πρόγραμμα άλλαξε. Ελέγξτε ξανά τις βάρδιες.",
+    "This shift overlaps with the following shifts:": "Αυτή η βάρδια συμπίπτει χρονικά με τις ακόλουθες βάρδιες:",
+    "Save anyway": "Αποθήκευση ούτως ή άλλως"
   }
 }

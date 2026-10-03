@@ -390,5 +390,7 @@ internal val catalogmk = mapOf(
     "New shifts to add" to "Нови смени за додавање",
     "Other jobs and dates outside this period stay unchanged." to "Другите работи и датумите надвор од овој период остануваат непроменети.",
     "Replace shifts" to "Замени смени",
-    "Schedule changed. Review the shifts again." to "Распоредот е променет. Прегледај ги смените повторно."
+    "Schedule changed. Review the shifts again." to "Распоредот е променет. Прегледај ги смените повторно.",
+    "This shift overlaps with the following shifts:" to "Оваа смена се преклопува со следните смени:",
+    "Save anyway" to "Сепак зачувај"
 )

@@ -390,5 +390,7 @@ internal val catalogde = mapOf(
     "New shifts to add" to "Hinzuzufügende neue Schichten",
     "Other jobs and dates outside this period stay unchanged." to "Andere Jobs und Daten außerhalb dieses Zeitraums bleiben unverändert.",
     "Replace shifts" to "Schichten ersetzen",
-    "Schedule changed. Review the shifts again." to "Der Plan wurde geändert. Prüfe die Schichten erneut."
+    "Schedule changed. Review the shifts again." to "Der Plan wurde geändert. Prüfe die Schichten erneut.",
+    "This shift overlaps with the following shifts:" to "Diese Schicht überschneidet sich mit den folgenden Schichten:",
+    "Save anyway" to "Trotzdem speichern"
 )

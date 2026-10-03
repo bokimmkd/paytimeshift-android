@@ -390,5 +390,7 @@ internal val cataloges = mapOf(
     "New shifts to add" to "Turnos nuevos que se añadirán",
     "Other jobs and dates outside this period stay unchanged." to "Los demás trabajos y las fechas fuera de este período no cambian.",
     "Replace shifts" to "Reemplazar turnos",
-    "Schedule changed. Review the shifts again." to "El horario ha cambiado. Revisa los turnos de nuevo."
+    "Schedule changed. Review the shifts again." to "El horario ha cambiado. Revisa los turnos de nuevo.",
+    "This shift overlaps with the following shifts:" to "Este turno se superpone con los siguientes turnos:",
+    "Save anyway" to "Guardar de todos modos"
 )

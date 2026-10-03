@@ -73,6 +73,14 @@ fun money(value: BigDecimal, code: String): String {
 }
 fun hours(minutes: Long): String = BigDecimal(minutes).divide(BigDecimal(60), 1, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString() + "h"
 fun totals(shifts: List<Shift>): Map<String, BigDecimal> = shifts.groupBy { it.currency }.mapValues { (_, rows) -> rows.fold(BigDecimal.ZERO) { a, s -> a + s.earnings() } }
+/** Half-open work intervals: touching shifts are allowed, edited rows never conflict with themselves. */
+fun overlappingShifts(candidate: Shift, shifts: List<Shift>): List<Shift> {
+    if (candidate.kind != "Work") return emptyList()
+    return shifts.filter { existing ->
+        existing.id != candidate.id && existing.kind == "Work" &&
+            candidate.begins < existing.finishes && existing.begins < candidate.finishes
+    }.sortedBy { it.begins }
+}
 fun warnings(shifts: List<Shift>, gapHours: Int): List<String> = warnings(shifts, gapHours.toDouble())
 fun warnings(shifts: List<Shift>, gapHours: Double, jobs: List<Job> = emptyList()): List<String> {
     val result = linkedSetOf<String>()

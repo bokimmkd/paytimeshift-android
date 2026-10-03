@@ -390,5 +390,7 @@ internal val catalogfr = mapOf(
     "New shifts to add" to "Nouveaux services à ajouter",
     "Other jobs and dates outside this period stay unchanged." to "Les autres emplois et les dates hors de cette période restent inchangés.",
     "Replace shifts" to "Remplacer les services",
-    "Schedule changed. Review the shifts again." to "Le planning a changé. Vérifiez à nouveau les services."
+    "Schedule changed. Review the shifts again." to "Le planning a changé. Vérifiez à nouveau les services.",
+    "This shift overlaps with the following shifts:" to "Ce poste chevauche les postes suivants :",
+    "Save anyway" to "Enregistrer quand même"
 )

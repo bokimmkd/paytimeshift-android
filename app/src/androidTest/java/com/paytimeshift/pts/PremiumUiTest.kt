@@ -64,6 +64,38 @@ class PremiumUiTest {
         ui.onNodeWithText("Add these shifts").performClick()
         ui.runOnIdle {org.junit.Assert.assertEquals(setOf("07:00","15:00","23:00"),saved!!.map {it.start}.toSet());org.junit.Assert.assertTrue(saved!!.size>20)}
     }
+    @Test fun manualShiftOverlapCanBeEditedOrExplicitlySaved() {
+        val first=Job(id="first",name="Morning job",rate="10")
+        val second=Job(id="second",name="Second job",rate="12",defaultStart="10:00",defaultEnd="18:00")
+        val existing=first.templateShift(java.time.LocalDate.of(2026,10,3),first.shiftTemplates().first())
+        val data=AppData(jobs=listOf(second,first),shifts=listOf(existing))
+        var saved:Shift?=null
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {ShiftDialog(null,data,"2026-10-03",{},{}) {saved=it}}}}
+        ui.onNodeWithText("Save shift").performClick()
+        ui.onNodeWithText("Overlapping shifts").assertIsDisplayed()
+        ui.onNodeWithText("Morning job").assertIsDisplayed()
+        ui.runOnIdle {org.junit.Assert.assertNull(saved)}
+        ui.onNodeWithText("Edit shift").performClick()
+        ui.onNodeWithText("Overlapping shifts").assertDoesNotExist()
+        ui.runOnIdle {org.junit.Assert.assertNull(saved);org.junit.Assert.assertEquals(listOf(existing),data.shifts)}
+        ui.onNodeWithText("Save shift").performClick()
+        screenshot("manual-shift-overlap-confirmation")
+        ui.onNodeWithText("Save anyway").performClick()
+        ui.runOnIdle {org.junit.Assert.assertEquals("second",saved!!.jobId);org.junit.Assert.assertEquals("10:00",saved!!.start)}
+    }
+
+    @Test fun adjacentManualShiftSavesWithoutOverlapConfirmation() {
+        val first=Job(id="first",name="Morning job",rate="10")
+        val second=Job(id="second",name="Second job",rate="12",defaultStart="15:00",defaultEnd="18:00")
+        val existing=first.templateShift(java.time.LocalDate.of(2026,10,3),first.shiftTemplates().first())
+        val data=AppData(jobs=listOf(second,first),shifts=listOf(existing))
+        var saved:Shift?=null
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {ShiftDialog(null,data,"2026-10-03",{},{}) {saved=it}}}}
+        ui.onNodeWithText("Save shift").performClick()
+        ui.onNodeWithText("Overlapping shifts").assertDoesNotExist()
+        ui.runOnIdle {org.junit.Assert.assertNotNull(saved)}
+    }
+
     @Test fun nativeTableReportsRenderInEveryLanguage() {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         languageNames.keys.forEach {language->
