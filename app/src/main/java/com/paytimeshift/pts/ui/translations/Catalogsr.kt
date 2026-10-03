@@ -358,5 +358,10 @@ internal val catalogsr = mapOf(
     "Payday" to "Isplata",
     "Collapse" to "Skupi",
     "Expand" to "Proširi",
-    "h" to "sati"
+    "h" to "sati",
+    "Continue with Google" to "Nastavi sa Google nalogom",
+    "Or use your email" to "Ili koristi e-poštu",
+    "Link Google account" to "Poveži Google nalog",
+    "Choose the Google account with the same email address." to "Izaberi Google nalog sa istom adresom e-pošte.",
+    "Google sign-in could not finish. Try again or use email." to "Google prijava nije završena. Pokušaj ponovo ili koristi e-poštu."
 )

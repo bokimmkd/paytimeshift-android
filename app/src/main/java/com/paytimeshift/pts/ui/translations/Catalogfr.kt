@@ -358,5 +358,10 @@ internal val catalogfr = mapOf(
     "Payday" to "Jour de paie",
     "Collapse" to "Réduire",
     "Expand" to "Développer",
-    "h" to "h"
+    "h" to "h",
+    "Continue with Google" to "Continuer avec Google",
+    "Or use your email" to "Ou utilisez votre adresse e-mail",
+    "Link Google account" to "Associer un compte Google",
+    "Choose the Google account with the same email address." to "Choisissez le compte Google avec la même adresse e-mail.",
+    "Google sign-in could not finish. Try again or use email." to "La connexion Google n’a pas abouti. Réessayez ou utilisez votre e-mail."
 )

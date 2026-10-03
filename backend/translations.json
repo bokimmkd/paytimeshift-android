@@ -356,7 +356,12 @@
     "Payday": "Исплата",
     "Collapse": "Собери",
     "Expand": "Прошири",
-    "h": "ч"
+    "h": "ч",
+    "Continue with Google": "Продолжи со Google",
+    "Or use your email": "Или користи е-пошта",
+    "Link Google account": "Поврзи Google сметка",
+    "Choose the Google account with the same email address.": "Избери ја Google сметката со истата е-пошта.",
+    "Google sign-in could not finish. Try again or use email.": "Google најавата не заврши. Обиди се повторно или користи е-пошта."
   },
   "de": {
     "Today": "Heute",
@@ -715,7 +720,12 @@
     "Payday": "Zahltag",
     "Collapse": "Einklappen",
     "Expand": "Ausklappen",
-    "h": "Std."
+    "h": "Std.",
+    "Continue with Google": "Mit Google fortfahren",
+    "Or use your email": "Oder E-Mail verwenden",
+    "Link Google account": "Google-Konto verknüpfen",
+    "Choose the Google account with the same email address.": "Wähle das Google-Konto mit derselben E-Mail-Adresse.",
+    "Google sign-in could not finish. Try again or use email.": "Die Google-Anmeldung konnte nicht abgeschlossen werden. Versuche es erneut oder nutze E-Mail."
   },
   "it": {
     "Today": "Oggi",
@@ -1074,7 +1084,12 @@
     "Payday": "Pagamento",
     "Collapse": "Comprimi",
     "Expand": "Espandi",
-    "h": "ore"
+    "h": "ore",
+    "Continue with Google": "Continua con Google",
+    "Or use your email": "Oppure usa la tua email",
+    "Link Google account": "Collega account Google",
+    "Choose the Google account with the same email address.": "Scegli l’account Google con lo stesso indirizzo email.",
+    "Google sign-in could not finish. Try again or use email.": "Accesso con Google non completato. Riprova o usa l’email."
   },
   "es": {
     "Today": "Hoy",
@@ -1433,7 +1448,12 @@
     "Payday": "Día de pago",
     "Collapse": "Contraer",
     "Expand": "Expandir",
-    "h": "h"
+    "h": "h",
+    "Continue with Google": "Continuar con Google",
+    "Or use your email": "O usa tu correo electrónico",
+    "Link Google account": "Vincular cuenta de Google",
+    "Choose the Google account with the same email address.": "Elige la cuenta de Google con la misma dirección de correo.",
+    "Google sign-in could not finish. Try again or use email.": "No se pudo completar el inicio de sesión con Google. Reintenta o usa tu correo."
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -1792,7 +1812,12 @@
     "Payday": "Jour de paie",
     "Collapse": "Réduire",
     "Expand": "Développer",
-    "h": "h"
+    "h": "h",
+    "Continue with Google": "Continuer avec Google",
+    "Or use your email": "Ou utilisez votre adresse e-mail",
+    "Link Google account": "Associer un compte Google",
+    "Choose the Google account with the same email address.": "Choisissez le compte Google avec la même adresse e-mail.",
+    "Google sign-in could not finish. Try again or use email.": "La connexion Google n’a pas abouti. Réessayez ou utilisez votre e-mail."
   },
   "sr": {
     "Today": "Danas",
@@ -2151,7 +2176,12 @@
     "Payday": "Isplata",
     "Collapse": "Skupi",
     "Expand": "Proširi",
-    "h": "sati"
+    "h": "sati",
+    "Continue with Google": "Nastavi sa Google nalogom",
+    "Or use your email": "Ili koristi e-poštu",
+    "Link Google account": "Poveži Google nalog",
+    "Choose the Google account with the same email address.": "Izaberi Google nalog sa istom adresom e-pošte.",
+    "Google sign-in could not finish. Try again or use email.": "Google prijava nije završena. Pokušaj ponovo ili koristi e-poštu."
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -2510,7 +2540,12 @@
     "Payday": "Pagamento",
     "Collapse": "Recolher",
     "Expand": "Expandir",
-    "h": "h"
+    "h": "h",
+    "Continue with Google": "Continuar com o Google",
+    "Or use your email": "Ou use seu e-mail",
+    "Link Google account": "Vincular conta do Google",
+    "Choose the Google account with the same email address.": "Escolha a conta do Google com o mesmo endereço de e-mail.",
+    "Google sign-in could not finish. Try again or use email.": "Não foi possível concluir o login com o Google. Tente novamente ou use e-mail."
   },
   "el": {
     "Today": "Σήμερα",
@@ -2869,6 +2904,11 @@
     "Payday": "Πληρωμή",
     "Collapse": "Σύμπτυξη",
     "Expand": "Ανάπτυξη",
-    "h": "ώ"
+    "h": "ώ",
+    "Continue with Google": "Συνέχεια με το Google",
+    "Or use your email": "Ή χρησιμοποιήστε το email σας",
+    "Link Google account": "Σύνδεση λογαριασμού Google",
+    "Choose the Google account with the same email address.": "Επιλέξτε τον λογαριασμό Google με την ίδια διεύθυνση email.",
+    "Google sign-in could not finish. Try again or use email.": "Η σύνδεση Google δεν ολοκληρώθηκε. Δοκιμάστε ξανά ή χρησιμοποιήστε email."
   }
 }

@@ -358,5 +358,10 @@ internal val catalogptBR = mapOf(
     "Payday" to "Pagamento",
     "Collapse" to "Recolher",
     "Expand" to "Expandir",
-    "h" to "h"
+    "h" to "h",
+    "Continue with Google" to "Continuar com o Google",
+    "Or use your email" to "Ou use seu e-mail",
+    "Link Google account" to "Vincular conta do Google",
+    "Choose the Google account with the same email address." to "Escolha a conta do Google com o mesmo endereço de e-mail.",
+    "Google sign-in could not finish. Try again or use email." to "Não foi possível concluir o login com o Google. Tente novamente ou use e-mail."
 )

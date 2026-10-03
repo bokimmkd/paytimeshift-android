@@ -358,5 +358,10 @@ internal val catalogde = mapOf(
     "Payday" to "Zahltag",
     "Collapse" to "Einklappen",
     "Expand" to "Ausklappen",
-    "h" to "Std."
+    "h" to "Std.",
+    "Continue with Google" to "Mit Google fortfahren",
+    "Or use your email" to "Oder E-Mail verwenden",
+    "Link Google account" to "Google-Konto verknüpfen",
+    "Choose the Google account with the same email address." to "Wähle das Google-Konto mit derselben E-Mail-Adresse.",
+    "Google sign-in could not finish. Try again or use email." to "Die Google-Anmeldung konnte nicht abgeschlossen werden. Versuche es erneut oder nutze E-Mail."
 )

@@ -358,5 +358,10 @@ internal val catalogit = mapOf(
     "Payday" to "Pagamento",
     "Collapse" to "Comprimi",
     "Expand" to "Espandi",
-    "h" to "ore"
+    "h" to "ore",
+    "Continue with Google" to "Continua con Google",
+    "Or use your email" to "Oppure usa la tua email",
+    "Link Google account" to "Collega account Google",
+    "Choose the Google account with the same email address." to "Scegli l’account Google con lo stesso indirizzo email.",
+    "Google sign-in could not finish. Try again or use email." to "Accesso con Google non completato. Riprova o usa l’email."
 )

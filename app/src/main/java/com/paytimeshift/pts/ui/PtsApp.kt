@@ -71,7 +71,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     Earnings("Earnings", Icons.Outlined.BarChart), Jobs("Jobs", Icons.Outlined.WorkOutline)
 }
 
-@Composable fun PtsApp() {
+@Composable fun PtsApp(shortcutAction: ShortcutAction? = null, onShortcutHandled: () -> Unit = {}) {
     val context = LocalContext.current
     val store = remember { LocalStore(context) }
     val scope = rememberCoroutineScope()
@@ -99,7 +99,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     }},{message=it},{annualPrice=it})}
     DisposableEffect(Unit) {
         val listener=com.google.firebase.auth.FirebaseAuth.AuthStateListener {
-            account=AccountStatus(uid=it.currentUser?.uid,email=it.currentUser?.email ?: "");accountResolved=it.currentUser==null
+            account=AccountStatus(uid=it.currentUser?.uid,email=it.currentUser?.email ?: "",verified=it.currentUser?.isEmailVerified==true,displayName=it.currentUser?.displayName ?: "");accountResolved=it.currentUser==null
             refreshAccount();billing.restore()
         }
         premiumRepo.auth.addAuthStateListener(listener);billing.start()
@@ -131,6 +131,28 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         loaded = true
         if(writable) withContext(Dispatchers.IO){syncReminders(context,data,data);refreshWidgets(context)}
     }
+    LaunchedEffect(loaded, data.preferences.language) {
+        if (loaded) publishPtsShortcuts(context, data.preferences.language)
+    }
+    LaunchedEffect(loaded, shortcutAction) {
+        if (!loaded || shortcutAction == null) return@LaunchedEffect
+        settings=false;accountOpen=false;analyticsOpen=false
+        addJob=false;jobEditor=null;addShift=false;shiftEditor=null
+        patterns=false;importer=false;shareMonth=null;sampleConfirm=false
+        when (shortcutAction) {
+            ShortcutAction.AddShift -> {
+                tab=Tab.Today
+                newShiftDate=LocalDate.now().toString()
+                if (writable) {
+                    if (data.jobs.none { !it.archived }) addJob=true else addShift=true
+                }
+            }
+            ShortcutAction.Calendar -> tab=Tab.Calendar
+            ShortcutAction.Earnings -> tab=Tab.Earnings
+            ShortcutAction.Jobs -> tab=Tab.Jobs
+        }
+        onShortcutHandled()
+    }
     fun commit(next: AppData) {
         if (!loaded || !writable || saving) return
         saving = true
@@ -153,7 +175,13 @@ private enum class Tab(val title: String, val icon: ImageVector) {
                 BrandLogo()
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) { UiText("PTS",fontSize=18.sp,fontWeight=FontWeight.Bold); UiText("Pay Time Shift",fontSize=9.sp) }
-                IconButton(onClick={settings=!settings}) { Icon(if(settings) Icons.Outlined.Close else Icons.Outlined.Settings,if(settings) "Close settings" else "Settings") }
+                IconButton(onClick={accountOpen=true}, enabled=loaded && writable) {
+                    Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primary.copy(alpha=.10f),CircleShape),contentAlignment=Alignment.Center) {
+                        Icon(if(account.uid==null) Icons.Outlined.PersonOutline else Icons.Outlined.Person,
+                            translate("Account & Premium",LocalLanguage.current),Modifier.size(21.dp),tint=MaterialTheme.colorScheme.primary)
+                    }
+                }
+                IconButton(onClick={settings=!settings}) { Icon(if(settings) Icons.Outlined.Close else Icons.Outlined.Settings,translate(if(settings) "Close settings" else "Settings",LocalLanguage.current)) }
             } },
             bottomBar = { if (!settings) BrandNavigation(tab) {tab=it} },
             floatingActionButton = { if (!settings && tab in listOf(Tab.Today,Tab.Calendar) && loaded && writable)

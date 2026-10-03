@@ -358,5 +358,10 @@ internal val cataloges = mapOf(
     "Payday" to "Día de pago",
     "Collapse" to "Contraer",
     "Expand" to "Expandir",
-    "h" to "h"
+    "h" to "h",
+    "Continue with Google" to "Continuar con Google",
+    "Or use your email" to "O usa tu correo electrónico",
+    "Link Google account" to "Vincular cuenta de Google",
+    "Choose the Google account with the same email address." to "Elige la cuenta de Google con la misma dirección de correo.",
+    "Google sign-in could not finish. Try again or use email." to "No se pudo completar el inicio de sesión con Google. Reintenta o usa tu correo."
 )

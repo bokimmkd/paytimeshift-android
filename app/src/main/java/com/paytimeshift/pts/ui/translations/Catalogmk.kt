@@ -358,5 +358,10 @@ internal val catalogmk = mapOf(
     "Payday" to "Исплата",
     "Collapse" to "Собери",
     "Expand" to "Прошири",
-    "h" to "ч"
+    "h" to "ч",
+    "Continue with Google" to "Продолжи со Google",
+    "Or use your email" to "Или користи е-пошта",
+    "Link Google account" to "Поврзи Google сметка",
+    "Choose the Google account with the same email address." to "Избери ја Google сметката со истата е-пошта.",
+    "Google sign-in could not finish. Try again or use email." to "Google најавата не заврши. Обиди се повторно или користи е-пошта."
 )

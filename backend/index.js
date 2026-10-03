@@ -10,6 +10,7 @@ import {setGlobalOptions} from 'firebase-functions/v2';
 import {google} from 'googleapis';
 import {createHash,randomUUID} from 'node:crypto';
 import {subscriptionEntitlement} from './entitlement.js';
+import {testerEntitlement} from './tester.js';
 import {validateBackup} from './analytics.js';
 import {reportPdf,translations} from './report.js';
 import {Resend} from 'resend';
@@ -19,6 +20,7 @@ const db=getFirestore(),auth=getAuth();const bucket=()=>getStorage().bucket();
 const PACKAGE='com.paytimeshift.pts',PRODUCT='pts_premium',BASE_PLAN='annual';
 const resendKey=defineSecret('PTS_RESEND_API_KEY');
 const sender=defineString('PTS_REPORT_SENDER',{description:'Verified sender such as PTS <reports@your-verified-domain>'});
+const testerEmail=defineString('PTS_PREMIUM_TEST_EMAIL',{default:'',description:'Optional owner-approved verified email for Premium QA. Empty disables test access.'});
 const hash=v=>createHash('sha256').update(v).digest('hex');
 const profile=uid=>db.doc(`users/${uid}`);
 const play=()=>google.androidpublisher({version:'v3',auth:new google.auth.GoogleAuth({scopes:['https://www.googleapis.com/auth/androidpublisher']})});
@@ -39,14 +41,19 @@ async function verify(uid,token){
 }
 async function premium(uid){
   const snap=await profile(uid).get();const p=snap.data() ?? {};
+  if(testerEntitlement(await auth.getUser(uid),testerEmail.value())) return p;
   if(!p.purchaseToken) throw new HttpsError('permission-denied','Premium is required.');
   const ent=await verify(uid,p.purchaseToken);if(!ent.active) throw new HttpsError('permission-denied','Premium is not active.');return p;
 }
 export const getAccountStatus=onCall(async request=>{
   const uid=identity(request);await limited(uid,'status');const user=await auth.getUser(uid);
   await db.runTransaction(async tx=>{const ref=profile(uid),snap=await tx.get(ref);if(!snap.exists) tx.set(ref,{monthlyEmail:true,yearlyEmail:true,language:'en',timeZone:'UTC',createdAt:Date.now()});});
-  let p=(await profile(uid).get()).data();let ent=p.premium ?? {active:false,expiresAt:0};
-  if(p.purchaseToken) ent=await verify(uid,p.purchaseToken);
+  let p=(await profile(uid).get()).data();let ent=testerEntitlement(user,testerEmail.value());
+  if(ent) await profile(uid).set({premium:ent,verifiedAt:Date.now()},{merge:true});
+  else {
+    ent=p.purchaseToken ? await verify(uid,p.purchaseToken) : {active:false,expiresAt:0};
+    if(p.premium?.state==='PTS_TEST_ACCESS') await profile(uid).set({premium:ent},{merge:true});
+  }
   return {premium:ent,email:user.email ?? '',emailVerified:user.emailVerified,monthlyEmail:p.monthlyEmail!==false,yearlyEmail:p.yearlyEmail!==false,backupAt:p.backupAt ?? 0,revision:p.revision ?? 0};
 });
 export const verifySubscription=onCall(async request=>{const uid=identity(request);await limited(uid,'purchase');return verify(uid,request.data?.purchaseToken);});

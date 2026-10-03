@@ -358,5 +358,10 @@ internal val catalogel = mapOf(
     "Payday" to "Πληρωμή",
     "Collapse" to "Σύμπτυξη",
     "Expand" to "Ανάπτυξη",
-    "h" to "ώ"
+    "h" to "ώ",
+    "Continue with Google" to "Συνέχεια με το Google",
+    "Or use your email" to "Ή χρησιμοποιήστε το email σας",
+    "Link Google account" to "Σύνδεση λογαριασμού Google",
+    "Choose the Google account with the same email address." to "Επιλέξτε τον λογαριασμό Google με την ίδια διεύθυνση email.",
+    "Google sign-in could not finish. Try again or use email." to "Η σύνδεση Google δεν ολοκληρώθηκε. Δοκιμάστε ξανά ή χρησιμοποιήστε email."
 )
