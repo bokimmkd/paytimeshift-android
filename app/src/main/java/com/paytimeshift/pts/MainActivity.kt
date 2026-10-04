@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.paytimeshift.pts.platform.ShortcutAction
 import com.paytimeshift.pts.platform.PlayUpdates
+import com.paytimeshift.pts.platform.MetaMeasurement
 import com.paytimeshift.pts.ui.PtsApp
 
 class MainActivity : ComponentActivity() {
@@ -28,5 +29,14 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         shortcutAction = ShortcutAction.fromIntent(intent)
     }
-}
 
+    override fun onResume() {
+        super.onResume()
+        MetaMeasurement.get(this).resume()
+    }
+
+    override fun onStop() {
+        MetaMeasurement.get(this).stop(isChangingConfigurations)
+        super.onStop()
+    }
+}

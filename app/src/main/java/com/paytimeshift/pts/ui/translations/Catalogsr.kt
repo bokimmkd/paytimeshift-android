@@ -495,5 +495,11 @@ internal val catalogsr = mapOf(
     "Installing update…" to "Instaliranje ažuriranja…",
     "Google Play will restart PTS to finish the update." to "Google Play će ponovo pokrenuti PTS da završi ažuriranje.",
     "You can keep using PTS while the update downloads." to "Možeš nastaviti da koristiš PTS dok se ažuriranje preuzima.",
-    "Could not finish installing. Tap Restart to try again." to "Instaliranje nije završeno. Dodirni Ponovo pokreni da pokušaš opet."
+    "Could not finish installing. Tap Restart to try again." to "Instaliranje nije završeno. Dodirni Ponovo pokreni da pokušaš opet.",
+    "App measurement" to "Merenje aplikacije",
+    "Allow app measurement" to "Dozvoli merenje aplikacije",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared." to "Dozvoljavaš da Meta meri instalacije i otvaranja PTS-a? Dele se podaci o uređaju/aplikaciji i mreži. Smene, zarada i podaci naloga se ne dele.",
+    "Optional. You can change this in Settings. Advertising ID collection is off." to "Opciono. Možeš promeniti u Podešavanjima. Prikupljanje reklamnog ID-a je isključeno.",
+    "Not now" to "Ne sada",
+    "Allow" to "Dozvoli"
 )

@@ -495,5 +495,11 @@ internal val catalogmk = mapOf(
     "Installing update…" to "Се инсталира ажурирањето…",
     "Google Play will restart PTS to finish the update." to "Google Play ќе го рестартира PTS за да го заврши ажурирањето.",
     "You can keep using PTS while the update downloads." to "Може да го користиш PTS додека се презема ажурирањето.",
-    "Could not finish installing. Tap Restart to try again." to "Инсталирањето не успеа. Притисни Рестарт за повторен обид."
+    "Could not finish installing. Tap Restart to try again." to "Инсталирањето не успеа. Притисни Рестарт за повторен обид.",
+    "App measurement" to "Мерење на апликацијата",
+    "Allow app measurement" to "Дозволи мерење на апликацијата",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared." to "Дозволуваш Meta да ги мери инсталациите и отворањата на PTS? Се споделуваат податоци за уредот/апликацијата и мрежата. Смените, платата и податоците за сметката не се споделуваат.",
+    "Optional. You can change this in Settings. Advertising ID collection is off." to "Изборно. Може да се смени во Поставки. Собирањето рекламен ID е исклучено.",
+    "Not now" to "Не сега",
+    "Allow" to "Дозволи"
 )

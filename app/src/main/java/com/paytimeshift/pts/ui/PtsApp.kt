@@ -224,6 +224,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             if (!loaded) Box(Modifier.fillMaxSize().padding(inset),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
             else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab in listOf(Tab.Today,Tab.Calendar) && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                 if(updates?.transfer?.stage in listOf(UpdateStage.Waiting,UpdateStage.Downloading,UpdateStage.Installing)) item {UpdateProgress(updates!!.transfer)}
+                if(!settings) item {MeasurementChoice()}
                 if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(data.withRestoredBackup(it))},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
@@ -778,6 +779,7 @@ private fun shiftLabel(shift: Shift): String {
         FormSection("Ad privacy") {
             OutlinedButton(onClick={com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(context as android.app.Activity){}},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){UiText("Privacy choices",fontSize=11.sp)}
         }
+        MeasurementChoice(settings=true)
         FormSection("Android widget") {UiText("Add a widget from your phone home screen.",fontSize=11.sp)}
         FormSection("PTS · Pay Time Shift") {
             UiText("${com.paytimeshift.pts.BuildConfig.VERSION_NAME} · PTS",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)

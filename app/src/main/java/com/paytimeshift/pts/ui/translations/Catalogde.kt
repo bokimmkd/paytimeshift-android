@@ -495,5 +495,11 @@ internal val catalogde = mapOf(
     "Installing update…" to "Update wird installiert…",
     "Google Play will restart PTS to finish the update." to "Google Play startet PTS neu, um das Update abzuschließen.",
     "You can keep using PTS while the update downloads." to "Du kannst PTS während des Downloads weiter nutzen.",
-    "Could not finish installing. Tap Restart to try again." to "Die Installation konnte nicht abgeschlossen werden. Tippe auf Neustart, um es erneut zu versuchen."
+    "Could not finish installing. Tap Restart to try again." to "Die Installation konnte nicht abgeschlossen werden. Tippe auf Neustart, um es erneut zu versuchen.",
+    "App measurement" to "App-Messung",
+    "Allow app measurement" to "App-Messung erlauben",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared." to "Darf Meta PTS-Installationen und App-Starts messen? Geräte-/App-Details und Netzwerkinformationen werden geteilt. Schichten, Bezahlung und Kontodaten werden nicht geteilt.",
+    "Optional. You can change this in Settings. Advertising ID collection is off." to "Optional. In den Einstellungen änderbar. Die Werbe-ID wird nicht erfasst.",
+    "Not now" to "Jetzt nicht",
+    "Allow" to "Erlauben"
 )

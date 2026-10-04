@@ -495,5 +495,11 @@ internal val catalogel = mapOf(
     "Installing update…" to "Εγκατάσταση ενημέρωσης…",
     "Google Play will restart PTS to finish the update." to "Το Google Play θα επανεκκινήσει το PTS για να ολοκληρώσει την ενημέρωση.",
     "You can keep using PTS while the update downloads." to "Μπορείτε να συνεχίσετε να χρησιμοποιείτε το PTS όσο γίνεται λήψη της ενημέρωσης.",
-    "Could not finish installing. Tap Restart to try again." to "Δεν ήταν δυνατή η ολοκλήρωση της εγκατάστασης. Πατήστε Επανεκκίνηση για νέα προσπάθεια."
+    "Could not finish installing. Tap Restart to try again." to "Δεν ήταν δυνατή η ολοκλήρωση της εγκατάστασης. Πατήστε Επανεκκίνηση για νέα προσπάθεια.",
+    "App measurement" to "Μέτρηση εφαρμογής",
+    "Allow app measurement" to "Να επιτρέπεται η μέτρηση εφαρμογής",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared." to "Να επιτρέπεται στη Meta να μετρά εγκαταστάσεις και ανοίγματα του PTS; Κοινοποιούνται στοιχεία συσκευής/εφαρμογής και δικτύου. Οι βάρδιες, οι αποδοχές και τα στοιχεία λογαριασμού δεν κοινοποιούνται.",
+    "Optional. You can change this in Settings. Advertising ID collection is off." to "Προαιρετικό. Αλλάζει στις Ρυθμίσεις. Η συλλογή διαφημιστικού ID είναι απενεργοποιημένη.",
+    "Not now" to "Όχι τώρα",
+    "Allow" to "Να επιτρέπεται"
 )

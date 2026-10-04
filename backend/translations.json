@@ -493,7 +493,13 @@
     "Installing update…": "Се инсталира ажурирањето…",
     "Google Play will restart PTS to finish the update.": "Google Play ќе го рестартира PTS за да го заврши ажурирањето.",
     "You can keep using PTS while the update downloads.": "Може да го користиш PTS додека се презема ажурирањето.",
-    "Could not finish installing. Tap Restart to try again.": "Инсталирањето не успеа. Притисни Рестарт за повторен обид."
+    "Could not finish installing. Tap Restart to try again.": "Инсталирањето не успеа. Притисни Рестарт за повторен обид.",
+    "App measurement": "Мерење на апликацијата",
+    "Allow app measurement": "Дозволи мерење на апликацијата",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Дозволуваш Meta да ги мери инсталациите и отворањата на PTS? Се споделуваат податоци за уредот/апликацијата и мрежата. Смените, платата и податоците за сметката не се споделуваат.",
+    "Optional. You can change this in Settings. Advertising ID collection is off.": "Изборно. Може да се смени во Поставки. Собирањето рекламен ID е исклучено.",
+    "Not now": "Не сега",
+    "Allow": "Дозволи"
   },
   "de": {
     "Today": "Heute",
@@ -989,7 +995,13 @@
     "Installing update…": "Update wird installiert…",
     "Google Play will restart PTS to finish the update.": "Google Play startet PTS neu, um das Update abzuschließen.",
     "You can keep using PTS while the update downloads.": "Du kannst PTS während des Downloads weiter nutzen.",
-    "Could not finish installing. Tap Restart to try again.": "Die Installation konnte nicht abgeschlossen werden. Tippe auf Neustart, um es erneut zu versuchen."
+    "Could not finish installing. Tap Restart to try again.": "Die Installation konnte nicht abgeschlossen werden. Tippe auf Neustart, um es erneut zu versuchen.",
+    "App measurement": "App-Messung",
+    "Allow app measurement": "App-Messung erlauben",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Darf Meta PTS-Installationen und App-Starts messen? Geräte-/App-Details und Netzwerkinformationen werden geteilt. Schichten, Bezahlung und Kontodaten werden nicht geteilt.",
+    "Optional. You can change this in Settings. Advertising ID collection is off.": "Optional. In den Einstellungen änderbar. Die Werbe-ID wird nicht erfasst.",
+    "Not now": "Jetzt nicht",
+    "Allow": "Erlauben"
   },
   "it": {
     "Today": "Oggi",
@@ -1485,7 +1497,13 @@
     "Installing update…": "Installazione dell’aggiornamento…",
     "Google Play will restart PTS to finish the update.": "Google Play riavvierà PTS per completare l’aggiornamento.",
     "You can keep using PTS while the update downloads.": "Puoi continuare a usare PTS durante il download dell’aggiornamento.",
-    "Could not finish installing. Tap Restart to try again.": "Impossibile completare l’installazione. Tocca Riavvia per riprovare."
+    "Could not finish installing. Tap Restart to try again.": "Impossibile completare l’installazione. Tocca Riavvia per riprovare.",
+    "App measurement": "Misurazione app",
+    "Allow app measurement": "Consenti misurazione app",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Consenti a Meta di misurare installazioni e aperture di PTS? Vengono condivisi dettagli del dispositivo/app e informazioni di rete. Turni, retribuzione e dati dell’account non vengono condivisi.",
+    "Optional. You can change this in Settings. Advertising ID collection is off.": "Facoltativo. Puoi modificare la scelta nelle Impostazioni. La raccolta dell’ID pubblicitario è disattivata.",
+    "Not now": "Non ora",
+    "Allow": "Consenti"
   },
   "es": {
     "Today": "Hoy",
@@ -1981,7 +1999,13 @@
     "Installing update…": "Instalando actualización…",
     "Google Play will restart PTS to finish the update.": "Google Play reiniciará PTS para completar la actualización.",
     "You can keep using PTS while the update downloads.": "Puedes seguir usando PTS mientras se descarga la actualización.",
-    "Could not finish installing. Tap Restart to try again.": "No se pudo completar la instalación. Pulsa Reiniciar para reintentar."
+    "Could not finish installing. Tap Restart to try again.": "No se pudo completar la instalación. Pulsa Reiniciar para reintentar.",
+    "App measurement": "Medición de la app",
+    "Allow app measurement": "Permitir medición de la app",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "¿Permites que Meta mida instalaciones y aperturas de PTS? Se comparten detalles del dispositivo/app e información de red. No se comparten turnos, salarios ni datos de la cuenta.",
+    "Optional. You can change this in Settings. Advertising ID collection is off.": "Opcional. Puedes cambiarlo en Ajustes. La recopilación del ID publicitario está desactivada.",
+    "Not now": "Ahora no",
+    "Allow": "Permitir"
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -2477,7 +2501,13 @@
     "Installing update…": "Installation de la mise à jour…",
     "Google Play will restart PTS to finish the update.": "Google Play redémarrera PTS pour terminer la mise à jour.",
     "You can keep using PTS while the update downloads.": "Vous pouvez continuer à utiliser PTS pendant le téléchargement de la mise à jour.",
-    "Could not finish installing. Tap Restart to try again.": "Impossible de terminer l’installation. Appuyez sur Redémarrer pour réessayer."
+    "Could not finish installing. Tap Restart to try again.": "Impossible de terminer l’installation. Appuyez sur Redémarrer pour réessayer.",
+    "App measurement": "Mesure de l’application",
+    "Allow app measurement": "Autoriser la mesure de l’application",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Autoriser Meta à mesurer les installations et ouvertures de PTS ? Les détails de l’appareil/app et les informations réseau sont partagés. Vos postes, salaires et données de compte ne sont pas partagés.",
+    "Optional. You can change this in Settings. Advertising ID collection is off.": "Facultatif. Modifiable dans les paramètres. La collecte de l’identifiant publicitaire est désactivée.",
+    "Not now": "Pas maintenant",
+    "Allow": "Autoriser"
   },
   "sr": {
     "Today": "Danas",
@@ -2973,7 +3003,13 @@
     "Installing update…": "Instaliranje ažuriranja…",
     "Google Play will restart PTS to finish the update.": "Google Play će ponovo pokrenuti PTS da završi ažuriranje.",
     "You can keep using PTS while the update downloads.": "Možeš nastaviti da koristiš PTS dok se ažuriranje preuzima.",
-    "Could not finish installing. Tap Restart to try again.": "Instaliranje nije završeno. Dodirni Ponovo pokreni da pokušaš opet."
+    "Could not finish installing. Tap Restart to try again.": "Instaliranje nije završeno. Dodirni Ponovo pokreni da pokušaš opet.",
+    "App measurement": "Merenje aplikacije",
+    "Allow app measurement": "Dozvoli merenje aplikacije",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Dozvoljavaš da Meta meri instalacije i otvaranja PTS-a? Dele se podaci o uređaju/aplikaciji i mreži. Smene, zarada i podaci naloga se ne dele.",
+    "Optional. You can change this in Settings. Advertising ID collection is off.": "Opciono. Možeš promeniti u Podešavanjima. Prikupljanje reklamnog ID-a je isključeno.",
+    "Not now": "Ne sada",
+    "Allow": "Dozvoli"
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -3469,7 +3505,13 @@
     "Installing update…": "Instalando atualização…",
     "Google Play will restart PTS to finish the update.": "O Google Play reiniciará o PTS para concluir a atualização.",
     "You can keep using PTS while the update downloads.": "Você pode continuar usando o PTS enquanto a atualização é baixada.",
-    "Could not finish installing. Tap Restart to try again.": "Não foi possível concluir a instalação. Toque em Reiniciar para tentar novamente."
+    "Could not finish installing. Tap Restart to try again.": "Não foi possível concluir a instalação. Toque em Reiniciar para tentar novamente.",
+    "App measurement": "Medição do app",
+    "Allow app measurement": "Permitir medição do app",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Permitir que a Meta meça instalações e aberturas do PTS? Detalhes do dispositivo/app e informações de rede são compartilhados. Turnos, salários e dados da conta não são compartilhados.",
+    "Optional. You can change this in Settings. Advertising ID collection is off.": "Opcional. Pode alterar nas Configurações. A coleta do ID de publicidade está desativada.",
+    "Not now": "Agora não",
+    "Allow": "Permitir"
   },
   "el": {
     "Today": "Σήμερα",
@@ -3965,6 +4007,12 @@
     "Installing update…": "Εγκατάσταση ενημέρωσης…",
     "Google Play will restart PTS to finish the update.": "Το Google Play θα επανεκκινήσει το PTS για να ολοκληρώσει την ενημέρωση.",
     "You can keep using PTS while the update downloads.": "Μπορείτε να συνεχίσετε να χρησιμοποιείτε το PTS όσο γίνεται λήψη της ενημέρωσης.",
-    "Could not finish installing. Tap Restart to try again.": "Δεν ήταν δυνατή η ολοκλήρωση της εγκατάστασης. Πατήστε Επανεκκίνηση για νέα προσπάθεια."
+    "Could not finish installing. Tap Restart to try again.": "Δεν ήταν δυνατή η ολοκλήρωση της εγκατάστασης. Πατήστε Επανεκκίνηση για νέα προσπάθεια.",
+    "App measurement": "Μέτρηση εφαρμογής",
+    "Allow app measurement": "Να επιτρέπεται η μέτρηση εφαρμογής",
+    "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Να επιτρέπεται στη Meta να μετρά εγκαταστάσεις και ανοίγματα του PTS; Κοινοποιούνται στοιχεία συσκευής/εφαρμογής και δικτύου. Οι βάρδιες, οι αποδοχές και τα στοιχεία λογαριασμού δεν κοινοποιούνται.",
+    "Optional. You can change this in Settings. Advertising ID collection is off.": "Προαιρετικό. Αλλάζει στις Ρυθμίσεις. Η συλλογή διαφημιστικού ID είναι απενεργοποιημένη.",
+    "Not now": "Όχι τώρα",
+    "Allow": "Να επιτρέπεται"
   }
 }
