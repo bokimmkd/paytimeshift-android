@@ -303,3 +303,16 @@ Owner screenshots 39641/39642/39643 show PTS New version available, Google Play 
 Source PlayUpdates exposes Ready only for Play InstallStatus.DOWNLOADED, from its listener or appUpdateInfo, and Restart calls completeUpdate. It currently gives no PTS progress UI for PENDING/DOWNLOADING and clears the prompt before installation. Official Google documentation describes background download after consent and platform-managed installation/restart via completeUpdate: https://developer.android.com/guide/playcore/in-app-updates/kotlin-java. A quick or cached download is a possible explanation, not established device evidence.
 
 Owner says the transition did not feel smooth. Next Android update scope: show a compact localized Waiting/Downloading indicator and byte-based progress when Play supplies a positive total; retain normal app use during download. Offer Restart only after confirmed DOWNLOADED, with no artificial delay for fast/cached downloads. After explicit Restart, show Installing until Play takes over; prevent repeated taps and recover clearly on completeUpdate failure. Resume should reconstruct Play state without reviving stale offers or downloaded events for an already installed version. Keep Later behavior, consent, optional updates, Store fallback and local data preservation. Add meaningful state-transition tests for slow/instant download, resume, repeated Restart and completion failure, and validate the next higher-version update on a real Play-installed device. Recorded scope only: no new application patch, version increment, AAB or Play submission in this diagnostic turn.
+
+
+## Calendar actions menu clarity — owner agreed, 2026-10-04 18:35 Europe/Skopje
+
+Owner screenshot 39649.jpg shows the Calendar overflow menu with Mark as holiday, Import roster, Delete shifts in a period and Share schedule. Owner agrees to include the following presentation changes in the next Android update:
+
+- Keep these actions in Calendar. Order: Import roster, Share schedule, Mark as holiday / Unmark holiday for the selected date, a divider, then Delete shifts in a period.
+- Show the selected date visibly beside the holiday action (for example, Mark as holiday · Oct 4), using the selected app language and locale. Update the date and mark/unmark wording when selection changes so the scope is clear.
+- Give every action a consistent leading icon and aligned text. Separate the destructive date-range deletion with a divider and use the theme's accessible error/red color for both its icon and text in Light and Dark.
+- Preserve action behavior: import/share keep their existing scope; the holiday flag applies to the selected calendar date across jobs and uses each job's configured holiday pay rules; deletion keeps its job/range review, affected count and explicit confirmation. Rearranging the menu must not modify saved shifts, rates or holidays.
+- Verify the menu on small screens and with longer translations/font scaling, selected-date changes, already-marked holidays, Light/Dark, and deletion cancellation.
+
+Recorded next-update scope only. No application implementation, version increment, new AAB or Play submission is claimed for this plan change.
