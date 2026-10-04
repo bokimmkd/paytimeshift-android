@@ -205,6 +205,18 @@ class PremiumUiTest {
         ui.runOnIdle {org.junit.Assert.assertEquals(0,downloads)}
     }
 
+    @Test fun unavailableFlexibleUpdateOffersALocalizedPlayStoreAction() {
+        var opened=0
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "mk") {Theme {
+            UpdateOffer(false,{opened++},{},store=true)
+        }}}
+        ui.onNodeWithText(translate("New version available","mk")).assertIsDisplayed()
+        ui.onNodeWithText(translate("A new PTS version is available. Open Google Play to install it.","mk")).assertIsDisplayed()
+        screenshot("update-play-store-fallback")
+        ui.onNodeWithText(translate("Open Google Play","mk")).performClick()
+        ui.runOnIdle {org.junit.Assert.assertEquals(1,opened)}
+    }
+
     @Test fun nativeTableReportsRenderInEveryLanguage() {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         languageNames.keys.forEach {language->

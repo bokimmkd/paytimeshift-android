@@ -477,5 +477,7 @@ internal val catalogmk = mapOf(
     "Support" to "Поддршка",
     "Support email copied." to "Е-поштата за поддршка е копирана.",
     "Enter 1–366 days." to "Внеси 1–366 дена.",
-    "Short rest" to "Краток одмор"
+    "Short rest" to "Краток одмор",
+    "Open Google Play" to "Отвори Google Play",
+    "A new PTS version is available. Open Google Play to install it." to "Достапна е нова верзија на PTS. Отвори Google Play за да ја инсталираш."
 )

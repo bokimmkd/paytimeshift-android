@@ -477,5 +477,7 @@ internal val cataloges = mapOf(
     "Support" to "Soporte",
     "Support email copied." to "Correo de soporte copiado.",
     "Enter 1–366 days." to "Introduce 1–366 días.",
-    "Short rest" to "Descanso insuficiente"
+    "Short rest" to "Descanso insuficiente",
+    "Open Google Play" to "Abrir Google Play",
+    "A new PTS version is available. Open Google Play to install it." to "Hay una nueva versión de PTS disponible. Abre Google Play para instalarla."
 )

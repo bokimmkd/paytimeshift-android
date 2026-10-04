@@ -1,6 +1,7 @@
 package com.paytimeshift.pts
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.content.pm.ShortcutManager
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -10,6 +11,7 @@ import com.paytimeshift.pts.platform.publishPtsShortcuts
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 class LauncherUiTest {
     @get:Rule val ui=createAndroidComposeRule<MainActivity>()
@@ -30,6 +32,15 @@ class LauncherUiTest {
             ui.onNodeWithText("Estimated earnings").assertIsDisplayed()
             open(ShortcutAction.Jobs,"Your jobs")
             ui.onNodeWithText("Your jobs").assertIsDisplayed()
+            ui.waitForIdle()
+            android.os.SystemClock.sleep(300)
+            val instrumentation=InstrumentationRegistry.getInstrumentation()
+            val screenshot=instrumentation.uiAutomation.takeScreenshot()
+            try {
+                val file=File(instrumentation.targetContext.getExternalFilesDir("screenshots"),"jobs-turquoise-add-button.png")
+                file.parentFile!!.mkdirs()
+                file.outputStream().use {screenshot.compress(Bitmap.CompressFormat.PNG,100,it)}
+            } finally {screenshot.recycle()}
             open(ShortcutAction.AddShift,"Pay and shift rules")
             ui.onNodeWithText("Pay and shift rules").assertIsDisplayed()
         } finally {

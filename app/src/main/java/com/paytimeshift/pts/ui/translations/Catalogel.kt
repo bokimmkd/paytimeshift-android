@@ -477,5 +477,7 @@ internal val catalogel = mapOf(
     "Support" to "Υποστήριξη",
     "Support email copied." to "Το email υποστήριξης αντιγράφηκε.",
     "Enter 1–366 days." to "Εισάγαγε 1–366 ημέρες.",
-    "Short rest" to "Σύντομη ανάπαυση"
+    "Short rest" to "Σύντομη ανάπαυση",
+    "Open Google Play" to "Άνοιγμα Google Play",
+    "A new PTS version is available. Open Google Play to install it." to "Μια νέα έκδοση του PTS είναι διαθέσιμη. Άνοιξε το Google Play για να την εγκαταστήσεις."
 )

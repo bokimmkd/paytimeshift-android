@@ -477,5 +477,7 @@ internal val catalogit = mapOf(
     "Support" to "Assistenza",
     "Support email copied." to "Email di assistenza copiata.",
     "Enter 1–366 days." to "Inserisci 1–366 giorni.",
-    "Short rest" to "Riposo breve"
+    "Short rest" to "Riposo breve",
+    "Open Google Play" to "Apri Google Play",
+    "A new PTS version is available. Open Google Play to install it." to "È disponibile una nuova versione di PTS. Apri Google Play per installarla."
 )

@@ -477,5 +477,7 @@ internal val catalogde = mapOf(
     "Support" to "Support",
     "Support email copied." to "Support-E-Mail kopiert.",
     "Enter 1–366 days." to "1–366 Tage eingeben.",
-    "Short rest" to "Kurze Ruhezeit"
+    "Short rest" to "Kurze Ruhezeit",
+    "Open Google Play" to "Google Play öffnen",
+    "A new PTS version is available. Open Google Play to install it." to "Eine neue PTS-Version ist verfügbar. Öffne Google Play, um sie zu installieren."
 )

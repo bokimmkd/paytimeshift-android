@@ -31,10 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
@@ -260,7 +258,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),false)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("Image")}
         }},confirmButton={TextButton(onClick={shareMonth=null}){UiText("Cancel")}})}
         if(sampleConfirm) AlertDialog(onDismissRequest={sampleConfirm=false},title={UiText("Load example schedule?")},text={UiText("Add Factory, Taxi and Restaurant with example shifts. You can edit them or start with your own jobs instead.")},confirmButton={TextButton(onClick={if(data.jobs.isEmpty()) commit(sampleData().copy(preferences=data.preferences)) else message="Examples are available only before adding jobs.";sampleConfirm=false}){UiText("Load examples")}},dismissButton={TextButton(onClick={sampleConfirm=false}){UiText("Cancel")}})
-        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()})
+        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store")
         if (saving) androidx.compose.ui.window.Dialog(onDismissRequest={}) { Surface(shape=Round) { Row(Modifier.padding(24.dp),verticalAlignment=Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(24.dp)); Spacer(Modifier.width(12.dp)); UiText("Saving…") } } }
         message?.let { text -> AlertDialog(onDismissRequest={message=null},title={UiText("PTS")},text={UiText(text)},confirmButton={TextButton(onClick={message=null}){UiText("OK")}}) }
     }
@@ -708,9 +706,12 @@ private fun shiftLabel(shift: Shift): String {
                 UiText(jobPayLabel(job),fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
             };Icon(Icons.Outlined.ChevronRight,null,Modifier.size(20.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
         }}
-        Box(Modifier.fillMaxWidth().height(44.dp).clip(Round).drawBehind {
-            drawRoundRect(color=Color(0xFF8EBFC3),cornerRadius=CornerRadius(9.dp.toPx()),style=Stroke(1.dp.toPx(),pathEffect=PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(),3.dp.toPx()))))
-        }.clickable(onClick=add),contentAlignment=Alignment.Center) {Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(7.dp)){Icon(Icons.Outlined.Add,null,Modifier.size(22.dp),tint=Color(0xFF00535B));UiText("Add job",fontSize=15.sp,fontWeight=FontWeight.Medium,color=Color(0xFF00535B))}}
+        Button(onClick=add,modifier=Modifier.fillMaxWidth().height(44.dp),shape=Round,
+            colors=ButtonDefaults.buttonColors(containerColor=Teal,contentColor=Color.White),
+            contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {
+            Icon(Icons.Outlined.Add,null,Modifier.size(22.dp));Spacer(Modifier.width(7.dp))
+            UiText("Add job",fontSize=15.sp,fontWeight=FontWeight.Medium,color=Color.White)
+        }
         if(data.jobs.any {it.archived}) {
             SectionLabel("Archived jobs")
             data.jobs.filter {it.archived}.forEach {j->TextButton(onClick={edit(j)}){androidx.compose.material3.Text(j.name)}}

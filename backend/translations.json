@@ -475,7 +475,9 @@
     "Support": "Поддршка",
     "Support email copied.": "Е-поштата за поддршка е копирана.",
     "Enter 1–366 days.": "Внеси 1–366 дена.",
-    "Short rest": "Краток одмор"
+    "Short rest": "Краток одмор",
+    "Open Google Play": "Отвори Google Play",
+    "A new PTS version is available. Open Google Play to install it.": "Достапна е нова верзија на PTS. Отвори Google Play за да ја инсталираш."
   },
   "de": {
     "Today": "Heute",
@@ -953,7 +955,9 @@
     "Support": "Support",
     "Support email copied.": "Support-E-Mail kopiert.",
     "Enter 1–366 days.": "1–366 Tage eingeben.",
-    "Short rest": "Kurze Ruhezeit"
+    "Short rest": "Kurze Ruhezeit",
+    "Open Google Play": "Google Play öffnen",
+    "A new PTS version is available. Open Google Play to install it.": "Eine neue PTS-Version ist verfügbar. Öffne Google Play, um sie zu installieren."
   },
   "it": {
     "Today": "Oggi",
@@ -1431,7 +1435,9 @@
     "Support": "Assistenza",
     "Support email copied.": "Email di assistenza copiata.",
     "Enter 1–366 days.": "Inserisci 1–366 giorni.",
-    "Short rest": "Riposo breve"
+    "Short rest": "Riposo breve",
+    "Open Google Play": "Apri Google Play",
+    "A new PTS version is available. Open Google Play to install it.": "È disponibile una nuova versione di PTS. Apri Google Play per installarla."
   },
   "es": {
     "Today": "Hoy",
@@ -1909,7 +1915,9 @@
     "Support": "Soporte",
     "Support email copied.": "Correo de soporte copiado.",
     "Enter 1–366 days.": "Introduce 1–366 días.",
-    "Short rest": "Descanso insuficiente"
+    "Short rest": "Descanso insuficiente",
+    "Open Google Play": "Abrir Google Play",
+    "A new PTS version is available. Open Google Play to install it.": "Hay una nueva versión de PTS disponible. Abre Google Play para instalarla."
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -2387,7 +2395,9 @@
     "Support": "Assistance",
     "Support email copied.": "Adresse d’assistance copiée.",
     "Enter 1–366 days.": "Saisissez 1–366 jours.",
-    "Short rest": "Repos insuffisant"
+    "Short rest": "Repos insuffisant",
+    "Open Google Play": "Ouvrir Google Play",
+    "A new PTS version is available. Open Google Play to install it.": "Une nouvelle version de PTS est disponible. Ouvrez Google Play pour l’installer."
   },
   "sr": {
     "Today": "Danas",
@@ -2865,7 +2875,9 @@
     "Support": "Podrška",
     "Support email copied.": "Adresa za podršku je kopirana.",
     "Enter 1–366 days.": "Unesi 1–366 dana.",
-    "Short rest": "Kratak odmor"
+    "Short rest": "Kratak odmor",
+    "Open Google Play": "Otvori Google Play",
+    "A new PTS version is available. Open Google Play to install it.": "Dostupna je nova verzija PTS-a. Otvori Google Play da je instaliraš."
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -3343,7 +3355,9 @@
     "Support": "Suporte",
     "Support email copied.": "E-mail de suporte copiado.",
     "Enter 1–366 days.": "Insira 1–366 dias.",
-    "Short rest": "Descanso insuficiente"
+    "Short rest": "Descanso insuficiente",
+    "Open Google Play": "Abrir Google Play",
+    "A new PTS version is available. Open Google Play to install it.": "Uma nova versão do PTS está disponível. Abra o Google Play para instalá-la."
   },
   "el": {
     "Today": "Σήμερα",
@@ -3821,6 +3835,8 @@
     "Support": "Υποστήριξη",
     "Support email copied.": "Το email υποστήριξης αντιγράφηκε.",
     "Enter 1–366 days.": "Εισάγαγε 1–366 ημέρες.",
-    "Short rest": "Σύντομη ανάπαυση"
+    "Short rest": "Σύντομη ανάπαυση",
+    "Open Google Play": "Άνοιγμα Google Play",
+    "A new PTS version is available. Open Google Play to install it.": "Μια νέα έκδοση του PTS είναι διαθέσιμη. Άνοιξε το Google Play για να την εγκαταστήσεις."
   }
 }
