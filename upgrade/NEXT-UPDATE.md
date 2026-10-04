@@ -143,3 +143,20 @@ This section supersedes the older “in review / live deployment pending” rele
 - Global Holiday is a pay/calendar classification and does not automatically mean every job is off. A Work shift on a holiday still needs its reminder; a specific job/day changed to Non-working day, Off, Vacation or Sick must not notify.
 - Device regression check alongside the calendar marker correction: schedule near-future reminders for two jobs, change only one job to a non-working status, confirm its prior alarm is canceled and only the other job notifies. Also verify returning that job to Work schedules its reminder again.
 - No unnecessary reminder was reproduced on device in this session; this is verified source behavior plus pending physical QA, not a claim of a newly fixed reminder bug.
+
+## User-reported rotation Days input — 2026-10-04
+
+- User screenshot 39566.jpg and report: Backspace cannot clear the single default digit in a rotation block's Days field; entering a replacement first and then deleting the old digit is required.
+- Confirmed source cause in ExtraScreens.kt / PatternDialog: Days renders block.days.toString(); onValueChange only accepts value.toIntOrNull(), so clearing the field is ignored and the previous number reappears.
+- Next Android update: preserve editable text separately from the validated day count, allow a temporarily empty field and normal cursor/selection behavior, then validate a positive supported count on Preview/save. Empty or invalid text must show a clear field error, never silently generate the old/default count.
+- Keep input state associated with the correct cycle row when adding/removing rows or changing jobs. Verify 2 -> empty -> 3, 1 -> empty -> 2, multi-digit Backspace, paste, row add/remove, job reset and existing valid rotation previews.
+- Recorded for the next update; no Android patch, build or Play upload has been performed for this issue yet.
+
+## Account/cloud status screenshot — 2026-10-04
+
+- User screenshot 39568.jpg shows the signed-in account, Subscribe yearly at $2.35/year, enabled Restore purchases, and disabled cloud backup/restore buttons. The cloud section simultaneously says "Automatic backup enabled on this phone", "Last cloud backup: —" and "Premium is required".
+- Confirmed UI defect in AccountScreen.kt: the enabled message depends only on repo.bound(uid), a local device/account binding. The buttons depend on status.premium. A retained binding therefore displays an active-sounding backup message when Premium is unavailable. A binding alone does not prove a successful upload; PremiumRepository can bind the device before an upload succeeds.
+- Next Android update: make the cloud status agree with current entitlement and actual upload evidence. Without Premium, explain that cloud backup requires Premium/is paused; do not call it active simply because a device binding exists. Keep the last successful backup timestamp distinct from configuration, and make never-uploaded/pending/failed states clear where known.
+- Preserve the existing account binding and local jobs/shifts; do not clear data or claim an uploaded backup based on this screenshot. Verify no Premium with a retained binding, eligible Premium before its first successful upload, successful backup/restore, failed upload and account switching.
+- PlayBilling.kt obtains the displayed annual price from the annual base plan's Google Play formattedPrice. The screenshot alone does not establish why it differs from the US base price, nor prove a purchase or server entitlement failure.
+- This is source diagnosis and next-update planning only. Payment verification and physical new-field cloud backup/restore remain pending.
