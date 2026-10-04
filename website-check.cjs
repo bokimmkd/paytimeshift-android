@@ -46,7 +46,7 @@ const server = http.createServer((req,res)=>{
     await page.reload();
     assert.equal(await page.inputValue('#language-select'),'el');
   }
-  const assets=await page.evaluate(()=>[...document.querySelectorAll('img')].map(i=>i.getAttribute('src')));
+  const assets=await page.evaluate(()=>[...document.querySelectorAll('img[src]')].map(i=>i.getAttribute('src')));
   for(const src of assets)assert(fs.existsSync(path.join(root,src)),src);
   const ratio=await page.locator('.cover img').evaluate(el=>({display:el.clientWidth/el.clientHeight,natural:el.naturalWidth/el.naturalHeight}));
   assert(Math.abs(ratio.display-ratio.natural)<0.03,'Cover cropped');
