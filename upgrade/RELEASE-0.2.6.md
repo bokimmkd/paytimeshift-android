@@ -40,3 +40,8 @@ The owner's installed version and flexible-update download/restart completion st
 - Publishing URL: https://play.google.com/console/u/0/developers/4766816481672407684/app/4974514655440409843/publishing
 - Saved proof: PTS-0.2.6-Play-review-1791113363940.jpg.
 - No production publication or backend deployment. Payment/cloud/RTDN/report email/Meta items remain as recorded above.
+
+
+## Published availability and next update report — 2026-10-04 14:10 Europe/Skopje
+
+Fresh Alpha page confirms 0.2.6 is Available to selected testers. The owner remains on the previously confirmed installed 0.2.5 and reports no 0.2.6 offer. Source integration is present and checks onResume; exact device Play availability and prompt behavior remain under diagnosis. See NEXT-UPDATE.md. Do not continue describing 0.2.6 as merely pending review.

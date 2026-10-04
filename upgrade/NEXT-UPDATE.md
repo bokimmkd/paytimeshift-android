@@ -218,3 +218,12 @@ Owner confirms that fixing the two remaining account buttons completes the relea
 ## Alpha submission and device update confirmation — 2026-10-04
 
 Owner confirms Settings shows 0.2.5; the earlier physical installed-version question is resolved. Owner explicitly authorizes publication of 0.2.6. The exact validated AAB16 is uploaded and submitted on existing Alpha at 100%, release 6 / "0.2.6 · Compact account buttons". Publishing overview shows Changes in review with quick checks running and managed publishing off. Availability to testers is still pending; see RELEASE-0.2.6.md and saved PTS-0.2.6-Play-review-1791113363940.jpg proof. No production or backend deployment; physical payment/cloud tests and RTDN/report-email/Meta work are unchanged.
+
+
+## 0.2.5 -> 0.2.6 offer report — 2026-10-04 14:10 Europe/Skopje
+
+Owner reports 0.2.6 approved but no in-app update offer. A fresh Alpha page now positively shows "Latest release: 0.2.6 · Compact account buttons" and "Available to selected testers"; publication is confirmed.
+
+Reviewed the exact candidate source af338cdf07f58bbb08225ac8595d8a84a73d8a28: MainActivity creates PlayUpdates and passes it to PtsApp; PlayUpdates checks on lifecycle onResume. The app does not continuously poll while remaining in the foreground. The source is unchanged from 0.2.5, whose installation the owner already confirmed. shouldOfferUpdate allows newer versionCode 16 even when versionCode 15 was deferred; a 15 deferral is not a confirmed explanation for the missing 16 offer. PtsApp waits until loaded/not saving and account/edit/pattern/analytics dialogs are closed before showing the prompt.
+
+Next phone diagnostic: close/reopen PTS on the main screen; inspect whether the same Play account's PTS listing offers Update, without installing first if testing the in-app prompt. Console availability does not reveal the device's appUpdateInfo response. Do not assert a propagation delay, a reproduced client failure, or successful 0.2.6 installation yet. No new source patch/AAB/rollout for this report.
