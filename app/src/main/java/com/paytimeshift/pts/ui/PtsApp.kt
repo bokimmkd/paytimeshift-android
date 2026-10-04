@@ -109,7 +109,14 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     }
     val billing=remember {PlayBilling(context as android.app.Activity,{premiumRepo.auth.currentUser?.uid},{token->scope.launch {
         if(!verifyingTokens.add(token)) return@launch
-        try {premiumRepo.verifyPurchase(token);refreshAccount()}
+        val requestedUid=premiumRepo.auth.currentUser?.uid
+        try {
+            premiumRepo.verifyPurchase(token)
+            // A status request started before purchase verification may still return Free.
+            refreshJob?.join()
+            if(premiumRepo.auth.currentUser?.uid==requestedUid) refreshAccount()
+        }
+        catch(e:kotlinx.coroutines.CancellationException) {throw e}
         catch(e:Exception) {message=cloudError(e)}
         finally {verifyingTokens.remove(token)}
     }},{message=it},{annualPrice=it})}
