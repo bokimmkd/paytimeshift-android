@@ -172,3 +172,14 @@ This section supersedes the older “in review / live deployment pending” rele
 - This screenshot also explicitly shows "Premium active" and "0.2.4 · PTS Premium" in Settings. Combined with the earlier Account screenshot's disabled cloud buttons / Premium-required message, this supports the owner's reported inconsistent Premium presentation across observed screens. The captures are at different times; do not claim simultaneous state or a confirmed backend cause.
 - Reproduce the Settings -> Account transition and account refresh/resume flow on the owner's Premium account, recording whether the status changes or cloud controls disagree. Resolve the entitlement/status issue separately from the button sizing.
 - Recorded for the next update; no Android layout patch, build or Play upload is claimed.
+
+## Website links, support email and release timing — 2026-10-04
+
+- Owner requests the app's Website and Privacy policy actions use the new paytimeshift.com website, and support email be visible in the app as bokimk.ap@gmail.com.
+- Current PtsApp.kt still links to https://pts-developer.bokimkd.chatgpt.site and its privacy.html. These are unchanged in Android source in this session.
+- Verified the owner's PTS-Website-9-Languages-2026-10-04.zip: its homepage links to privacy-premium.html; this policy applies to 0.2.0 and later. The separate privacy.html is the historical 0.1.7 local-only policy and must not be the new app's primary policy link.
+- Next implementation targets: Website https://paytimeshift.com/; Privacy policy https://paytimeshift.com/privacy-premium.html; visible support address bokimk.ap@gmail.com with a mailto action that opens the user's email app without sending automatically. Keep labels localized and consistent with the planned compact Settings buttons.
+- The website archive also contains delete-account.html. Verify public availability of the current policy and account-deletion page at release review; changing Play listing metadata is a separate reviewable action.
+- Public checks in this session could not verify the domain: web retrieval was inaccessible and direct HTTP checks returned 502. This does not establish the cause or publication state; recheck once website publication completes.
+- Owner's latest instruction at 11:00 Europe/Skopje: wait for website publication, then make the AAB. Do not start a new AAB/release upload now. Confirm homepage and current privacy page load publicly before applying the links, completing the agreed fixes/checks and building the next incremented version.
+- Only this plan was updated for these requests; no Android source changes, website deployment or new AAB were performed.
