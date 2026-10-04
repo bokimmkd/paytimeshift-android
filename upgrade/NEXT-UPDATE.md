@@ -227,3 +227,12 @@ Owner reports 0.2.6 approved but no in-app update offer. A fresh Alpha page now 
 Reviewed the exact candidate source af338cdf07f58bbb08225ac8595d8a84a73d8a28: MainActivity creates PlayUpdates and passes it to PtsApp; PlayUpdates checks on lifecycle onResume. The app does not continuously poll while remaining in the foreground. The source is unchanged from 0.2.5, whose installation the owner already confirmed. shouldOfferUpdate allows newer versionCode 16 even when versionCode 15 was deferred; a 15 deferral is not a confirmed explanation for the missing 16 offer. PtsApp waits until loaded/not saving and account/edit/pattern/analytics dialogs are closed before showing the prompt.
 
 Next phone diagnostic: close/reopen PTS on the main screen; inspect whether the same Play account's PTS listing offers Update, without installing first if testing the in-app prompt. Console availability does not reveal the device's appUpdateInfo response. Do not assert a propagation delay, a reproduced client failure, or successful 0.2.6 installation yet. No new source patch/AAB/rollout for this report.
+
+
+## Update retry and turquoise Add job — 0.2.7 / 17, 2026-10-04
+
+Owner reports the Play listing offers Update but the PTS offer does not reappear after returning to the main screen; screenshot 1791116039853.jpeg. Exact device Play SDK response is unavailable, so the cause remains unproven. Owner requests a new AAB and a turquoise Add job action.
+
+Source 093648439db27caf0cb0c529f916de52389f5ac6 adds foreground retries, request/session coalescing and timeout handling, available-update Store fallback, explicit-only per-version postponement and protection of downloaded/Ready events. Add job is now turquoise with white icon/text. Build 37202260071 and UI workflow 37202260083 passed: 82 debug + 82 release unit tests, 18 UI, 17 backend; no failures. Signed PTS-0.2.7-17.aab validated and saved for delivery; SHA-256 4725317aa5766d2889470b9c6cd8d449868668ea07a2a3aa82bd8a9132cb221c. See RELEASE-0.2.7.md for artifact and certificate evidence.
+
+0.2.7 is a prepared candidate, not a Play upload/publication; currently published Alpha remains 0.2.6. The old installed client needs 0.2.7 installed before the improved checking logic applies; real update-offer/download/restart verification requires 0.2.7 -> a higher Play version. Physical payment/cloud checks and RTDN/report mail/Meta work remain open.
