@@ -164,3 +164,11 @@ This section supersedes the older “in review / live deployment pending” rele
 - Preserve the account binding and local jobs/shifts. Device QA must include the owner's Premium account, unresolved/failed refresh, valid Premium backup/restore, expired/Free status with a retained binding, failed upload and account switching.
 - PlayBilling.kt obtains the displayed annual price from the annual base plan's Google Play formattedPrice. The screenshot alone does not establish why it differs from the US base price.
 - This is source diagnosis and next-update planning only. No Premium recognition fix, successful payment verification or physical new-field cloud backup/restore is claimed.
+
+## Settings button sizing and additional Premium evidence — 2026-10-04
+
+- Owner screenshot 39573.jpg requests smaller buttons in Settings. Scope includes Account & Premium, Privacy choices, Website, Privacy policy, Save backup file and Restore backup file; align the nearby Save actions with the compact style.
+- Next Android update: reduce visible button height and excessive vertical padding, use consistent compact icon/text proportions, and reduce unnecessary section spacing where it contributes to the oversized appearance. Preserve readable localized labels and comfortable accessible touch targets; check small screens and larger font settings. Do not remove actions or change their behavior.
+- This screenshot also explicitly shows "Premium active" and "0.2.4 · PTS Premium" in Settings. Combined with the earlier Account screenshot's disabled cloud buttons / Premium-required message, this supports the owner's reported inconsistent Premium presentation across observed screens. The captures are at different times; do not claim simultaneous state or a confirmed backend cause.
+- Reproduce the Settings -> Account transition and account refresh/resume flow on the owner's Premium account, recording whether the status changes or cloud controls disagree. Resolve the entitlement/status issue separately from the button sizing.
+- Recorded for the next update; no Android layout patch, build or Play upload is claimed.
