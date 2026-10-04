@@ -499,7 +499,7 @@ private fun shiftLabel(shift: Shift): String {
                                         markers.take(3).forEach {marker->data.jobs.find {it.id==marker.jobId}?.let {j->
                                             Box(Modifier.size(if(marker.kind=="Work") 7.dp else 11.dp).background(Color(j.color),CircleShape)
                                                 .semantics {contentDescription="${j.name}: ${translate(marker.kind,data.preferences.language)}"},contentAlignment=Alignment.Center) {
-                                                if(marker.kind!="Work") Text("−",fontSize=10.sp,lineHeight=11.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.error)
+                                                if(marker.kind!="Work") Text("−",Modifier.background(Color.White,CircleShape).padding(horizontal=1.dp),fontSize=8.sp,lineHeight=8.sp,fontWeight=FontWeight.Bold,color=Color(0xFFB3261E))
                                             }
                                         }}
                                         if(markers.size>3) UiText("+",fontSize=10.sp,lineHeight=10.sp)

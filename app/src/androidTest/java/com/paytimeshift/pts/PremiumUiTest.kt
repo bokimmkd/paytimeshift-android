@@ -91,7 +91,7 @@ class PremiumUiTest {
         ui.onNodeWithText("Subscribe yearly").assertDoesNotExist()
     }
     @Test fun calendarKeepsAbsenceAndWorkMarkersAlongsideRestIndicator() {
-        val factory=Job(id="factory",name="Factory",rate="10")
+        val factory=Job(id="factory",name="Factory",rate="10",color=0xFFDE5353)
         val wolt=Job(id="wolt",name="Wolt",rate="10")
         val rows=listOf(
             Shift(jobId="factory",date="2026-10-07",start="07:00",end="15:00",rate="10",currency="EUR"),
