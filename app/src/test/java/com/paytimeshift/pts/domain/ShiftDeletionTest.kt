@@ -36,8 +36,8 @@ class ShiftDeletionTest {
         assertTrue(runCatching {shiftsForDeletion(listOf(shift("a")),null,until,from)}.isFailure)
     }
     @Test fun deletingWorkNeverDeletesFixedSalaryOrMonthlyAdjustments() {
-        val job=factory.copy(monthlyPay=true,salaryPeriods=listOf(SalaryPeriod(from="2026-10-01",amount="40000",currency="MKD")))
-        val data=AppData(jobs=listOf(job),shifts=listOf(shift("a").copy(monthlyPay=true)))
+        val job=factory.copy(currency="MKD",monthlyPay=true,salaryPeriods=listOf(SalaryPeriod(from="2026-10-01",amount="40000",currency="MKD")))
+        val data=AppData(jobs=listOf(job),shifts=listOf(shift("a").copy(currency="MKD",monthlyPay=true)))
         val next=data.withShiftDeletion(ShiftDeletion("f",from,until,setOf("a")))
         assertEquals(monthlyAnalytics(data,java.time.YearMonth.of(2026,10)).currencies.single().salaryBase,monthlyAnalytics(next,java.time.YearMonth.of(2026,10)).currencies.single().salaryBase)
         assertEquals(data.adjustments,next.adjustments)
