@@ -340,3 +340,12 @@ Owner requests a new AAB to settle update behavior in PTS. Required sequence: PT
 ## 0.2.10 / 20 validated and submitted to Alpha — 2026-10-04 20:37 Europe/Skopje
 
 Source a45d506 implements the owner-defined next-opening Later behavior and retained Play consent/transfer state. Android/backend run 37224216796 and UI run 37224216807 pass: 101 debug + 101 release unit tests, 27 instrumented tests, 17 backend tests, lint and signed bundle verification. AAB manifest, artifact digests and existing upload certificate verified. Exact AAB 20 / 0.2.10 submitted as the sole Alpha change, release 10, full rollout to existing testers. Publishing overview confirms Changes in review with quick checks in progress; approval/tester availability and physical acceptance remain pending. See RELEASE-0.2.10.md for artifact identity and the distinction between updating into a version and exercising its updater.
+
+
+## Next PTS release candidate — Meta scope deferred for device testing, 2026-10-04 21:17 Europe/Skopje
+
+Owner keeps Meta/Facebook App Install Ads integration in the next PTS update and asks to wait while testing 0.2.10 for further issues. Combine Meta and any newly agreed fixes into the next release-candidate update after scope is closed. No new app implementation, version increment, build/AAB or Play upload is requested now.
+
+Meta requirements remain: a dedicated PTS Meta App ID for com.paytimeshift.pts and its verified Play listing; correct debug and Play signing-channel key hashes; a currently compatible SDK with install/activation measurement; confirmed Business Portfolio/ad account linking; an Events Manager event from a real clean install; applicable consent/privacy/Data Safety changes and regression checks before a later AAB. Do not treat the recorded plan as a completed SDK/account integration or advertising activation.
+
+At 21:08 the owner praised the physical update experience and top download indicator as perfect. Record positive device feedback without inferring coverage of all Later, rotation and installation-failure scenarios. The existing Meta backlog is retained alongside any other pending items.
