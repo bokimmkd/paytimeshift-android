@@ -126,14 +126,14 @@ This section supersedes the older “in review / live deployment pending” rele
 
 ## User-reported calendar marker correction — 2026-10-04
 
-- Scenario: mark a specific job's shift/day as Non-working day while another job (for example Wolt) still has a Work shift on the same date.
-- Existing job/date replacement scope is correct: only entries for the chosen job/date are replaced. Preserve the other job's shift, reminder and pay.
-- Confirmed source defect in CalendarScreen: dayRows currently includes every kind and derives normal job-colored shift dots from all jobIds, so a Non-working day, Off, Vacation or Sick record still looks like a work shift.
-- Next Android update: normal colored shift dots must represent Work entries only. After marking the factory non-working, its work dot disappears while Wolt's work dot remains. Keep the non-working status visible in the selected-day details without counting it as a worked shift. Align the calendar's shift counts and accessibility description with actual Work entries.
-- Existing arithmetic is already correct for a specific shift converted to a non-working status: hourly/per-shift jobs produce zero paid hours, base pay and extras for that record. If it replaced a planned paid shift, the month's estimate falls by that shift's previous earnings; no additional automatic deduction is created. Other jobs' earnings are unaffected.
-- Fixed monthly salary remains unchanged by attendance; reductions only come from explicit monthly deductions. Preserve these rules and Android/server agreement.
-- Verify one date with factory + Wolt: mark factory non-working, confirm only factory replacement, Wolt marker/pay remain, factory hourly/daily earnings become zero, fixed salary remains unchanged, then change back to Work. Check overnight start-date scope and saved/cloud status preservation.
-- This correction is recorded for the next update; no Android patch, build or Play upload has been performed for it yet.
+- Owner's latest decision (10:55 Europe/Skopje) supersedes the earlier proposal to hide the absent job's dot: keep the job marker for Vacation, Sick and Non-working day, visibly marked with a red minus sign. Use the same non-work distinction for Off; preserve the job identity/color so two jobs on the same date remain distinguishable.
+- Scenario: mark the factory's day non-working while Wolt still has a Work shift on that date. The factory marker remains with a red minus; Wolt keeps its normal work marker, hours, pay and reminder. Scope changes only to the selected job and shift-start date.
+- Confirmed current visual defect in CalendarScreen: all kinds derive ordinary job-colored dots from jobIds, so an absence currently looks like a Work shift. Next update must distinguish absence markers from ordinary Work markers, retain the status in day details and provide an accessible job/status description.
+- Vacation, Sick, Non-working day and Off must not contribute worked hours, worked-shift counts, hourly wages, daily/per-shift pay or work extras. For hourly/daily jobs the record contributes zero earnings; replacing a paid Work shift removes its former earnings without creating an additional automatic deduction.
+- Fixed monthly salary is unchanged by these day statuses. Only an explicit manual monthly deduction changes that salary estimate; do not prorate it automatically for absence.
+- Normal shift reminders are not scheduled for these non-work records; another job's Work reminder on the same date remains independent. A global Holiday flag on an actual Work shift retains its normal pay/reminder rules.
+- Verify factory + Wolt on one date for Vacation, Sick and Non-working day: factory marker remains with red minus, Wolt marker/pay/reminder remain, factory worked hours and hourly/daily pay are zero, fixed salary remains unchanged, and returning to Work restores the normal marker/calculation/reminder. Check overnight start-date scope, localized/accessibility status and saved/cloud preservation.
+- Recorded requirements for the next update only; no Android patch, build or Play upload has been performed for this correction yet.
 
 ## Reminder behavior checked — 2026-10-04
 
