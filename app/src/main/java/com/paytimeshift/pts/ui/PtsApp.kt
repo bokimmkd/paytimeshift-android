@@ -223,7 +223,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         ) { inset ->
             if (!loaded) Box(Modifier.fillMaxSize().padding(inset),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
             else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab in listOf(Tab.Today,Tab.Calendar) && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
+                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(data.withRestoredBackup(it))},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
                     Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it},{deleteShiftsDate=it}) }
@@ -234,7 +234,8 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         }
         if(accountOpen) AccountDialog(premiumRepo,account,annualPrice,{refreshAccount()},{billing.buy()},{billing.restore()},data,{next->
             check(loaded && writable && !saving);saving=true
-            try {withContext(Dispatchers.IO){store.save(next);syncReminders(context,data,next);refreshWidgets(context)};data=next}
+            val restored=data.withRestoredBackup(next)
+            try {withContext(Dispatchers.IO){store.save(restored);syncReminders(context,data,restored);refreshWidgets(context)};data=restored}
             finally {saving=false}
         },{accountOpen=false},resolved=accountResolved,checking=accountChecking,statusError=accountError)
         if(analyticsOpen && account.premium) AnalyticsDialog(data,YearMonth.parse(reportMonthText)){analyticsOpen=false}
