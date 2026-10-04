@@ -183,3 +183,13 @@ This section supersedes the older “in review / live deployment pending” rele
 - Public checks in this session could not verify the domain: web retrieval was inaccessible and direct HTTP checks returned 502. This does not establish the cause or publication state; recheck once website publication completes.
 - Owner's latest instruction at 11:00 Europe/Skopje: wait for website publication, then make the AAB. Do not start a new AAB/release upload now. Confirm homepage and current privacy page load publicly before applying the links, completing the agreed fixes/checks and building the next incremented version.
 - Only this plan was updated for these requests; no Android source changes, website deployment or new AAB were performed.
+
+## Calendar short-rest indicator — 2026-10-04
+
+- Owner screenshot 39575.jpg shows the selected day's existing "0h between shifts" warning. Owner requests a small exclamation mark on the calendar day whenever the rest interval is below the configured minimum, without disturbing job dots.
+- Next Android update: show one compact warning-colored "!" in a separate corner of the relevant date cell. Keep the date number, normal job dots, red-minus absence markers, holiday background and selected-day outline readable and in their existing roles.
+- Use the same short-rest decision as the detailed day warning, including only actual Work shifts and preserving cross-job and overnight behavior. Recompute after schedule edits and minimum-rest setting changes; below the minimum warns, equal/above does not.
+- Determine intervals with neighboring dates/months so an overnight shift or a prior-month shift cannot hide a short-rest warning at the month boundary. The cell indicator and selected-day warning must agree for the associated date.
+- Keep the existing detail below the shift cards when the user selects the day; add a localized accessible short-rest description to the date cell. The icon is a warning only and does not change shift dots, earnings or reminders.
+- Verify two jobs on one date, overnight and month-boundary intervals, threshold equality, disappearance after correcting the schedule, light/dark themes, small screens and the new absence marker coexistence.
+- This is an addition to the next-update plan; no Android patch, AAB or publication is claimed. The owner's wait-for-website instruction remains in effect.
