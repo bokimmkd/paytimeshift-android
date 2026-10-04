@@ -236,3 +236,8 @@ Owner reports the Play listing offers Update but the PTS offer does not reappear
 Source 093648439db27caf0cb0c529f916de52389f5ac6 adds foreground retries, request/session coalescing and timeout handling, available-update Store fallback, explicit-only per-version postponement and protection of downloaded/Ready events. Add job is now turquoise with white icon/text. Build 37202260071 and UI workflow 37202260083 passed: 82 debug + 82 release unit tests, 18 UI, 17 backend; no failures. Signed PTS-0.2.7-17.aab validated and saved for delivery; SHA-256 4725317aa5766d2889470b9c6cd8d449868668ea07a2a3aa82bd8a9132cb221c. See RELEASE-0.2.7.md for artifact and certificate evidence.
 
 0.2.7 is a prepared candidate, not a Play upload/publication; currently published Alpha remains 0.2.6. The old installed client needs 0.2.7 installed before the improved checking logic applies; real update-offer/download/restart verification requires 0.2.7 -> a higher Play version. Physical payment/cloud checks and RTDN/report mail/Meta work remain open.
+
+
+## 0.2.7 Alpha submitted — 2026-10-04 14:49 Europe/Skopje
+
+Owner authorizes upload/publication. Exact validated AAB17 uploaded to existing Closed testing - Alpha, release 7, 100% rollout, name "0.2.7 · Update checks & turquoise Add job". Publishing overview confirms Changes in review; quick checks are running and managed publishing is off. Availability to selected testers is pending. See RELEASE-0.2.7.md and saved PTS-0.2.7-Play-review-1791118183371.jpg proof. Earlier candidate-only status is superseded. No production or backend deployment; physical update/payment/cloud checks and RTDN/report mail/Meta remain open.

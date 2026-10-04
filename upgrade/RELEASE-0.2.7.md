@@ -40,3 +40,14 @@ The owner confirmed installed 0.2.5 earlier. Alpha 0.2.6 is available to selecte
 This 0.2.7 is prepared and validated, not uploaded or published. Current published Alpha remains 0.2.6 / 16. The old installed client cannot receive this new checking logic until 0.2.7 is installed. Physical end-to-end validation of the improved offer needs an installed 0.2.7 followed by a higher-version Play release; CI is not proof of a real Play download/restart.
 
 Physical payment/purchase restore and owner-account cloud backup/restore remain open integration checks. RTDN, deferred paid-mail/report sending and Meta integration are unchanged.
+
+
+## Owner-authorized Alpha submission — 2026-10-04 14:49 Europe/Skopje
+
+- Owner explicitly requests upload/publication: "Kaci ja". Uploaded the exact validated PTS-0.2.7-17.aab, SHA-256 4725317aa5766d2889470b9c6cd8d449868668ea07a2a3aa82bd8a9132cb221c.
+- Google accepted versionCode 17 / 0.2.7 on existing Closed testing - Alpha track 4699298164505386169, release 7, name "0.2.7 · Update checks & turquoise Add job", rollout 100%.
+- Reviewed the single nonblocking native debug-symbol warning. No supported devices were lost. Release notes describe improved update checks/recovery and the turquoise Add job action.
+- Submitted exactly one change. Publishing overview positively shows "Changes in review" for this release; quick checks are still running (up to 14 minutes shown). Managed publishing is off. Submission is confirmed; availability to testers is not yet confirmed.
+- Verified publishing URL: https://play.google.com/console/u/0/developers/4766816481672407684/app/4974514655440409843/publishing
+- Saved proof: PTS-0.2.7-Play-review-1791118183371.jpg.
+- Earlier candidate-only status above is superseded by this submission. No production publication or backend deployment. Physical update/payment/cloud checks and RTDN/report mail/Meta items remain as recorded above.
