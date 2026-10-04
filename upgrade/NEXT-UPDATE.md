@@ -241,3 +241,14 @@ Source 093648439db27caf0cb0c529f916de52389f5ac6 adds foreground retries, request
 ## 0.2.7 Alpha submitted — 2026-10-04 14:49 Europe/Skopje
 
 Owner authorizes upload/publication. Exact validated AAB17 uploaded to existing Closed testing - Alpha, release 7, 100% rollout, name "0.2.7 · Update checks & turquoise Add job". Publishing overview confirms Changes in review; quick checks are running and managed publishing is off. Availability to selected testers is pending. See RELEASE-0.2.7.md and saved PTS-0.2.7-Play-review-1791118183371.jpg proof. Earlier candidate-only status is superseded. No production or backend deployment; physical update/payment/cloud checks and RTDN/report mail/Meta remain open.
+
+
+## Cloud upload blocked but mislabeled as connection failure — 2026-10-04 15:48 Europe/Skopje
+
+Owner screenshots 39613.jpg and 39615.jpg show the cloud upload confirmation followed by "Could not connect. Check your connection and try again." Cloud actions are enabled; the screen shows "Choose cloud restore or enable backup on this phone first" and an existing backup timestamp 2026-10-04T11:03:58.351. This is not evidence that the owner's phone has lost internet or lacks Premium.
+
+Source diagnosis at b3b2b709cc45706be72094e259bdc48fa664dea6: AccountScreen.kt's confirmation checks status.revision==0 before binding an unbound phone. With an existing nonzero cloud revision it throws IllegalStateException("Restore existing backup first.") before calling reportPreferences or backup. PremiumRepository.kt's cloudError does not map that exception; it falls through to the generic connection message. This matches the visible existing-backup/unbound state closely. The actual device exception and network request were not captured; do not claim a backend outage or a proven phone call trace.
+
+Next Android update (expected 0.2.8 / 18): present this existing-backup condition accurately before upload confirmation, using a localized explanation and appropriate restore guidance. Preserve the guard against overwriting an existing cloud backup from an unbound phone. Keep successful binding/upload status distinct and make mapped local validation errors specific rather than connection failures. If a cloud restore would replace newer local jobs/shifts, explain that clearly and allow saving a local backup first; do not restore, delete or overwrite automatically. Add a meaningful regression for the existing nonzero revision/unbound case and error presentation. Retain existing cross-phone revision conflict and empty-data protection.
+
+This turn diagnoses and records the issue only. No new Android patch/build/Play release, backend deployment, successful backup/restore or device data mutation is claimed. 0.2.7 was previously submitted to Alpha; its current approval/availability was not rechecked in this turn.
