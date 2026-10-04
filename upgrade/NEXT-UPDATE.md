@@ -111,3 +111,15 @@ Recorded: 2026-10-03. These are implementation requirements, not a claim that al
 - Full rollout requested only within this closed-test track; no production rollout. Publishing overview shows Changes in review, with automated quick checks still running before Google review.
 - Native debug symbols warning is nonblocking; no unsupported-device changes or validation errors were shown.
 - Managed publishing was already off; approved changes can publish automatically. Do not claim availability to testers until Google approves/publishes this release.
+
+## Latest availability and next-update QA — 2026-10-04
+
+This section supersedes the older “in review / live deployment pending” release wording above.
+
+- User screenshot 39532.jpg shows Closed testing release 0.2.4 · Field hints & monthly pay, bundle 14 (0.2.4), 100% Available on Play; rollout began October 3, 2026 at 23:28 as displayed in the screenshot. Production remains unpublished.
+- User reported that the expected in-app update request did not appear. Keep this as an open device-QA item for the next release; do not label it fixed based only on source/UI tests.
+- Source history confirms the Play update integration was first introduced by commit 68ae8a72690ff9a5017c4557e6599e393d3129f3 in 0.2.4. The published 0.2.3 (13) did not contain PlayUpdates or the app-update dependency, so it could not show the new PTS in-app offer for 0.2.4.
+- For the next higher version, verify on a Play-installed 0.2.4 with an eligible tester account: offer on foreground/resume, Update/Later, 24-hour deferral, background download, restart/install and preservation of local jobs/shifts. Record the installed build, offered build, Play account/track eligibility and whether Later or Play auto-update explains a missing offer. Fix any reproducible failure found.
+- User noticed another one or two situations needing correction. Their descriptions are not yet supplied; capture them individually with steps, expected behavior and screenshot before implementing. Do not invent these issues.
+- Resend work is explicitly deferred by the owner until the website work in the other session is finished and the email/sender path is chosen. Do not purchase a Resend upgrade or change the website from this task.
+- Current service evidence and the completed PTS-only Play grant are recorded in SERVICE-STATUS-2026-10-04.md. Purchase, RTDN and cloud/device QA remain separate from release availability.
