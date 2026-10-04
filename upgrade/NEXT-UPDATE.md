@@ -193,3 +193,10 @@ This section supersedes the older “in review / live deployment pending” rele
 - Keep the existing detail below the shift cards when the user selects the day; add a localized accessible short-rest description to the date cell. The icon is a warning only and does not change shift dots, earnings or reminders.
 - Verify two jobs on one date, overnight and month-boundary intervals, threshold equality, disappearance after correcting the schedule, light/dark themes, small screens and the new absence marker coexistence.
 - This is an addition to the next-update plan; no Android patch, AAB or publication is claimed. The owner's wait-for-website instruction remains in effect.
+
+
+## Current implementation — 0.2.5 / 15, 2026-10-04
+
+The owner confirms the website is available and authorizes a new AAB, superseding the earlier wait instruction. Android source eaf038ab23751d11e6a37a2aa3968e4a3a26e7b8 implements the agreed red-minus absence markers (with contrast on red job colors), the separate short-rest exclamation mark, editable rotation counts, resolved/error-aware Premium cloud controls and refresh/purchase coalescing, compact Settings buttons, paytimeshift.com/current policy links and visible support email. Existing non-working zero hourly/daily pay, unchanged fixed monthly salary and Work-only reminder filtering are preserved. Historical planning/diagnosis notes above describe the state at their recording time; use RELEASE-0.2.5.md for the current build result.
+
+Final build 37192622764 and UI validation 37192622779 passed: 73 debug + 73 release unit tests, 17 UI tests and 17 backend tests. PTS-0.2.5-15.aab is signed with the existing upload certificate; bundle/manifest validation passed. SHA-256 49b29ce9d68ee674c718d9130c0d14c1862a9ae96e1ab57b46a62774daa000b3. The artifact was saved for delivery. The build is not a Play upload or rollout. Owner-account cloud backup/restore, license purchase/restore and the 0.2.4 -> 0.2.5 update offer still need physical-device verification. RTDN, deferred Resend/report mail and Meta integration remain open.
