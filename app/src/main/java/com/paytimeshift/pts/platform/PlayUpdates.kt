@@ -65,7 +65,7 @@ class PlayUpdates(private val activity:ComponentActivity):DefaultLifecycleObserv
         if(transfer.stage !in listOf(UpdateStage.Ready,UpdateStage.Downloading,UpdateStage.Installing,UpdateStage.Installed,UpdateStage.Stopped)) {
             observation++
             when(result.resultCode) {
-                Activity.RESULT_CANCELED -> {deferVersion(flowVersion);transfer=UpdateTransfer();prompt=null}
+                Activity.RESULT_CANCELED -> {deferVersion(flowVersion);transfer=UpdateTransfer(completedVersion=transfer.completedVersion);prompt=null}
                 Activity.RESULT_OK -> observe(flowVersion,InstallStatus.PENDING)
                 else -> {Log.w("PTSUpdates","Play update consent failed");storeFallbackVersion=flowVersion;prompt="Store"}
             }
@@ -107,7 +107,7 @@ class PlayUpdates(private val activity:ComponentActivity):DefaultLifecycleObserv
             info=value
             val version=value.availableVersionCode()
             observe(version,value.installStatus(),value.bytesDownloaded(),value.totalBytesToDownload())
-            if(version<=BuildConfig.VERSION_CODE || transfer.stage==UpdateStage.Installed) {prompt=null;return@addOnCompleteListener}
+            if(version<=maxOf(BuildConfig.VERSION_CODE,transfer.completedVersion) || transfer.stage==UpdateStage.Installed) {prompt=null;return@addOnCompleteListener}
             if(transfer.stage==UpdateStage.Idle && value.updateAvailability()==UpdateAvailability.UPDATE_AVAILABLE &&
                 shouldOfferUpdate(BuildConfig.VERSION_CODE,version,preferences.getInt("laterVersion",0),preferences.getLong("laterAt",0),System.currentTimeMillis()))
                 prompt=if(value.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE) && version!=storeFallbackVersion) "Available" else "Store"
