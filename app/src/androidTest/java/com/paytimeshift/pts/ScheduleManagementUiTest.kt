@@ -21,9 +21,9 @@ import java.util.Locale
 class ScheduleManagementUiTest {
     @get:Rule val ui=createComposeRule()
     private val data=AppData(jobs=listOf(Job(id="f",name="Factory"),Job(id="w",name="Wolt")),shifts=listOf(
-        Shift(id="f1",jobId="f",date="2026-10-07",start="07:00",end="15:00",rate="10"),
-        Shift(id="f2",jobId="f",date="2026-10-08",start="07:00",end="15:00",rate="10",kind="Sick"),
-        Shift(id="w1",jobId="w",date="2026-10-07",start="15:00",end="23:00",rate="10")))
+        Shift(id="f1",jobId="f",date="2026-10-07",start="07:00",end="15:00",rate="10",currency="EUR"),
+        Shift(id="f2",jobId="f",date="2026-10-08",start="07:00",end="15:00",rate="10",currency="EUR",kind="Sick"),
+        Shift(id="w1",jobId="w",date="2026-10-07",start="15:00",end="23:00",rate="10",currency="EUR")))
     private fun screenshot(name:String) {
         ui.waitForIdle();android.os.SystemClock.sleep(300)
         val inst=InstrumentationRegistry.getInstrumentation()

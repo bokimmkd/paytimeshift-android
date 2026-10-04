@@ -11,7 +11,7 @@ class ShiftDeletionTest {
     private val until=LocalDate.of(2026,10,31)
     private val factory=Job(id="f",name="Factory")
     private val wolt=Job(id="w",name="Wolt")
-    private fun shift(id:String,job:String="f",date:String="2026-10-07",kind:String="Work")=Shift(id=id,jobId=job,date=date,start="23:00",end="07:00",rate="10",kind=kind)
+    private fun shift(id:String,job:String="f",date:String="2026-10-07",kind:String="Work")=Shift(id=id,jobId=job,date=date,start="23:00",end="07:00",rate="10",currency="EUR",kind=kind)
     @Test fun selectedJobDeletionIncludesLeaveAndPreservesOtherJobsAndSettings() {
         val data=AppData(jobs=listOf(factory,wolt),shifts=listOf(shift("work"),shift("leave",kind="Sick"),shift("other","w"),shift("before",date="2026-09-30"),shift("after",date="2026-11-01")))
         val rows=shiftsForDeletion(data.shifts,"f",from,until)
