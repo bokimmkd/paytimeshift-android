@@ -16,10 +16,13 @@ fun cloudBackupLabel(status:AccountStatus,bound:Boolean,resolved:Boolean,error:B
     !resolved && error -> "Cloud backup status unavailable. Refresh account."
     !resolved -> "Checking account…"
     !status.premium -> "Cloud backup paused. Premium is required."
+    cloudRestoreRequired(status,bound) -> existingBackupMessage
     !bound -> "Choose cloud restore or enable backup on this phone first."
     status.backupAt==0L -> "Automatic backup is ready. No cloud backup saved yet."
     else -> "Automatic backup enabled on this phone"
 }
+fun cloudRestoreRequired(status:AccountStatus,bound:Boolean):Boolean = !bound && status.revision>0
+const val existingBackupMessage="A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data."
 fun accountHash(uid: String)=MessageDigest.getInstance("SHA-256").digest(uid.toByteArray()).joinToString(""){"%02x".format(it)}
 class PremiumRepository(val context: Context) {
     val auth=FirebaseAuth.getInstance()
@@ -57,6 +60,9 @@ class PremiumRepository(val context: Context) {
     suspend fun deleteAccount() {call("deletePtsAccount");unbind();auth.signOut()}
 }
 fun cloudError(e: Exception): String = when {
+    e is IllegalStateException && e.message=="Restore existing backup first." -> existingBackupMessage
+    e is IllegalStateException && e.message=="Choose cloud restore or enable backup on this phone first." -> "Choose cloud restore or enable backup on this phone first."
+    e is IllegalStateException && e.message=="Sign in first." -> "Sign in before subscribing."
     e is IllegalArgumentException && e.message=="Choose the Google account with the same email address." -> "Choose the Google account with the same email address."
     e is androidx.credentials.exceptions.GetCredentialException -> "Google sign-in could not finish. Try again or use email."
     e is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Check your email and password."

@@ -479,5 +479,15 @@ internal val catalogfr = mapOf(
     "Enter 1–366 days." to "Saisissez 1–366 jours.",
     "Short rest" to "Repos insuffisant",
     "Open Google Play" to "Ouvrir Google Play",
-    "A new PTS version is available. Open Google Play to install it." to "Une nouvelle version de PTS est disponible. Ouvrez Google Play pour l’installer."
+    "A new PTS version is available. Open Google Play to install it." to "Une nouvelle version de PTS est disponible. Ouvrez Google Play pour l’installer.",
+    "Delete shifts in a period" to "Supprimer les services sur une période",
+    "All jobs" to "Tous les emplois",
+    "Entries to delete" to "Entrées à supprimer",
+    "Includes days off and leave. Dates refer to when each shift starts." to "Inclut les jours de repos et les absences. Les dates correspondent au début de chaque service.",
+    "Review deletion" to "Vérifier la suppression",
+    "Delete these entries?" to "Supprimer ces entrées ?",
+    "Entries outside this selection and job settings stay unchanged." to "Les entrées hors de cette sélection et les paramètres des emplois restent inchangés.",
+    "Select valid From and To dates." to "Choisissez des dates de début et de fin valides.",
+    "Existing cloud backup" to "Sauvegarde cloud existante",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Une sauvegarde cloud existe déjà. Restaurez-la avant d’activer la sauvegarde sur ce téléphone. Enregistrez d’abord une copie locale pour conserver vos données actuelles."
 )

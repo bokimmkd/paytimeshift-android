@@ -477,7 +477,17 @@
     "Enter 1–366 days.": "Внеси 1–366 дена.",
     "Short rest": "Краток одмор",
     "Open Google Play": "Отвори Google Play",
-    "A new PTS version is available. Open Google Play to install it.": "Достапна е нова верзија на PTS. Отвори Google Play за да ја инсталираш."
+    "A new PTS version is available. Open Google Play to install it.": "Достапна е нова верзија на PTS. Отвори Google Play за да ја инсталираш.",
+    "Delete shifts in a period": "Избриши смени во период",
+    "All jobs": "Сите работи",
+    "Entries to delete": "Записи за бришење",
+    "Includes days off and leave. Dates refer to when each shift starts.": "Вклучува слободни денови и отсуства. Датумот се однесува на почетокот на смената.",
+    "Review deletion": "Прегледај бришење",
+    "Delete these entries?": "Да ги избришам овие записи?",
+    "Entries outside this selection and job settings stay unchanged.": "Записите надвор од изборот и поставките на работите остануваат непроменети.",
+    "Select valid From and To dates.": "Избери валидни датуми Од и До.",
+    "Existing cloud backup": "Постоечка cloud копија",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Веќе постои cloud копија. Врати ја пред да активираш backup на овој телефон. Прво зачувај локална копија за да ги задржиш сегашните податоци."
   },
   "de": {
     "Today": "Heute",
@@ -957,7 +967,17 @@
     "Enter 1–366 days.": "1–366 Tage eingeben.",
     "Short rest": "Kurze Ruhezeit",
     "Open Google Play": "Google Play öffnen",
-    "A new PTS version is available. Open Google Play to install it.": "Eine neue PTS-Version ist verfügbar. Öffne Google Play, um sie zu installieren."
+    "A new PTS version is available. Open Google Play to install it.": "Eine neue PTS-Version ist verfügbar. Öffne Google Play, um sie zu installieren.",
+    "Delete shifts in a period": "Schichten in einem Zeitraum löschen",
+    "All jobs": "Alle Jobs",
+    "Entries to delete": "Zu löschende Einträge",
+    "Includes days off and leave. Dates refer to when each shift starts.": "Enthält freie Tage und Urlaub. Das Datum bezieht sich auf den Schichtbeginn.",
+    "Review deletion": "Löschung prüfen",
+    "Delete these entries?": "Diese Einträge löschen?",
+    "Entries outside this selection and job settings stay unchanged.": "Einträge außerhalb der Auswahl und Job-Einstellungen bleiben unverändert.",
+    "Select valid From and To dates.": "Gültige Von- und Bis-Daten auswählen.",
+    "Existing cloud backup": "Vorhandene Cloud-Sicherung",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Es gibt bereits eine Cloud-Sicherung. Stelle sie wieder her, bevor du die Sicherung auf diesem Telefon aktivierst. Sichere zuerst lokal, um deine aktuellen Daten zu behalten."
   },
   "it": {
     "Today": "Oggi",
@@ -1437,7 +1457,17 @@
     "Enter 1–366 days.": "Inserisci 1–366 giorni.",
     "Short rest": "Riposo breve",
     "Open Google Play": "Apri Google Play",
-    "A new PTS version is available. Open Google Play to install it.": "È disponibile una nuova versione di PTS. Apri Google Play per installarla."
+    "A new PTS version is available. Open Google Play to install it.": "È disponibile una nuova versione di PTS. Apri Google Play per installarla.",
+    "Delete shifts in a period": "Elimina turni in un periodo",
+    "All jobs": "Tutti i lavori",
+    "Entries to delete": "Voci da eliminare",
+    "Includes days off and leave. Dates refer to when each shift starts.": "Include giorni liberi e assenze. Le date si riferiscono all’inizio di ogni turno.",
+    "Review deletion": "Controlla eliminazione",
+    "Delete these entries?": "Eliminare queste voci?",
+    "Entries outside this selection and job settings stay unchanged.": "Le voci fuori dalla selezione e le impostazioni dei lavori restano invariate.",
+    "Select valid From and To dates.": "Seleziona date Da e A valide.",
+    "Existing cloud backup": "Backup cloud esistente",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Esiste già un backup cloud. Ripristinalo prima di attivare il backup su questo telefono. Salva prima una copia locale per conservare i dati attuali."
   },
   "es": {
     "Today": "Hoy",
@@ -1917,7 +1947,17 @@
     "Enter 1–366 days.": "Introduce 1–366 días.",
     "Short rest": "Descanso insuficiente",
     "Open Google Play": "Abrir Google Play",
-    "A new PTS version is available. Open Google Play to install it.": "Hay una nueva versión de PTS disponible. Abre Google Play para instalarla."
+    "A new PTS version is available. Open Google Play to install it.": "Hay una nueva versión de PTS disponible. Abre Google Play para instalarla.",
+    "Delete shifts in a period": "Eliminar turnos de un período",
+    "All jobs": "Todos los trabajos",
+    "Entries to delete": "Registros a eliminar",
+    "Includes days off and leave. Dates refer to when each shift starts.": "Incluye días libres y ausencias. Las fechas indican cuándo empieza cada turno.",
+    "Review deletion": "Revisar eliminación",
+    "Delete these entries?": "¿Eliminar estos registros?",
+    "Entries outside this selection and job settings stay unchanged.": "Los registros fuera de esta selección y los ajustes de los trabajos no cambian.",
+    "Select valid From and To dates.": "Selecciona fechas Desde y Hasta válidas.",
+    "Existing cloud backup": "Copia en la nube existente",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Ya existe una copia en la nube. Restáurala antes de activar la copia en este teléfono. Guarda primero una copia local para conservar tus datos actuales."
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -2397,7 +2437,17 @@
     "Enter 1–366 days.": "Saisissez 1–366 jours.",
     "Short rest": "Repos insuffisant",
     "Open Google Play": "Ouvrir Google Play",
-    "A new PTS version is available. Open Google Play to install it.": "Une nouvelle version de PTS est disponible. Ouvrez Google Play pour l’installer."
+    "A new PTS version is available. Open Google Play to install it.": "Une nouvelle version de PTS est disponible. Ouvrez Google Play pour l’installer.",
+    "Delete shifts in a period": "Supprimer les services sur une période",
+    "All jobs": "Tous les emplois",
+    "Entries to delete": "Entrées à supprimer",
+    "Includes days off and leave. Dates refer to when each shift starts.": "Inclut les jours de repos et les absences. Les dates correspondent au début de chaque service.",
+    "Review deletion": "Vérifier la suppression",
+    "Delete these entries?": "Supprimer ces entrées ?",
+    "Entries outside this selection and job settings stay unchanged.": "Les entrées hors de cette sélection et les paramètres des emplois restent inchangés.",
+    "Select valid From and To dates.": "Choisissez des dates de début et de fin valides.",
+    "Existing cloud backup": "Sauvegarde cloud existante",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Une sauvegarde cloud existe déjà. Restaurez-la avant d’activer la sauvegarde sur ce téléphone. Enregistrez d’abord une copie locale pour conserver vos données actuelles."
   },
   "sr": {
     "Today": "Danas",
@@ -2877,7 +2927,17 @@
     "Enter 1–366 days.": "Unesi 1–366 dana.",
     "Short rest": "Kratak odmor",
     "Open Google Play": "Otvori Google Play",
-    "A new PTS version is available. Open Google Play to install it.": "Dostupna je nova verzija PTS-a. Otvori Google Play da je instaliraš."
+    "A new PTS version is available. Open Google Play to install it.": "Dostupna je nova verzija PTS-a. Otvori Google Play da je instaliraš.",
+    "Delete shifts in a period": "Obriši smene u periodu",
+    "All jobs": "Svi poslovi",
+    "Entries to delete": "Unosi za brisanje",
+    "Includes days off and leave. Dates refer to when each shift starts.": "Uključuje slobodne dane i odsustva. Datumi se odnose na početak svake smene.",
+    "Review deletion": "Pregledaj brisanje",
+    "Delete these entries?": "Obrisati ove unose?",
+    "Entries outside this selection and job settings stay unchanged.": "Unosi van ovog izbora i podešavanja poslova ostaju nepromenjeni.",
+    "Select valid From and To dates.": "Izaberi važeće datume Od i Do.",
+    "Existing cloud backup": "Postojeća cloud kopija",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Cloud kopija već postoji. Vrati je pre nego što uključiš backup na ovom telefonu. Prvo sačuvaj lokalnu kopiju da zadržiš trenutne podatke."
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -3357,7 +3417,17 @@
     "Enter 1–366 days.": "Insira 1–366 dias.",
     "Short rest": "Descanso insuficiente",
     "Open Google Play": "Abrir Google Play",
-    "A new PTS version is available. Open Google Play to install it.": "Uma nova versão do PTS está disponível. Abra o Google Play para instalá-la."
+    "A new PTS version is available. Open Google Play to install it.": "Uma nova versão do PTS está disponível. Abra o Google Play para instalá-la.",
+    "Delete shifts in a period": "Excluir turnos de um período",
+    "All jobs": "Todos os trabalhos",
+    "Entries to delete": "Registros a excluir",
+    "Includes days off and leave. Dates refer to when each shift starts.": "Inclui folgas e afastamentos. As datas se referem ao início de cada turno.",
+    "Review deletion": "Revisar exclusão",
+    "Delete these entries?": "Excluir estes registros?",
+    "Entries outside this selection and job settings stay unchanged.": "Registros fora desta seleção e configurações dos trabalhos permanecem iguais.",
+    "Select valid From and To dates.": "Selecione datas De e Até válidas.",
+    "Existing cloud backup": "Backup existente na nuvem",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Já existe um backup na nuvem. Restaure-o antes de ativar o backup neste telefone. Salve primeiro uma cópia local para manter seus dados atuais."
   },
   "el": {
     "Today": "Σήμερα",
@@ -3837,6 +3907,16 @@
     "Enter 1–366 days.": "Εισάγαγε 1–366 ημέρες.",
     "Short rest": "Σύντομη ανάπαυση",
     "Open Google Play": "Άνοιγμα Google Play",
-    "A new PTS version is available. Open Google Play to install it.": "Μια νέα έκδοση του PTS είναι διαθέσιμη. Άνοιξε το Google Play για να την εγκαταστήσεις."
+    "A new PTS version is available. Open Google Play to install it.": "Μια νέα έκδοση του PTS είναι διαθέσιμη. Άνοιξε το Google Play για να την εγκαταστήσεις.",
+    "Delete shifts in a period": "Διαγραφή βαρδιών σε περίοδο",
+    "All jobs": "Όλες οι εργασίες",
+    "Entries to delete": "Εγγραφές προς διαγραφή",
+    "Includes days off and leave. Dates refer to when each shift starts.": "Περιλαμβάνει ρεπό και άδειες. Οι ημερομηνίες αφορούν την έναρξη κάθε βάρδιας.",
+    "Review deletion": "Έλεγχος διαγραφής",
+    "Delete these entries?": "Διαγραφή αυτών των εγγραφών;",
+    "Entries outside this selection and job settings stay unchanged.": "Οι εγγραφές εκτός της επιλογής και οι ρυθμίσεις εργασιών παραμένουν αμετάβλητες.",
+    "Select valid From and To dates.": "Επιλέξτε έγκυρες ημερομηνίες Από και Έως.",
+    "Existing cloud backup": "Υπάρχον αντίγραφο στο cloud",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Υπάρχει ήδη αντίγραφο στο cloud. Επαναφέρετέ το πριν ενεργοποιήσετε το backup σε αυτό το τηλέφωνο. Αποθηκεύστε πρώτα ένα τοπικό αντίγραφο για να διατηρήσετε τα τρέχοντα δεδομένα."
   }
 }

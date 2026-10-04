@@ -479,5 +479,15 @@ internal val catalogsr = mapOf(
     "Enter 1–366 days." to "Unesi 1–366 dana.",
     "Short rest" to "Kratak odmor",
     "Open Google Play" to "Otvori Google Play",
-    "A new PTS version is available. Open Google Play to install it." to "Dostupna je nova verzija PTS-a. Otvori Google Play da je instaliraš."
+    "A new PTS version is available. Open Google Play to install it." to "Dostupna je nova verzija PTS-a. Otvori Google Play da je instaliraš.",
+    "Delete shifts in a period" to "Obriši smene u periodu",
+    "All jobs" to "Svi poslovi",
+    "Entries to delete" to "Unosi za brisanje",
+    "Includes days off and leave. Dates refer to when each shift starts." to "Uključuje slobodne dane i odsustva. Datumi se odnose na početak svake smene.",
+    "Review deletion" to "Pregledaj brisanje",
+    "Delete these entries?" to "Obrisati ove unose?",
+    "Entries outside this selection and job settings stay unchanged." to "Unosi van ovog izbora i podešavanja poslova ostaju nepromenjeni.",
+    "Select valid From and To dates." to "Izaberi važeće datume Od i Do.",
+    "Existing cloud backup" to "Postojeća cloud kopija",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Cloud kopija već postoji. Vrati je pre nego što uključiš backup na ovom telefonu. Prvo sačuvaj lokalnu kopiju da zadržiš trenutne podatke."
 )

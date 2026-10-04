@@ -144,6 +144,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var addShift by remember { mutableStateOf(false) }
     var newShiftDate by rememberSaveable {mutableStateOf(LocalDate.now().toString())}
     var patterns by remember {mutableStateOf(false)}
+    var deleteShiftsDate by remember {mutableStateOf<String?>(null)}
     var exporter by remember {mutableStateOf(false)}
     var importer by remember {mutableStateOf(false)}
     var shareMonth by remember {mutableStateOf<String?>(null)}
@@ -165,7 +166,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         if (!loaded || shortcutAction == null) return@LaunchedEffect
         settings=false;accountOpen=false;analyticsOpen=false
         addJob=false;jobEditor=null;addShift=false;shiftEditor=null
-        patterns=false;importer=false;shareMonth=null;sampleConfirm=false
+        patterns=false;importer=false;shareMonth=null;sampleConfirm=false;deleteShiftsDate=null
         when (shortcutAction) {
             ShortcutAction.AddShift -> {
                 tab=Tab.Today
@@ -225,7 +226,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
                 if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
-                    Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it}) }
+                    Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it},{deleteShiftsDate=it}) }
                     Tab.Earnings -> item { EarningsScreen(data,reportMonthText,{reportMonthText=it},{if(account.premium) analyticsOpen=true else accountOpen=true}) {commit(data.copy(adjustments=it))} }
                     Tab.Jobs -> item { JobsScreen(data,{jobEditor=it},{addJob=true},{message=it},{patterns=true},{accountOpen=true}) }
                 }
@@ -249,6 +250,10 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             val next=runCatching {data.withPatternChange(change)}.getOrElse {message="Schedule changed. Review the shifts again.";return@PatternDialog}
             commit(next);patterns=false
         }
+        deleteShiftsDate?.let {date->DeleteShiftsDialog(data,date,{deleteShiftsDate=null}) {change->
+            val next=runCatching {data.withShiftDeletion(change)}.getOrElse {message="Schedule changed. Review the shifts again.";return@DeleteShiftsDialog}
+            commit(next);deleteShiftsDate=null
+        }}
         if(exporter) ColleagueExportDialog(data,YearMonth.parse(reportMonthText),{exporter=false}) {job,from,until->scope.launch {try {shareColleagueSchedule(context,job,data,from,until)} catch(_:Exception){message="File could not be saved."}};exporter=false}
         if(importer) ImportDialog(data,{importer=false}) {rows->commit(data.copy(shifts=data.shifts+rows));importer=false}
         shareMonth?.let {month->AlertDialog(onDismissRequest={shareMonth=null},title={ScreenHeading("Share schedule", Icons.Outlined.Share, "Export as PDF or image", compact=true)},text={Column {
@@ -258,7 +263,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),false)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("Image")}
         }},confirmButton={TextButton(onClick={shareMonth=null}){UiText("Cancel")}})}
         if(sampleConfirm) AlertDialog(onDismissRequest={sampleConfirm=false},title={UiText("Load example schedule?")},text={UiText("Add Factory, Taxi and Restaurant with example shifts. You can edit them or start with your own jobs instead.")},confirmButton={TextButton(onClick={if(data.jobs.isEmpty()) commit(sampleData().copy(preferences=data.preferences)) else message="Examples are available only before adding jobs.";sampleConfirm=false}){UiText("Load examples")}},dismissButton={TextButton(onClick={sampleConfirm=false}){UiText("Cancel")}})
-        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store")
+        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen && deleteShiftsDate==null) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store")
         if (saving) androidx.compose.ui.window.Dialog(onDismissRequest={}) { Surface(shape=Round) { Row(Modifier.padding(24.dp),verticalAlignment=Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(24.dp)); Spacer(Modifier.width(12.dp)); UiText("Saving…") } } }
         message?.let { text -> AlertDialog(onDismissRequest={message=null},title={UiText("PTS")},text={UiText(text)},confirmButton={TextButton(onClick={message=null}){UiText("OK")}}) }
     }
@@ -448,7 +453,7 @@ private fun shiftLabel(shift: Shift): String {
         }
     }
 }
-@Composable internal fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit) {
+@Composable internal fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit,openDelete:(String)->Unit = {}) {
     val month=YearMonth.parse(monthText)
     var selectedText by rememberSaveable(monthText) {mutableStateOf(if(month==YearMonth.now()) LocalDate.now().toString() else month.atDay(1).toString())};val selected=LocalDate.parse(selectedText);val locale=uiLocale();var menu by remember {mutableStateOf(false)}
     LaunchedEffect(selectedText) {onSelected(selectedText)}
@@ -464,6 +469,7 @@ private fun shiftLabel(shift: Shift): String {
                 DropdownMenu(menu,{menu=false}) {
                     DropdownMenuItem(text={UiText(if(selectedText in data.holidays) "Unmark holiday" else "Mark as holiday")},leadingIcon={Icon(Icons.Outlined.Event,null)},onClick={menu=false;toggleHoliday(selectedText)})
                     DropdownMenuItem(text={UiText("Import roster")},onClick={menu=false;openImport()})
+                    DropdownMenuItem(text={UiText("Delete shifts in a period")},leadingIcon={Icon(Icons.Outlined.DeleteOutline,null)},onClick={menu=false;openDelete(selectedText)})
                     DropdownMenuItem(text={UiText("Share schedule")},onClick={menu=false;share(monthText)})
                 }
             }
@@ -518,12 +524,13 @@ private fun shiftLabel(shift: Shift): String {
         if(selectedShifts.isEmpty()) UiText("No shifts added",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
         selectedShifts.forEach {ShiftCard(it,data,{edit(it)},compact=true)}
         alerts.filter {selectedText in it.dates}.forEach {warning->
-            val concise=if(warning.shortRest) hours(warning.gapMinutes)+" between shifts" else "Overlapping shifts"
-            Surface(shape=RoundedCornerShape(8.dp),color=Color(0xFFFFF0D2)) {Row(Modifier.fillMaxWidth().padding(horizontal=13.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically) {Icon(Icons.Outlined.Schedule,null,Modifier.size(21.dp),tint=Color(0xFF9B4A00));Spacer(Modifier.width(10.dp));UiText(concise,fontSize=12.sp,color=Color(0xFF9B4A00))}}
+            Surface(shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.errorContainer.copy(alpha=.25f)) {
+                Box(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=8.dp)) {ScheduleWarningDetails(warning,data.jobs)}
+            }
         }
     }
 }
-@Composable private fun EarningsScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,openAnalytics:()->Unit,saveAdjustments:(List<MonthlyAdjustment>)->Unit) {
+@Composable internal fun EarningsScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,openAnalytics:()->Unit,saveAdjustments:(List<MonthlyAdjustment>)->Unit) {
     val month=YearMonth.parse(monthText)
     var picker by remember {mutableStateOf(false)};var period by rememberSaveable(monthText) {mutableStateOf("Month")}
     var paymentDetails by remember {mutableStateOf<Job?>(null)}
@@ -545,8 +552,18 @@ private fun shiftLabel(shift: Shift): String {
         ScreenHeading("Estimated earnings", Icons.Outlined.AccountBalanceWallet, "Hours, pay and next payments")
         Surface(onClick={picker=true},shape=RoundedCornerShape(7.dp),color=MaterialTheme.colorScheme.surface,border=BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant)) {
             Row(Modifier.fillMaxWidth().heightIn(min=36.dp).padding(horizontal=13.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically) {
-                UiText(if(period=="Week") "${weekStart.format(DateTimeFormatter.ofPattern("MMM d",uiLocale()))} – ${weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("MMM d",uiLocale()))}" else if(period=="Pay period") translate("Current pay period",LocalLanguage.current) else month.format(DateTimeFormatter.ofPattern("MMMM yyyy",uiLocale())),Modifier.weight(1f),fontSize=14.sp,fontWeight=FontWeight.Medium)
+                UiText(if(period=="Week") "${weekStart.format(DateTimeFormatter.ofPattern("MMM d",uiLocale()))} – ${weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("MMM d",uiLocale()))}" else if(period=="Pay period") translate("Payday and covered dates",LocalLanguage.current) else month.format(DateTimeFormatter.ofPattern("MMMM yyyy",uiLocale())),Modifier.weight(1f),fontSize=14.sp,fontWeight=FontWeight.Medium)
                 Icon(Icons.Outlined.KeyboardArrowDown,"Select month",Modifier.size(20.dp))
+            }
+        }
+        if(period=="Pay period" && data.jobs.isNotEmpty()) Panel {
+            val dateFormat=DateTimeFormatter.ofPattern("d MMM yyyy",uiLocale())
+            data.jobs.forEach {job->
+                val (from,to)=payPeriod(job,nextPayday(job,today))
+                Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
+                    Text(job.name,fontSize=12.sp,fontWeight=FontWeight.Medium)
+                    Text("${from.format(dateFormat)} – ${to.format(dateFormat)}",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         Surface(shape=Round,color=Color(0xFF004A56)) {

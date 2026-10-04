@@ -479,5 +479,15 @@ internal val catalogel = mapOf(
     "Enter 1–366 days." to "Εισάγαγε 1–366 ημέρες.",
     "Short rest" to "Σύντομη ανάπαυση",
     "Open Google Play" to "Άνοιγμα Google Play",
-    "A new PTS version is available. Open Google Play to install it." to "Μια νέα έκδοση του PTS είναι διαθέσιμη. Άνοιξε το Google Play για να την εγκαταστήσεις."
+    "A new PTS version is available. Open Google Play to install it." to "Μια νέα έκδοση του PTS είναι διαθέσιμη. Άνοιξε το Google Play για να την εγκαταστήσεις.",
+    "Delete shifts in a period" to "Διαγραφή βαρδιών σε περίοδο",
+    "All jobs" to "Όλες οι εργασίες",
+    "Entries to delete" to "Εγγραφές προς διαγραφή",
+    "Includes days off and leave. Dates refer to when each shift starts." to "Περιλαμβάνει ρεπό και άδειες. Οι ημερομηνίες αφορούν την έναρξη κάθε βάρδιας.",
+    "Review deletion" to "Έλεγχος διαγραφής",
+    "Delete these entries?" to "Διαγραφή αυτών των εγγραφών;",
+    "Entries outside this selection and job settings stay unchanged." to "Οι εγγραφές εκτός της επιλογής και οι ρυθμίσεις εργασιών παραμένουν αμετάβλητες.",
+    "Select valid From and To dates." to "Επιλέξτε έγκυρες ημερομηνίες Από και Έως.",
+    "Existing cloud backup" to "Υπάρχον αντίγραφο στο cloud",
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Υπάρχει ήδη αντίγραφο στο cloud. Επαναφέρετέ το πριν ενεργοποιήσετε το backup σε αυτό το τηλέφωνο. Αποθηκεύστε πρώτα ένα τοπικό αντίγραφο για να διατηρήσετε τα τρέχοντα δεδομένα."
 )

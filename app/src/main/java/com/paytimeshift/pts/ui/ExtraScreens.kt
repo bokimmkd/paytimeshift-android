@@ -135,8 +135,8 @@ private data class RotationStepInput(val shift:Int?,val days:String="2",val id:S
         } else Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(6.dp)) {
             UiText("${selected.size} / ${preview!!.size} shifts",fontSize=12.sp)
             if(removedIds.isNotEmpty()) Row(horizontalArrangement=Arrangement.spacedBy(5.dp)) {UiText("Existing entries to remove",fontSize=11.sp);UiText(removedIds.size.toString(),fontSize=11.sp,fontWeight=FontWeight.Bold)}
-            val alerts=warnings(data.shifts.filterNot {it.id in removedIds}+preview!!.filter {it.id in selected},data.preferences.gapHours,data.jobs)
-            alerts.take(3).forEach {UiText(it,fontSize=10.sp,color=MaterialTheme.colorScheme.error)}
+            val alerts=scheduleWarnings(data.shifts.filterNot {it.id in removedIds}+preview!!.filter {it.id in selected},data.preferences.gapHours,data.jobs)
+            ScheduleWarningsList(alerts,data.jobs)
             Box(Modifier.weight(1f)){ShiftReviewGrid(preview!!,selected){id->selected=if(id in selected) selected-id else selected+id}}
         }
     },confirmButton={Button(contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp),enabled=preview==null || selected.isNotEmpty(),onClick={
@@ -193,7 +193,7 @@ private data class RotationStepInput(val shift:Int?,val days:String="2",val id:S
             if(busy) CircularProgressIndicator()
         } else Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(6.dp)) {
             UiText("Check dates and times before importing. Nothing is saved automatically.",fontSize=12.sp)
-            warnings(data.shifts+preview!!.filter {it.id in selected},data.preferences.gapHours,data.jobs).take(3).forEach {UiText(it,fontSize=10.sp,color=MaterialTheme.colorScheme.error)}
+            ScheduleWarningsList(scheduleWarnings(data.shifts+preview!!.filter {it.id in selected},data.preferences.gapHours,data.jobs),data.jobs)
             UiText("${selected.size} / ${preview!!.size} shifts",fontSize=12.sp)
             Box(Modifier.weight(1f)){ShiftReviewGrid(preview!!,selected){id->selected=if(id in selected) selected-id else selected+id}}
         }

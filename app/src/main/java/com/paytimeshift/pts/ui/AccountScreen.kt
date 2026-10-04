@@ -36,6 +36,15 @@ import kotlinx.coroutines.tasks.await
     var restoreConfirm by remember {mutableStateOf(false)};var deleteConfirm by remember {mutableStateOf(false)}
     var enableConfirm by remember {mutableStateOf(false)}
     val premiumReady=status.premium && resolved && !checking
+    val restoreRequired=cloudRestoreRequired(status,status.uid?.let {repo.bound(it)} ?: false)
+    var localBackupNotice by remember {mutableStateOf<String?>(null)}
+    val saveLocal=androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")) {uri->
+        if(uri!=null) {busy=true;scope.launch {
+            try {kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {context.contentResolver.openOutputStream(uri,"wt")!!.bufferedWriter().use {it.write(com.paytimeshift.pts.data.LocalStore.encode(data))}};localBackupNotice="Backup saved."}
+            catch(_:Exception) {localBackupNotice="File could not be saved."}
+            finally {busy=false}
+        }}
+    }
     fun task(block: suspend ()->Unit) {if(busy) return;busy=true;error=null;scope.launch {try {block();refresh()} catch(_: GetCredentialCancellationException) { /* User dismissed the chooser. */ } catch(e: Exception){error=cloudError(e)} finally {busy=false}}}
     BrandedEditor(onDismissRequest=close,title={ScreenHeading("Account & Premium",Icons.Outlined.PersonOutline,"Buy us a coffee ☕",compact=true)},error=error ?: statusError,
         text={LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)) {
@@ -94,11 +103,19 @@ import kotlinx.coroutines.tasks.await
             }
             item {if(busy || checking) LinearProgressIndicator(Modifier.fillMaxWidth())}
         }},confirmButton={TextButton(onClick=close){UiText("Close",fontSize=12.sp)}},dismissButton={})
-    if(restoreConfirm) AlertDialog(onDismissRequest={restoreConfirm=false},title={ScreenHeading("Restore backup",Icons.Outlined.CloudDownload,"Review before saving",compact=true)},text={UiText("Replace this phone's jobs and shifts with your latest cloud backup? Save a manual backup first if you want to keep both.",fontSize=12.sp)},confirmButton={TextButton(onClick={restoreConfirm=false;task {val uid=repo.auth.currentUser!!.uid;val (next,revision)=repo.restored();check(repo.auth.currentUser?.uid==uid);restoreData(next);repo.bind(uid,revision);queueCloudBackup(context,uid)}}){UiText("Restore backup",fontSize=12.sp)}},dismissButton={TextButton(onClick={restoreConfirm=false}){UiText("Cancel",fontSize=12.sp)}})
-    if(enableConfirm) AlertDialog(onDismissRequest={enableConfirm=false},title={ScreenHeading("Cloud backup",Icons.Outlined.CloudUpload,"Automatic Cloud Backup",compact=true)},text={UiText("Upload this phone's data to your account? If another phone has a newer backup, restore it first.",fontSize=12.sp)},confirmButton={TextButton(onClick={enableConfirm=false;task {
-        val uid=status.uid!!;if(!repo.bound(uid)) {check(status.revision==0){"Restore existing backup first."};repo.bind(uid,0)}
-        repo.reportPreferences(status.monthlyEmail,status.yearlyEmail,data.preferences.language);repo.backup(data);queueCloudBackup(context,uid)
-    }}){UiText("Back up now",fontSize=12.sp)}},dismissButton={TextButton(onClick={enableConfirm=false}){UiText("Cancel",fontSize=12.sp)}})
+    if(restoreConfirm) AlertDialog(onDismissRequest={if(!busy) restoreConfirm=false},title={ScreenHeading("Restore backup",Icons.Outlined.CloudDownload,"Review before saving",compact=true)},text={Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {
+        UiText("Replace this phone's jobs and shifts with your latest cloud backup? Save a manual backup first if you want to keep both.",fontSize=12.sp)
+        OutlinedButton(enabled=!busy,onClick={saveLocal.launch("PTS-backup-${java.time.LocalDate.now()}.json")},contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){UiText("Save backup file",fontSize=11.sp)}
+        localBackupNotice?.let {UiText(it,fontSize=11.sp)}
+    }},confirmButton={TextButton(enabled=!busy,onClick={restoreConfirm=false;task {val uid=repo.auth.currentUser!!.uid;val (next,revision)=repo.restored();check(repo.auth.currentUser?.uid==uid);restoreData(next);repo.bind(uid,revision);queueCloudBackup(context,uid)}}){UiText("Restore backup",fontSize=12.sp)}},dismissButton={TextButton(enabled=!busy,onClick={restoreConfirm=false}){UiText("Cancel",fontSize=12.sp)}})
+    if(enableConfirm) AlertDialog(onDismissRequest={enableConfirm=false},title={ScreenHeading(if(restoreRequired) "Existing cloud backup" else "Cloud backup",Icons.Outlined.CloudUpload,"Automatic Cloud Backup",compact=true)},text={UiText(if(restoreRequired) existingBackupMessage else "Upload this phone's data to your account? If another phone has a newer backup, restore it first.",fontSize=12.sp)},confirmButton={TextButton(onClick={
+        enableConfirm=false
+        if(restoreRequired) {localBackupNotice=null;restoreConfirm=true} else task {
+            val uid=status.uid!!;check(repo.auth.currentUser?.uid==uid)
+            if(!repo.bound(uid)) {check(status.revision==0){"Restore existing backup first."};repo.bind(uid,0)}
+            repo.reportPreferences(status.monthlyEmail,status.yearlyEmail,data.preferences.language);repo.backup(data);queueCloudBackup(context,uid)
+        }
+    }){UiText(if(restoreRequired) "Restore backup" else "Back up now",fontSize=12.sp)}},dismissButton={TextButton(onClick={enableConfirm=false}){UiText("Cancel",fontSize=12.sp)}})
     if(deleteConfirm) AlertDialog(onDismissRequest={deleteConfirm=false},title={ScreenHeading("Delete account",Icons.Outlined.DeleteOutline,"Account & Premium",compact=true)},text={UiText("Permanently delete your account and cloud backups? Local jobs stay on this phone. Cancel your subscription separately in Google Play. You may need to sign in again.",fontSize=12.sp)},confirmButton={TextButton(onClick={deleteConfirm=false;task {stopCloudBackup(context,status.uid);repo.deleteAccount();clearGoogleSession(context)}}){UiText("Delete account",fontSize=12.sp,color=MaterialTheme.colorScheme.error)}},dismissButton={TextButton(onClick={deleteConfirm=false}){UiText("Cancel",fontSize=12.sp)}})
 }
 
