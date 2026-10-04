@@ -349,3 +349,10 @@ Owner keeps Meta/Facebook App Install Ads integration in the next PTS update and
 Meta requirements remain: a dedicated PTS Meta App ID for com.paytimeshift.pts and its verified Play listing; correct debug and Play signing-channel key hashes; a currently compatible SDK with install/activation measurement; confirmed Business Portfolio/ad account linking; an Events Manager event from a real clean install; applicable consent/privacy/Data Safety changes and regression checks before a later AAB. Do not treat the recorded plan as a completed SDK/account integration or advertising activation.
 
 At 21:08 the owner praised the physical update experience and top download indicator as perfect. Record positive device feedback without inferring coverage of all Later, rotation and installation-failure scenarios. The existing Meta backlog is retained alongside any other pending items.
+
+
+## PTS Meta AAB 0.2.11 / 21 — 2026-10-04
+
+Owner supplied dedicated Meta App ID 1899290267897887 and authorized a new AAB, superseding the earlier testing hold. Source 88667e4 integrates pinned facebook-core 18.3.0, the public PTS client token and consent-based manual install/activation measurement. Default-off phone consent is outside backups; automatic initialization is removed, Meta advertising ID collection and automatic logging are disabled. Meta Android package/launcher and debug/upload/retained Play signing hashes are saved and verified after reload.
+
+106 debug + 106 release unit tests, 29 instrumented tests, 17 backend tests, lint and signed AAB verification pass. Exact AAB 21 / 0.2.11 is built and available. Play upload is blocked by expired Google sign-in; prior 0.2.10 Alpha review is untouched. Policy source is updated, but live website policy publication/current Data Safety readback, real-device Events Manager proof, ad-account link and Meta publication remain pending. No campaign or spend is activated. See RELEASE-0.2.11.md for artifact identity and acceptance steps.
