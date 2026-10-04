@@ -467,5 +467,15 @@ internal val catalogsr = mapOf(
     "A new PTS version is available on Google Play. Download it in the background and keep using the app." to "Nova verzija PTS-a je dostupna na Google Play-u. Preuzmi je u pozadini i nastavi da koristiš aplikaciju.",
     "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone." to "Ažuriranje je preuzeto. Ponovo pokreni PTS da završiš instalaciju. Sačuvani podaci ostaju na telefonu.",
     "Estimated shift extras" to "Procenjeni dodaci za smenu",
-    "Monthly salary is shown in Earnings." to "Mesečna plata je prikazana u Zarada."
+    "Monthly salary is shown in Earnings." to "Mesečna plata je prikazana u Zarada.",
+    "Checking account…" to "Provera naloga…",
+    "Account status unavailable" to "Status naloga nije dostupan",
+    "Could not refresh account. Try again." to "Nalog nije osvežen. Pokušaj ponovo.",
+    "Cloud backup status unavailable. Refresh account." to "Status cloud rezervne kopije nije dostupan. Osveži nalog.",
+    "Cloud backup paused. Premium is required." to "Cloud rezervna kopija je pauzirana. Potreban je Premium.",
+    "Automatic backup is ready. No cloud backup saved yet." to "Automatska rezervna kopija je spremna. Još nema sačuvane cloud kopije.",
+    "Support" to "Podrška",
+    "Support email copied." to "Adresa za podršku je kopirana.",
+    "Enter 1–366 days." to "Unesi 1–366 dana.",
+    "Short rest" to "Kratak odmor"
 )

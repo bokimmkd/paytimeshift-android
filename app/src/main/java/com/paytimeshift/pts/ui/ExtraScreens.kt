@@ -73,12 +73,13 @@ import kotlinx.coroutines.withContext
     Column(verticalArrangement=Arrangement.spacedBy(5.dp)) {
         Row(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.CenterVertically) {
             Box(Modifier.weight(1f)){NumberField("Rest between shifts (hours)",value){value=it}}
-            Button(onClick={change(p.copy(gapHours=n!!))},enabled=n!=null && n.isFinite() && n in 0.0..168.0 && n!=p.gapHours){Icon(Icons.Outlined.Save,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Save",fontSize=12.sp)}
+            Button(modifier=Modifier.heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp),onClick={change(p.copy(gapHours=n!!))},enabled=n!=null && n.isFinite() && n in 0.0..168.0 && n!=p.gapHours){Icon(Icons.Outlined.Save,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Save",fontSize=12.sp)}
         }
         if(n==null || !n.isFinite() || n !in 0.0..168.0) UiText("Enter 0–168 hours.",color=MaterialTheme.colorScheme.error)
         UiText("Overlaps and short gaps appear in Calendar.",fontSize=11.sp)
     }
 }
+private data class RotationStepInput(val shift:Int?,val days:String="2",val id:String=java.util.UUID.randomUUID().toString())
 @Composable fun PatternDialog(data:AppData,close:()->Unit,save:(PatternChange)->Unit) {
     val jobs=data.jobs.filterNot {it.archived}
     if(jobs.isEmpty()) {AlertDialog(onDismissRequest=close,title={UiText("Shift patterns")},text={UiText("No active jobs.")},confirmButton={TextButton(onClick=close){UiText("Close")}});return}
@@ -87,7 +88,8 @@ import kotlinx.coroutines.withContext
     var from by remember {mutableStateOf(LocalDate.now().toString())};var until by remember {mutableStateOf(LocalDate.now().plusDays(30).toString())}
     var enabled by remember {mutableStateOf(setOf(0))}
     var rotation by remember {mutableStateOf(false)}
-    var blocks by remember {mutableStateOf(listOf(RotationBlock(0,2),RotationBlock(null,1)))}
+    var blocks by remember {mutableStateOf(listOf(RotationStepInput(0),RotationStepInput(null,"1")))}
+    var validateDays by remember {mutableStateOf(false)}
     var days by remember {mutableStateOf(setOf(1,2,3,4,5))}
     var preview by remember {mutableStateOf<List<Shift>?>(null)};var error by remember {mutableStateOf<String?>(null)}
     var selected by remember {mutableStateOf<Set<String>>(emptySet())}
@@ -99,7 +101,7 @@ import kotlinx.coroutines.withContext
     val names=listOf("First shift","Second shift","Third shift")
     BrandedEditor(onDismissRequest=close,error=error,title={ScreenHeading("Shift patterns",Icons.Outlined.Repeat,"Repeat and review shifts",compact=true)},text={
         if(preview==null) Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-            JobPicker(jobs,jobId){id->jobId=id;enabled=setOf(0);blocks=listOf(RotationBlock(0,2),RotationBlock(null,1));replaceExisting=false;removedIds=emptySet();error=null}
+            JobPicker(jobs,jobId){id->jobId=id;enabled=setOf(0);blocks=listOf(RotationStepInput(0),RotationStepInput(null,"1"));validateDays=false;replaceExisting=false;removedIds=emptySet();error=null}
             FormPair(first={DateControl("From",from){from=it;replaceExisting=false}},second={DateControl("Repeat until",until){until=it;replaceExisting=false}})
             if(existing.isNotEmpty()) FormSection("Existing shifts in this period") {
                 UiText("${existing.size}",fontSize=13.sp,fontWeight=FontWeight.Bold)
@@ -108,20 +110,23 @@ import kotlinx.coroutines.withContext
             }
             templates.forEachIndexed {i,t->if(t.active) Row(verticalAlignment=Alignment.CenterVertically) {
                 val shiftLabel=translate(names[i],LocalLanguage.current)
-                Checkbox(i in enabled,{checked->enabled=if(checked) enabled+i else enabled-i;blocks=if(checked) blocks.filter {it.shift!=null}+RotationBlock(i,2)+blocks.filter {it.shift==null} else blocks.filter {it.shift==null || it.shift in enabled}},modifier=Modifier.semantics {contentDescription=shiftLabel})
+                Checkbox(i in enabled,{checked->enabled=if(checked) enabled+i else enabled-i;blocks=if(checked) blocks.filter {it.shift!=null}+RotationStepInput(i)+blocks.filter {it.shift==null} else blocks.filter {it.shift==null || it.shift in enabled}},modifier=Modifier.semantics {contentDescription=shiftLabel})
                 Column {UiText(names[i],fontSize=12.sp,fontWeight=FontWeight.Bold);UiText("${t.start}–${t.end} · ${t.breakMinutes} min",fontSize=11.sp)}
             }}
             CompactToggle("Rotation",rotation){rotation=it}
             if(rotation) {
                 UiText("Repeat this cycle",fontSize=12.sp)
-                blocks.forEachIndexed {index,block->
+                blocks.forEachIndexed {index,block->key(block.id) {
                     Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)) {
                         Box(Modifier.weight(1f)) {SelectionField("Shift",block.shift?.let {names[it]} ?: "Off",enabled.sorted().map {names[it]}+"Off"){value->blocks=blocks.toMutableList().apply {set(index,block.copy(shift=names.indexOf(value).takeIf {it>=0}))}}}
-                        Box(Modifier.weight(.65f)) {CompactField("Days",block.days.toString(),{value->value.toIntOrNull()?.let {n->blocks=blocks.toMutableList().apply {set(index,block.copy(days=n))}}},keyboardType=androidx.compose.ui.text.input.KeyboardType.Number)}
-                        IconButton(onClick={blocks=blocks.filterIndexed {i,_->i!=index}}){Icon(Icons.Outlined.DeleteOutline,null,Modifier.size(18.dp))}
+                        Column(Modifier.weight(.65f)) {
+                            CompactField("Days",block.days,{value->blocks=blocks.toMutableList().apply {set(index,block.copy(days=value))};error=null},keyboardType=androidx.compose.ui.text.input.KeyboardType.Number)
+                            if(validateDays && block.days.toIntOrNull()?.let {it in 1..366}!=true) UiText("Enter 1–366 days.",fontSize=10.sp,color=MaterialTheme.colorScheme.error)
+                        }
+                        IconButton(onClick={blocks=blocks.filter {it.id!=block.id}}){Icon(Icons.Outlined.DeleteOutline,null,Modifier.size(18.dp))}
                     }
-                }
-                OutlinedButton(onClick={blocks=blocks+RotationBlock(enabled.minOrNull(),2)},enabled=blocks.size<100){UiText("Add cycle step",fontSize=11.sp)}
+                }}
+                OutlinedButton(onClick={blocks=blocks+RotationStepInput(enabled.minOrNull())},enabled=blocks.size<100){UiText("Add cycle step",fontSize=11.sp)}
             } else {
                 UiText("Repeat on days")
                 val locale=uiLocale()
@@ -141,12 +146,17 @@ import kotlinx.coroutines.withContext
             require(b>=a && java.time.temporal.ChronoUnit.DAYS.between(a,b)<=366)
             val removing=if(replaceExisting) patternShiftsInPeriod(data.shifts,jobId,a,b).map {it.id}.toSet() else emptySet()
             val remaining=data.shifts.filterNot {it.id in removing}
-            val rows=if(rotation) {require(blocks.all {it.shift==null || it.shift in enabled});generateRotation(job,a,b,blocks,remaining)} else {
+            val rows=if(rotation) {
+                validateDays=true
+                require(blocks.all {it.days.toIntOrNull()?.let {n->n in 1..366}==true}) {"Enter 1–366 days."}
+                require(blocks.all {it.shift==null || it.shift in enabled})
+                generateRotation(job,a,b,blocks.map {RotationBlock(it.shift,it.days.toInt())},remaining)
+            } else {
                 require(days.isNotEmpty())
                 newScheduleRows(generateSequence(a){it.plusDays(1)}.takeWhile {it<=b}.filter {it.dayOfWeek.value in days}.flatMap {d->enabled.sorted().asSequence().map {i->templates[i].validate();job.templateShift(d,templates[i])}}.toList(),remaining)
             }
             preview=rows;selected=rows.map {it.id}.toSet();removedIds=removing;error=if(rows.isEmpty()) "No new shifts." else null
-        } catch(_:Exception) {error="Select days and valid dates/times; maximum 366 days."}
+        } catch(e:Exception) {error=if(e.message=="Enter 1–366 days.") e.message else "Select days and valid dates/times; maximum 366 days."}
         else if(removedIds.isNotEmpty()) confirmReplacement=true else saveReviewed()
     }){Icon(if(preview==null) Icons.Outlined.Visibility else Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText(if(preview==null) "Preview shifts" else "Add these shifts",fontSize=12.sp)}},dismissButton={TextButton(onClick={if(preview!=null) {preview=null;removedIds=emptySet()} else close()}){UiText(if(preview==null) "Cancel" else "Back",fontSize=12.sp)}})
     if(confirmReplacement) AlertDialog(onDismissRequest={confirmReplacement=false},
@@ -199,8 +209,8 @@ import kotlinx.coroutines.withContext
     val context=LocalContext.current;var pending by remember {mutableStateOf<AppData?>(null)};val scope=rememberCoroutineScope()
     val create=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")){uri->if(uri!=null) scope.launch {try {withContext(Dispatchers.IO){context.contentResolver.openOutputStream(uri,"wt")!!.bufferedWriter().use {it.write(LocalStore.encode(data))}};info("Backup saved.")} catch(e:Exception){info("File could not be saved.")}}}
     val open=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null) scope.launch {try {pending=withContext(Dispatchers.IO){context.contentResolver.openInputStream(uri)!!.bufferedReader().use {reader-> val chars=CharArray(4*1024*1024+1);var count=0;while(count<chars.size){val n=reader.read(chars,count,chars.size-count);if(n<0) break;count+=n};require(count<=4*1024*1024);LocalStore.decode(String(chars,0,count))}}} catch(e:Exception){info("Invalid backup. Current data is unchanged.")}}}
-    FormPair(first={OutlinedButton(onClick={create.launch("PTS-backup-${LocalDate.now()}.json")},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.SaveAlt,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Save backup file",fontSize=11.sp)}},
-        second={OutlinedButton(onClick={open.launch(arrayOf("application/json","text/plain","application/octet-stream"))},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.Restore,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Restore backup file",fontSize=11.sp)}})
+    FormPair(first={OutlinedButton(onClick={create.launch("PTS-backup-${LocalDate.now()}.json")},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.SaveAlt,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Save backup file",fontSize=11.sp)}},
+        second={OutlinedButton(onClick={open.launch(arrayOf("application/json","text/plain","application/octet-stream"))},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.Restore,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Restore backup file",fontSize=11.sp)}})
     if(pending!=null) AlertDialog(onDismissRequest={pending=null},title={UiText("Restore backup?")},text={UiText("This replaces your local jobs and shifts. Save a backup first.")},confirmButton={TextButton(onClick={restore(pending!!);pending=null}){UiText("Restore backup file")}},dismissButton={TextButton(onClick={pending=null}){UiText("Cancel")}})
 }
 @Composable fun ReminderSetting(p:Preferences,change:(Preferences)->Unit) {
@@ -209,7 +219,7 @@ import kotlinx.coroutines.withContext
     Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.CenterVertically) {
             Box(Modifier.weight(1f)){NumberField("Minutes before shift (0 = off)",value){value=it}}
-            Button(onClick={change(p.copy(reminderMinutes=n!!))},enabled=n!=null && n in 0..10080 && n!=p.reminderMinutes){Icon(Icons.Outlined.Save,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Save",fontSize=12.sp)}
+            Button(modifier=Modifier.heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp),onClick={change(p.copy(reminderMinutes=n!!))},enabled=n!=null && n in 0..10080 && n!=p.reminderMinutes){Icon(Icons.Outlined.Save,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Save",fontSize=12.sp)}
         }
         UiText("Notifications may be delayed by Android battery settings.",fontSize=11.sp)
     }

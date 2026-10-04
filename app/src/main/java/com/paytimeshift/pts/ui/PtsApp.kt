@@ -83,32 +83,53 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     val premiumRepo=remember {PremiumRepository(context)}
     var account by remember {mutableStateOf(AccountStatus(uid=premiumRepo.auth.currentUser?.uid))}
     var accountResolved by remember {mutableStateOf(premiumRepo.auth.currentUser==null)}
+    var accountChecking by remember {mutableStateOf(false)}
+    var accountError by remember {mutableStateOf<String?>(null)}
+    var refreshJob by remember {mutableStateOf<kotlinx.coroutines.Job?>(null)}
+    var refreshUid by remember {mutableStateOf<String?>(null)}
     var accountOpen by remember {mutableStateOf(false)}
     var analyticsOpen by remember {mutableStateOf(false)}
     var annualPrice by remember {mutableStateOf<String?>(null)}
+    val verifyingTokens=remember {mutableSetOf<String>()}
     fun refreshAccount() {
         val requestedUid=premiumRepo.auth.currentUser?.uid
-        scope.launch {
-            try {val refreshed=premiumRepo.status();if(premiumRepo.auth.currentUser?.uid==requestedUid) {account=refreshed;accountResolved=true}}
-            catch(_:Exception) {if(premiumRepo.auth.currentUser?.uid==requestedUid) accountResolved=requestedUid==null}
+        if(refreshJob?.isActive==true && refreshUid==requestedUid) return
+        refreshJob?.cancel();refreshUid=requestedUid;accountChecking=true;accountError=null
+        refreshJob=scope.launch {
+            try {
+                val refreshed=try {premiumRepo.status()} catch(e:com.google.firebase.functions.FirebaseFunctionsException) {
+                    if(e.code!=com.google.firebase.functions.FirebaseFunctionsException.Code.RESOURCE_EXHAUSTED) throw e
+                    kotlinx.coroutines.delay(2200);premiumRepo.status()
+                }
+                if(premiumRepo.auth.currentUser?.uid==requestedUid) {account=refreshed;accountResolved=true}
+            } catch(e:kotlinx.coroutines.CancellationException) {throw e}
+            catch(_:Exception) {if(premiumRepo.auth.currentUser?.uid==requestedUid) {accountResolved=requestedUid==null;accountError="Could not refresh account. Try again."}}
+            finally {if(refreshUid==requestedUid) accountChecking=false}
         }
     }
     val billing=remember {PlayBilling(context as android.app.Activity,{premiumRepo.auth.currentUser?.uid},{token->scope.launch {
+        if(!verifyingTokens.add(token)) return@launch
         try {premiumRepo.verifyPurchase(token);refreshAccount()}
         catch(e:Exception) {message=cloudError(e)}
+        finally {verifyingTokens.remove(token)}
     }},{message=it},{annualPrice=it})}
     DisposableEffect(Unit) {
         val listener=com.google.firebase.auth.FirebaseAuth.AuthStateListener {
-            account=AccountStatus(uid=it.currentUser?.uid,email=it.currentUser?.email ?: "",verified=it.currentUser?.isEmailVerified==true,displayName=it.currentUser?.displayName ?: "");accountResolved=it.currentUser==null
+            if(account.uid!=it.currentUser?.uid) {account=AccountStatus(uid=it.currentUser?.uid);accountResolved=it.currentUser==null}
+            account=account.copy(email=it.currentUser?.email ?: "",verified=it.currentUser?.isEmailVerified==true,displayName=it.currentUser?.displayName ?: "")
             refreshAccount();billing.restore()
         }
+        val host=context as androidx.activity.ComponentActivity
+        val observer=object:androidx.lifecycle.DefaultLifecycleObserver {override fun onResume(owner:androidx.lifecycle.LifecycleOwner) {refreshAccount()}}
+        host.lifecycle.addObserver(observer)
         premiumRepo.auth.addAuthStateListener(listener);billing.start()
-        onDispose {premiumRepo.auth.removeAuthStateListener(listener);billing.close()}
+        onDispose {host.lifecycle.removeObserver(observer);premiumRepo.auth.removeAuthStateListener(listener);refreshJob?.cancel();billing.close()}
     }
+    LaunchedEffect(accountOpen) {if(accountOpen) refreshAccount()}
     LaunchedEffect(account.uid,accountResolved,loaded,data.preferences.language) {
         if(account.uid!=null && accountResolved && loaded) try {premiumRepo.reportPreferences(account.monthlyEmail,account.yearlyEmail,data.preferences.language)} catch(_:Exception) { }
     }
-    LaunchedEffect(account.premium,account.uid) {if(account.premium && premiumRepo.bound(account.uid!!)) queueCloudBackup(context,account.uid)}
+    LaunchedEffect(account.premium,account.uid,accountResolved) {if(account.premium && accountResolved && premiumRepo.bound(account.uid!!)) queueCloudBackup(context,account.uid)}
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     var reportMonthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     var settings by rememberSaveable { mutableStateOf(false) }
@@ -196,7 +217,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         ) { inset ->
             if (!loaded) Box(Modifier.fillMaxSize().padding(inset),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
             else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab in listOf(Tab.Today,Tab.Calendar) && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium);FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
+                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
                     Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it}) }
@@ -209,7 +230,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             check(loaded && writable && !saving);saving=true
             try {withContext(Dispatchers.IO){store.save(next);syncReminders(context,data,next);refreshWidgets(context)};data=next}
             finally {saving=false}
-        },{accountOpen=false})
+        },{accountOpen=false},resolved=accountResolved,checking=accountChecking,statusError=accountError)
         if(analyticsOpen && account.premium) AnalyticsDialog(data,YearMonth.parse(reportMonthText)){analyticsOpen=false}
         if (addJob || jobEditor != null) JobDialog(jobEditor,data.preferences.currency,onClose={addJob=false;jobEditor=null}) { job, applyUpcoming ->
             commit(data.withJob(job,applyUpcoming,LocalDate.now())); addJob=false;jobEditor=null
@@ -422,11 +443,13 @@ private fun shiftLabel(shift: Shift): String {
         }
     }
 }
-@Composable private fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit) {
+@Composable internal fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit) {
     val month=YearMonth.parse(monthText)
     var selectedText by rememberSaveable(monthText) {mutableStateOf(if(month==YearMonth.now()) LocalDate.now().toString() else month.atDay(1).toString())};val selected=LocalDate.parse(selectedText);val locale=uiLocale();var menu by remember {mutableStateOf(false)}
     LaunchedEffect(selectedText) {onSelected(selectedText)}
     val selectedShifts=data.shifts.filter {it.date==selectedText}.sortedBy {it.begins}
+    val alerts=remember(data.shifts,data.jobs,data.preferences.gapHours) {scheduleWarnings(data.shifts,data.preferences.gapHours,data.jobs)}
+    val shortRestDates=remember(alerts) {alerts.filter {it.shortRest}.flatMap {it.dates}.toSet()}
     val offset=(month.atDay(1).dayOfWeek.value-(if(data.preferences.mondayFirst) 1 else 7)+7)%7
     Stack {
         Row(verticalAlignment=Alignment.CenterVertically) {
@@ -456,17 +479,26 @@ private fun shiftLabel(shift: Shift): String {
                         if(day !in 1..month.lengthOfMonth()) Box(base)
                         else {
                             val date=month.atDay(day);val dayRows=data.shifts.filter {it.date==date.toString()}
+                            val markers=calendarMarkers(dayRows)
+                            val shortRest=date.toString() in shortRestDates
+                            val warningLabel=translate("Short rest",LocalLanguage.current)
                             val holiday=date.toString() in data.holidays
                             val holidayBackground=if(holiday) MaterialTheme.colorScheme.primary.copy(alpha=.10f) else Color.Transparent
                             val selectedModifier=Modifier.padding(2.dp).background(holidayBackground,RoundedCornerShape(7.dp)).then(if(date==selected) Modifier.border(1.2.dp,MaterialTheme.colorScheme.primary,RoundedCornerShape(7.dp)) else Modifier)
-                            Box(base.clickable {selectedText=date.toString()}.semantics {contentDescription="${date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d",locale))}, ${dayRows.size} shifts"}) {
+                            Box(base.clickable {selectedText=date.toString()}.semantics {contentDescription="${date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d",locale))}, ${dayRows.count {it.kind=="Work"}} ${translate("shifts",data.preferences.language)}"+(if(shortRest) ", $warningLabel" else "")}) {
                                 Column(Modifier.fillMaxSize().then(selectedModifier).padding(top=7.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)) {
                                     UiText(day.toString(),fontSize=12.sp,lineHeight=15.sp,fontWeight=if(date==selected) FontWeight.Bold else FontWeight.Normal)
                                     Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                                        dayRows.map {it.jobId}.distinct().take(3).forEach {id->data.jobs.find {it.id==id}?.let {j->Box(Modifier.size(7.dp).background(Color(j.color),CircleShape))}}
-                                        if(dayRows.map {it.jobId}.distinct().size>3) UiText("+",fontSize=10.sp,lineHeight=10.sp)
+                                        markers.take(3).forEach {marker->data.jobs.find {it.id==marker.jobId}?.let {j->
+                                            Box(Modifier.size(if(marker.kind=="Work") 7.dp else 11.dp).background(Color(j.color),CircleShape)
+                                                .semantics {contentDescription="${j.name}: ${translate(marker.kind,data.preferences.language)}"},contentAlignment=Alignment.Center) {
+                                                if(marker.kind!="Work") Text("−",fontSize=10.sp,lineHeight=11.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.error)
+                                            }
+                                        }}
+                                        if(markers.size>3) UiText("+",fontSize=10.sp,lineHeight=10.sp)
                                     }
                                 }
+                                if(shortRest) Text("!",Modifier.align(Alignment.TopEnd).padding(top=3.dp,end=5.dp),fontSize=10.sp,lineHeight=12.sp,fontWeight=FontWeight.Bold,color=Color(0xFFFFA000))
                             }
                         }
                     }
@@ -475,14 +507,13 @@ private fun shiftLabel(shift: Shift): String {
         }
         Spacer(Modifier.height(1.dp))
         Row(verticalAlignment=Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) {SectionLabel("${selected.format(DateTimeFormatter.ofPattern("EEE, MMM d",uiLocale()))} · ${selectedShifts.size} shifts")}
+            Box(Modifier.weight(1f)) {SectionLabel("${selected.format(DateTimeFormatter.ofPattern("EEE, MMM d",uiLocale()))} · ${selectedShifts.count {it.kind=="Work"}} shifts")}
             if(selectedText in data.holidays) Surface(shape=RoundedCornerShape(5.dp),color=MaterialTheme.colorScheme.primary.copy(alpha=.12f)){UiText("Holiday",Modifier.padding(horizontal=7.dp,vertical=3.dp),fontSize=10.sp,color=MaterialTheme.colorScheme.primary)}
         }
         if(selectedShifts.isEmpty()) UiText("No shifts added",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
         selectedShifts.forEach {ShiftCard(it,data,{edit(it)},compact=true)}
-        val nearby=data.shifts.filter {it.begins.toLocalDate()>=selected.minusDays(1) && it.begins.toLocalDate()<=selected.plusDays(1)}
-        warnings(nearby,data.preferences.gapHours,data.jobs).filter {it.contains(selectedText)}.forEach {warning->
-            val concise=if(warning.startsWith("Only ")) warning.substringAfter("Only ").substringBefore(" between")+" between shifts" else "Overlapping shifts"
+        alerts.filter {selectedText in it.dates}.forEach {warning->
+            val concise=if(warning.shortRest) hours(warning.gapMinutes)+" between shifts" else "Overlapping shifts"
             Surface(shape=RoundedCornerShape(8.dp),color=Color(0xFFFFF0D2)) {Row(Modifier.fillMaxWidth().padding(horizontal=13.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically) {Icon(Icons.Outlined.Schedule,null,Modifier.size(21.dp),tint=Color(0xFF9B4A00));Spacer(Modifier.width(10.dp));UiText(concise,fontSize=12.sp,color=Color(0xFF9B4A00))}}
         }
     }
@@ -696,7 +727,7 @@ private fun shiftLabel(shift: Shift): String {
     }
 }
 
-@Composable private fun SettingsScreen(p: Preferences, change: (Preferences)->Unit,premium:()->Unit,isPremium:Boolean) {
+@Composable private fun SettingsScreen(p: Preferences, change: (Preferences)->Unit,premium:()->Unit,isPremium:Boolean,resolved:Boolean=true,statusError:String?=null) {
     var currencyOpen by remember {mutableStateOf(false)}
     val context=LocalContext.current
     Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {
@@ -713,20 +744,31 @@ private fun shiftLabel(shift: Shift): String {
         FormSection("Calendar warnings") {GapSetting(p,change)}
         FormSection("Reminders") {ReminderSetting(p,change)}
         FormSection("Premium & backup") {
-            OutlinedButton(onClick=premium,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.PersonOutline,null,Modifier.size(18.dp));Spacer(Modifier.width(5.dp));UiText("Account & Premium",fontSize=12.sp)}
-            UiText(if(isPremium) "Premium active" else "Free · Local storage",fontSize=11.sp)
+            OutlinedButton(onClick=premium,modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.PersonOutline,null,Modifier.size(18.dp));Spacer(Modifier.width(5.dp));UiText("Account & Premium",fontSize=12.sp)}
+            UiText(if(!resolved) (if(statusError!=null) "Account status unavailable" else "Checking account…") else if(isPremium) "Premium active" else "Free · Local storage",fontSize=11.sp)
         }
         FormSection("Ad privacy") {
-            OutlinedButton(onClick={com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(context as android.app.Activity){}},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){UiText("Privacy choices",fontSize=11.sp)}
+            OutlinedButton(onClick={com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(context as android.app.Activity){}},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){UiText("Privacy choices",fontSize=11.sp)}
         }
         FormSection("Android widget") {UiText("Add a widget from your phone home screen.",fontSize=11.sp)}
         FormSection("PTS · Pay Time Shift") {
-            UiText("0.2.4 · PTS Premium",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            FormPair(first={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://pts-developer.bokimkd.chatgpt.site")))},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)) {
+            UiText("${com.paytimeshift.pts.BuildConfig.VERSION_NAME} · PTS",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            FormPair(first={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://paytimeshift.com/")))},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
                 Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Website",fontSize=11.sp)
-            }},second={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://pts-developer.bokimkd.chatgpt.site/privacy.html")))},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)) {
+            }},second={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://paytimeshift.com/privacy-premium.html")))},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
                 Icon(Icons.Outlined.PrivacyTip,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Privacy policy",fontSize=11.sp)
             }})
+            OutlinedButton(onClick={
+                val mail=Intent(Intent.ACTION_SENDTO,android.net.Uri.parse("mailto:bokimk.ap@gmail.com"))
+                try {context.startActivity(mail)} catch(_:android.content.ActivityNotFoundException) {
+                    (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                        .setPrimaryClip(android.content.ClipData.newPlainText("PTS support","bokimk.ap@gmail.com"))
+                    android.widget.Toast.makeText(context,translate("Support email copied.",p.language),android.widget.Toast.LENGTH_SHORT).show()
+                }
+            },modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
+                Icon(Icons.Outlined.Email,null,Modifier.size(16.dp));Spacer(Modifier.width(6.dp))
+                UiText("Support",fontSize=11.sp);Spacer(Modifier.width(6.dp));Text("bokimk.ap@gmail.com",fontSize=11.sp)
+            }
         }
     }
     if(currencyOpen) CurrencyDialog(p.currency,{currencyOpen=false}) {change(p.copy(currency=it));currencyOpen=false}
@@ -976,4 +1018,3 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
             }})
     }
 }
-

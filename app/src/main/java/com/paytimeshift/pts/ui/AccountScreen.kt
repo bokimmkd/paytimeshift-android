@@ -26,7 +26,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @Composable fun AccountDialog(repo: PremiumRepository,status: AccountStatus,price: String?,refresh: ()->Unit,buy: ()->Unit,restorePurchase: ()->Unit,
-    data: AppData,restoreData: suspend (AppData)->Unit,close: ()->Unit) {
+    data: AppData,restoreData: suspend (AppData)->Unit,close: ()->Unit,
+    resolved:Boolean=true,checking:Boolean=false,statusError:String?=null) {
     val scope=rememberCoroutineScope();val context=LocalContext.current
     val language=LocalLanguage.current
     LaunchedEffect(language) {repo.auth.setLanguageCode(language)}
@@ -34,18 +35,19 @@ import kotlinx.coroutines.tasks.await
     var busy by remember {mutableStateOf(false)};var error by remember {mutableStateOf<String?>(null)}
     var restoreConfirm by remember {mutableStateOf(false)};var deleteConfirm by remember {mutableStateOf(false)}
     var enableConfirm by remember {mutableStateOf(false)}
+    val premiumReady=status.premium && resolved && !checking
     fun task(block: suspend ()->Unit) {if(busy) return;busy=true;error=null;scope.launch {try {block();refresh()} catch(_: GetCredentialCancellationException) { /* User dismissed the chooser. */ } catch(e: Exception){error=cloudError(e)} finally {busy=false}}}
-    BrandedEditor(onDismissRequest=close,title={ScreenHeading("Account & Premium",Icons.Outlined.PersonOutline,"Buy us a coffee ☕",compact=true)},error=error,
+    BrandedEditor(onDismissRequest=close,title={ScreenHeading("Account & Premium",Icons.Outlined.PersonOutline,"Buy us a coffee ☕",compact=true)},error=error ?: statusError,
         text={LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)) {
             item {FormSection("Premium") {
-                UiText(if(status.premium) "Premium active" else "Buy us a coffee ☕",fontSize=17.sp,fontWeight=FontWeight.Bold)
-                if(!status.premium) UiText(if(price!=null) "$price / ${translate("year",LocalLanguage.current)}" else "$1.99 / year",fontSize=17.sp,color=MaterialTheme.colorScheme.primary)
+                UiText(if(!resolved) (if(statusError!=null) "Account status unavailable" else "Checking account…") else if(status.premium) "Premium active" else "Buy us a coffee ☕",fontSize=17.sp,fontWeight=FontWeight.Bold)
+                if(resolved && !status.premium) UiText(if(price!=null) "$price / ${translate("year",LocalLanguage.current)}" else "$1.99 / year",fontSize=17.sp,color=MaterialTheme.colorScheme.primary)
                 listOf("No Ads","Automatic Cloud Backup","Restore on new phone","Advanced Work Analytics","Detailed Monthly / Yearly Reports").forEach {benefit->Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) {Icon(Icons.Outlined.CheckCircleOutline,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.primary);UiText(benefit,fontSize=12.sp)}}
-                if(status.premium && !status.testAccess) {
+                if(resolved && status.premium && !status.testAccess) {
                     UiText("${translate("Access until",LocalLanguage.current)}: ${java.time.Instant.ofEpochMilli(status.expiresAt).atZone(java.time.ZoneId.systemDefault()).toLocalDate()}",fontSize=11.sp)
                     TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://play.google.com/store/account/subscriptions?sku=pts_premium&package=com.paytimeshift.pts")))}){UiText("Manage subscription",fontSize=12.sp)}
-                } else if(!status.premium) {
-                    Button(onClick=buy,enabled=status.uid!=null && price!=null && !busy,contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {Icon(Icons.Outlined.LocalCafe,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));UiText("Subscribe yearly",fontSize=12.sp)}
+                } else if(resolved && !status.premium) {
+                    Button(onClick=buy,enabled=status.uid!=null && price!=null && !busy && !checking,contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {Icon(Icons.Outlined.LocalCafe,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));UiText("Subscribe yearly",fontSize=12.sp)}
                     UiText("Renews yearly. Cancel anytime in Google Play. The price and terms shown by Google Play apply.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     if(price==null) UiText("Subscription is not available in Google Play yet. Please try again later.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     if(status.uid==null) UiText("Sign in before subscribing.",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
@@ -74,24 +76,23 @@ import kotlinx.coroutines.tasks.await
                         UiText("Verify your email to receive automatic reports.",fontSize=11.sp)
                         TextButton(enabled=!busy,onClick={task {repo.auth.currentUser?.sendEmailVerification()?.await();error="Verification email sent."}}){UiText("Send verification email",fontSize=11.sp)}
                     }
-                    FormPair(first={OutlinedButton(onClick={task {repo.status()}},enabled=!busy,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.Refresh,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Refresh account",fontSize=11.sp)}},second={
+                    FormPair(first={OutlinedButton(onClick=refresh,enabled=!busy && !checking,modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.Refresh,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Refresh account",fontSize=11.sp)}},second={
                     OutlinedButton(onClick={stopCloudBackup(context,status.uid);repo.unbind();repo.auth.signOut();refresh();scope.launch {clearGoogleSession(context)}},enabled=!busy,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.Logout,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Sign out",fontSize=11.sp)}})
                 }}
                 item {FormSection("Cloud backup") {
-                    UiText(if(repo.bound(status.uid!!)) "Automatic backup enabled on this phone" else "Choose cloud restore or enable backup on this phone first.",fontSize=11.sp)
+                    UiText(if(checking) "Checking account…" else cloudBackupLabel(status,repo.bound(status.uid!!),resolved,statusError!=null),fontSize=11.sp)
                     UiText("${translate("Last cloud backup",LocalLanguage.current)}: ${if(status.backupAt==0L) "—" else java.time.Instant.ofEpochMilli(status.backupAt).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime().toString()}",fontSize=10.sp)
-                    FormPair(first={OutlinedButton(enabled=status.premium && !busy,onClick={enableConfirm=true},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.CloudUpload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Back up now",fontSize=11.sp)}},
-                        second={OutlinedButton(enabled=status.premium && !busy,onClick={restoreConfirm=true},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.CloudDownload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore backup",fontSize=11.sp)}})
-                    if(!status.premium) UiText("Premium is required.",fontSize=10.sp)
+                    FormPair(first={OutlinedButton(enabled=premiumReady && !busy,onClick={enableConfirm=true},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.CloudUpload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Back up now",fontSize=11.sp)}},
+                        second={OutlinedButton(enabled=premiumReady && !busy,onClick={restoreConfirm=true},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.CloudDownload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore backup",fontSize=11.sp)}})
                 }}
                 item {FormSection("Automatic email reports") {
-                    CompactToggle("Monthly Report Email",status.monthlyEmail,enabled=status.premium && !busy){value->task {repo.reportPreferences(value,status.yearlyEmail,data.preferences.language)}}
-                    CompactToggle("Yearly Report Email",status.yearlyEmail,enabled=status.premium && !busy){value->task {repo.reportPreferences(status.monthlyEmail,value,data.preferences.language)}}
+                    CompactToggle("Monthly Report Email",status.monthlyEmail,enabled=premiumReady && !busy){value->task {repo.reportPreferences(value,status.yearlyEmail,data.preferences.language)}}
+                    CompactToggle("Yearly Report Email",status.yearlyEmail,enabled=premiumReady && !busy){value->task {repo.reportPreferences(status.monthlyEmail,value,data.preferences.language)}}
                     UiText("Sent at the start of the next month or year to your verified account email. Reports use your latest cloud backup.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }}
                 item {TextButton(onClick={deleteConfirm=true},enabled=!busy){Icon(Icons.Outlined.DeleteOutline,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.error);Spacer(Modifier.width(4.dp));UiText("Delete account",fontSize=12.sp,color=MaterialTheme.colorScheme.error)}}
             }
-            item {if(busy) LinearProgressIndicator(Modifier.fillMaxWidth())}
+            item {if(busy || checking) LinearProgressIndicator(Modifier.fillMaxWidth())}
         }},confirmButton={TextButton(onClick=close){UiText("Close",fontSize=12.sp)}},dismissButton={})
     if(restoreConfirm) AlertDialog(onDismissRequest={restoreConfirm=false},title={ScreenHeading("Restore backup",Icons.Outlined.CloudDownload,"Review before saving",compact=true)},text={UiText("Replace this phone's jobs and shifts with your latest cloud backup? Save a manual backup first if you want to keep both.",fontSize=12.sp)},confirmButton={TextButton(onClick={restoreConfirm=false;task {val uid=repo.auth.currentUser!!.uid;val (next,revision)=repo.restored();check(repo.auth.currentUser?.uid==uid);restoreData(next);repo.bind(uid,revision);queueCloudBackup(context,uid)}}){UiText("Restore backup",fontSize=12.sp)}},dismissButton={TextButton(onClick={restoreConfirm=false}){UiText("Cancel",fontSize=12.sp)}})
     if(enableConfirm) AlertDialog(onDismissRequest={enableConfirm=false},title={ScreenHeading("Cloud backup",Icons.Outlined.CloudUpload,"Automatic Cloud Backup",compact=true)},text={UiText("Upload this phone's data to your account? If another phone has a newer backup, restore it first.",fontSize=12.sp)},confirmButton={TextButton(onClick={enableConfirm=false;task {

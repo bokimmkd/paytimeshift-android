@@ -64,6 +64,49 @@ class PremiumUiTest {
         ui.onNodeWithText("Add these shifts").performClick()
         ui.runOnIdle {org.junit.Assert.assertEquals(setOf("07:00","15:00","23:00"),saved!!.map {it.start}.toSet());org.junit.Assert.assertTrue(saved!!.size>20)}
     }
+    @Test fun rotationDaysCanBeClearedAndInvalidPreviewCannotUseTheOldNumber() {
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {PatternDialog(fixture.copy(shifts=emptyList()),{}) {}}}}
+        ui.onNodeWithText("Rotation").performClick()
+        ui.onAllNodesWithContentDescription("Days").onFirst().performTextClearance()
+        ui.onAllNodesWithContentDescription("Days").onFirst().assert(SemanticsMatcher.expectValue(androidx.compose.ui.semantics.SemanticsProperties.EditableText,androidx.compose.ui.text.AnnotatedString("")))
+        ui.onNodeWithText("Preview shifts").performClick()
+        ui.onNodeWithText("Add these shifts").assertDoesNotExist()
+        ui.onAllNodesWithText("Enter 1–366 days.").onFirst().assertExists()
+        ui.onAllNodesWithContentDescription("Days").onFirst().performTextInput("3")
+        ui.onNodeWithText("Preview shifts").performClick()
+        ui.onNodeWithText("Add these shifts").assertExists()
+    }
+    @Test fun premiumCloudActionsAndUnresolvedStatusAreDistinct() {
+        val repo=PremiumRepository(InstrumentationRegistry.getInstrumentation().targetContext)
+        var resolved by mutableStateOf(true)
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {
+            AccountDialog(repo,AccountStatus(uid="ui-fixture",email="owner@example.test",verified=true,premium=true,testAccess=true),"$1.99",{},{},{},fixture,{}, {},resolved=resolved)
+        }}}
+        ui.onNodeWithText("Premium active").assertIsDisplayed()
+        ui.onNodeWithText("Back up now").performScrollTo().assertIsEnabled()
+        ui.onNodeWithText("Restore backup").assertIsEnabled()
+        ui.runOnIdle {resolved=false}
+        ui.onNodeWithText("Back up now").assertIsNotEnabled()
+        ui.onNodeWithText("Premium is required.").assertDoesNotExist()
+        ui.onNodeWithText("Subscribe yearly").assertDoesNotExist()
+    }
+    @Test fun calendarKeepsAbsenceAndWorkMarkersAlongsideRestIndicator() {
+        val factory=Job(id="factory",name="Factory",rate="10")
+        val wolt=Job(id="wolt",name="Wolt",rate="10")
+        val rows=listOf(
+            Shift(jobId="factory",date="2026-10-07",start="07:00",end="15:00",rate="10",currency="EUR"),
+            Shift(jobId="wolt",date="2026-10-07",start="16:00",end="20:00",rate="10",currency="EUR"),
+            Shift(jobId="factory",date="2026-10-08",start="07:00",end="15:00",rate="10",currency="EUR",kind="Vacation"),
+            Shift(jobId="wolt",date="2026-10-08",start="18:00",end="21:00",rate="10",currency="EUR"))
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {
+            CalendarScreen(AppData(jobs=listOf(factory,wolt),shifts=rows),"2026-10",{},{},{},{},{},{})
+        }}}
+        ui.onNodeWithContentDescription("Factory: Vacation",useUnmergedTree=true).assertExists()
+        ui.onAllNodesWithContentDescription("Wolt: Work",useUnmergedTree=true).assertCountEquals(2)
+        ui.onNodeWithText("−",useUnmergedTree=true).assertExists()
+        ui.onNodeWithText("!",useUnmergedTree=true).assertExists()
+        screenshot("calendar-rest-and-absence-markers")
+    }
     @Test fun manualShiftOverlapCanBeEditedOrExplicitlySaved() {
         val first=Job(id="first",name="Morning job",rate="10")
         val second=Job(id="second",name="Second job",rate="12",defaultStart="10:00",defaultEnd="18:00")
@@ -207,4 +250,3 @@ class PremiumUiTest {
         }
     }
 }
-

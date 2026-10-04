@@ -467,5 +467,15 @@ internal val cataloges = mapOf(
     "A new PTS version is available on Google Play. Download it in the background and keep using the app." to "Hay una nueva versión de PTS en Google Play. Descárgala en segundo plano y sigue usando la app.",
     "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone." to "La actualización se ha descargado. Reinicia PTS para instalarla. Los datos guardados permanecen en el teléfono.",
     "Estimated shift extras" to "Complementos estimados del turno",
-    "Monthly salary is shown in Earnings." to "El salario mensual se muestra en Ingresos."
+    "Monthly salary is shown in Earnings." to "El salario mensual se muestra en Ingresos.",
+    "Checking account…" to "Comprobando la cuenta…",
+    "Account status unavailable" to "Estado de la cuenta no disponible",
+    "Could not refresh account. Try again." to "No se pudo actualizar la cuenta. Inténtalo de nuevo.",
+    "Cloud backup status unavailable. Refresh account." to "Estado de la copia en la nube no disponible. Actualiza la cuenta.",
+    "Cloud backup paused. Premium is required." to "Copia en la nube pausada. Se requiere Premium.",
+    "Automatic backup is ready. No cloud backup saved yet." to "Copia automática lista. Aún no se ha guardado ninguna copia en la nube.",
+    "Support" to "Soporte",
+    "Support email copied." to "Correo de soporte copiado.",
+    "Enter 1–366 days." to "Introduce 1–366 días.",
+    "Short rest" to "Descanso insuficiente"
 )

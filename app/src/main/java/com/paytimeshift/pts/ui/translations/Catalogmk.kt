@@ -467,5 +467,15 @@ internal val catalogmk = mapOf(
     "A new PTS version is available on Google Play. Download it in the background and keep using the app." to "Достапна е нова верзија на PTS на Google Play. Преземи ја во позадина и продолжи да ја користиш апликацијата.",
     "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone." to "Ажурирањето е преземено. Рестартирај PTS за да се инсталира. Зачуваните податоци остануваат на телефонот.",
     "Estimated shift extras" to "Проценети додатоци за смената",
-    "Monthly salary is shown in Earnings." to "Месечната плата е прикажана во Заработка."
+    "Monthly salary is shown in Earnings." to "Месечната плата е прикажана во Заработка.",
+    "Checking account…" to "Се проверува сметката…",
+    "Account status unavailable" to "Статусот на сметката не е достапен",
+    "Could not refresh account. Try again." to "Сметката не се освежи. Обиди се повторно.",
+    "Cloud backup status unavailable. Refresh account." to "Статусот на cloud backup не е достапен. Освежи ја сметката.",
+    "Cloud backup paused. Premium is required." to "Cloud backup е паузиран. Потребен е Premium.",
+    "Automatic backup is ready. No cloud backup saved yet." to "Автоматскиот backup е подготвен. Сè уште нема зачуван cloud backup.",
+    "Support" to "Поддршка",
+    "Support email copied." to "Е-поштата за поддршка е копирана.",
+    "Enter 1–366 days." to "Внеси 1–366 дена.",
+    "Short rest" to "Краток одмор"
 )

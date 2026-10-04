@@ -8,6 +8,7 @@ class PlayBilling(activity: Activity,private val uid: ()->String?,private val ve
     private val host=activity
     private var product: ProductDetails?=null
     private var offer: ProductDetails.SubscriptionOfferDetails?=null
+    private var restoring=false
     private val client=BillingClient.newBuilder(activity).setListener {result,purchases->
         when(result.responseCode) {
             BillingClient.BillingResponseCode.OK -> purchases.orEmpty().forEach {p->
@@ -42,9 +43,11 @@ class PlayBilling(activity: Activity,private val uid: ()->String?,private val ve
         if(result.responseCode==BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) restore()
         else if(result.responseCode!=BillingClient.BillingResponseCode.OK) message("Google Play purchase failed. Please try again.")
     }
-    fun restore() {if(uid()==null) return
+    fun restore() {val requestedUid=uid() ?: return;if(restoring || !client.isReady) return
+        restoring=true
         client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()) {result,purchases->
-            if(result.responseCode==BillingClient.BillingResponseCode.OK) purchases.filter {"pts_premium" in it.products && it.purchaseState==Purchase.PurchaseState.PURCHASED && !it.isSuspended}.forEach {verify(it.purchaseToken)}
+            restoring=false
+            if(uid()==requestedUid && result.responseCode==BillingClient.BillingResponseCode.OK) purchases.filter {"pts_premium" in it.products && it.purchaseState==Purchase.PurchaseState.PURCHASED && !it.isSuspended}.forEach {verify(it.purchaseToken)}
         }
     }
     fun close() {client.endConnection()}

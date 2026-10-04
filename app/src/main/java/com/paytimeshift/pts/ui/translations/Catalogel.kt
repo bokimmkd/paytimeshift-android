@@ -467,5 +467,15 @@ internal val catalogel = mapOf(
     "A new PTS version is available on Google Play. Download it in the background and keep using the app." to "Μια νέα έκδοση του PTS είναι διαθέσιμη στο Google Play. Κατεβάστε την στο παρασκήνιο και συνεχίστε να χρησιμοποιείτε την εφαρμογή.",
     "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone." to "Η ενημέρωση κατέβηκε. Επανεκκινήστε το PTS για να ολοκληρωθεί η εγκατάσταση. Τα αποθηκευμένα δεδομένα παραμένουν στο τηλέφωνο.",
     "Estimated shift extras" to "Εκτιμώμενες προσαυξήσεις βάρδιας",
-    "Monthly salary is shown in Earnings." to "Ο μηνιαίος μισθός εμφανίζεται στα Έσοδα."
+    "Monthly salary is shown in Earnings." to "Ο μηνιαίος μισθός εμφανίζεται στα Έσοδα.",
+    "Checking account…" to "Έλεγχος λογαριασμού…",
+    "Account status unavailable" to "Η κατάσταση λογαριασμού δεν είναι διαθέσιμη",
+    "Could not refresh account. Try again." to "Δεν έγινε ανανέωση λογαριασμού. Δοκίμασε ξανά.",
+    "Cloud backup status unavailable. Refresh account." to "Η κατάσταση αντιγράφου cloud δεν είναι διαθέσιμη. Ανανέωσε τον λογαριασμό.",
+    "Cloud backup paused. Premium is required." to "Το αντίγραφο cloud έχει τεθεί σε παύση. Απαιτείται Premium.",
+    "Automatic backup is ready. No cloud backup saved yet." to "Το αυτόματο αντίγραφο είναι έτοιμο. Δεν έχει αποθηκευτεί ακόμη αντίγραφο cloud.",
+    "Support" to "Υποστήριξη",
+    "Support email copied." to "Το email υποστήριξης αντιγράφηκε.",
+    "Enter 1–366 days." to "Εισάγαγε 1–366 ημέρες.",
+    "Short rest" to "Σύντομη ανάπαυση"
 )

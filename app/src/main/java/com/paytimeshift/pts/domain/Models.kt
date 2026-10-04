@@ -97,17 +97,32 @@ fun overlappingShifts(candidate: Shift, shifts: List<Shift>): List<Shift> {
 }
 fun warnings(shifts: List<Shift>, gapHours: Int): List<String> = warnings(shifts, gapHours.toDouble())
 fun warnings(shifts: List<Shift>, gapHours: Double, jobs: List<Job> = emptyList()): List<String> {
-    val result = linkedSetOf<String>()
+    return scheduleWarnings(shifts,gapHours,jobs).map {it.message}.distinct()
+}
+data class ScheduleWarning(val first: Shift,val next: Shift,val gapMinutes: Long) {
+    val shortRest: Boolean get() = gapMinutes>=0
+    val dates: Set<String> get() = setOf(first.date,next.date)
+    val message: String get() = if(!shortRest) "Overlapping shifts: ${first.date} ${first.start} and ${next.date} ${next.start}"
+        else "Only ${hours(gapMinutes)} between shifts: ${first.date} ${first.start} and ${next.date} ${next.start}"
+}
+/** Shared structured warnings keep calendar indicators and day details in agreement. */
+fun scheduleWarnings(shifts: List<Shift>,gapHours: Double,jobs: List<Job> = emptyList()): List<ScheduleWarning> {
+    val result = mutableListOf<ScheduleWarning>()
     val sorted = shifts.filter { it.kind == "Work" }.sortedBy { it.begins }
+    val maximumGap=maxOf(gapHours,jobs.maxOfOrNull {it.minGapHours.coerceAtLeast(0.0)} ?: 0.0)*60
     sorted.forEachIndexed { i, first ->
-        sorted.drop(i + 1).forEach { next ->
+        for(j in i+1 until sorted.size) {
+            val next=sorted[j]
             val gap = Duration.between(first.finishes, next.begins).toMinutes()
-            if (gap < 0) result.add("Overlapping shifts: ${first.date} ${first.start} and ${next.date} ${next.start}")
-            else if (gap < (jobs.find {it.id==next.jobId}?.minGapHours?.takeIf {it>=0} ?: gapHours) * 60) result.add("Only ${hours(gap)} between shifts: ${first.date} ${first.start} and ${next.date} ${next.start}")
+            if(gap>=maximumGap) break
+            if(gap<0 || gap<(jobs.find {it.id==next.jobId}?.minGapHours?.takeIf {it>=0} ?: gapHours)*60)
+                result.add(ScheduleWarning(first,next,gap))
         }
     }
-    return result.toList()
+    return result
 }
+data class CalendarMarker(val jobId:String,val kind:String)
+fun calendarMarkers(shifts:List<Shift>):List<CalendarMarker> = shifts.map {CalendarMarker(it.jobId,it.kind)}.distinct()
 fun nextPayday(job: Job, from: LocalDate): LocalDate {
     val anchor = LocalDate.parse(job.paydayAnchor)
     return when (job.payCycle) {
@@ -237,4 +252,3 @@ fun generatePattern(job: Job, from: LocalDate, until: LocalDate, weekdays: Set<I
             breakMinutes=breakMinutes,rate=job.rate,currency=job.currency,fixedPay=job.fixedPay,rules=job.hourlyRules(),paidBreak=job.paidBreak,monthlyPay=job.monthlyPay || job.monthlySalaryOn(d)!=null)}
         .filter {s->existing.none {it.jobId==s.jobId && it.date==s.date && it.start==s.start && it.end==s.end}}.toList()
 }
-

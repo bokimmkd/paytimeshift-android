@@ -467,5 +467,15 @@ internal val catalogfr = mapOf(
     "A new PTS version is available on Google Play. Download it in the background and keep using the app." to "Une nouvelle version de PTS est disponible sur Google Play. Téléchargez-la en arrière-plan et continuez à utiliser l’application.",
     "The update has downloaded. Restart PTS to finish installing it. Your saved data stays on this phone." to "La mise à jour est téléchargée. Redémarrez PTS pour terminer l’installation. Vos données enregistrées restent sur ce téléphone.",
     "Estimated shift extras" to "Suppléments estimés du poste",
-    "Monthly salary is shown in Earnings." to "Le salaire mensuel est affiché dans Revenus."
+    "Monthly salary is shown in Earnings." to "Le salaire mensuel est affiché dans Revenus.",
+    "Checking account…" to "Vérification du compte…",
+    "Account status unavailable" to "Statut du compte indisponible",
+    "Could not refresh account. Try again." to "Impossible d’actualiser le compte. Réessayez.",
+    "Cloud backup status unavailable. Refresh account." to "Statut de sauvegarde cloud indisponible. Actualisez le compte.",
+    "Cloud backup paused. Premium is required." to "Sauvegarde cloud en pause. Premium requis.",
+    "Automatic backup is ready. No cloud backup saved yet." to "Sauvegarde automatique prête. Aucune sauvegarde cloud enregistrée.",
+    "Support" to "Assistance",
+    "Support email copied." to "Adresse d’assistance copiée.",
+    "Enter 1–366 days." to "Saisissez 1–366 jours.",
+    "Short rest" to "Repos insuffisant"
 )

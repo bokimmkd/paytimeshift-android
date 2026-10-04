@@ -12,6 +12,14 @@ import java.security.MessageDigest
 data class AccountStatus(val uid: String?=null,val email: String="",val verified: Boolean=false,
     val premium: Boolean=false,val expiresAt: Long=0,val monthlyEmail: Boolean=true,val yearlyEmail: Boolean=true,
     val backupAt: Long=0,val revision: Int=0,val testAccess: Boolean=false,val displayName: String="")
+fun cloudBackupLabel(status:AccountStatus,bound:Boolean,resolved:Boolean,error:Boolean):String = when {
+    !resolved && error -> "Cloud backup status unavailable. Refresh account."
+    !resolved -> "Checking account…"
+    !status.premium -> "Cloud backup paused. Premium is required."
+    !bound -> "Choose cloud restore or enable backup on this phone first."
+    status.backupAt==0L -> "Automatic backup is ready. No cloud backup saved yet."
+    else -> "Automatic backup enabled on this phone"
+}
 fun accountHash(uid: String)=MessageDigest.getInstance("SHA-256").digest(uid.toByteArray()).joinToString(""){"%02x".format(it)}
 class PremiumRepository(val context: Context) {
     val auth=FirebaseAuth.getInstance()
