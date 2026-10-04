@@ -1,47 +1,81 @@
 package com.paytimeshift.pts
 
-import com.paytimeshift.pts.domain.shouldOfferUpdate
-import com.paytimeshift.pts.domain.shouldOfferRestart
-import com.paytimeshift.pts.domain.updatePrompt
-import com.paytimeshift.pts.domain.UpdateCheckGate
+import com.paytimeshift.pts.domain.*
 import org.junit.Assert.*
 import org.junit.Test
 
 class UpdatePromptTest {
-    @Test fun onlyNewVersionsAreOfferedAndRefusalDoesNotLoop() {
-        val now=100000000L
-        assertFalse(shouldOfferUpdate(14,14,0,0,now))
-        assertFalse(shouldOfferUpdate(14,13,0,0,now))
-        assertTrue(shouldOfferUpdate(14,15,0,0,now))
-        assertFalse(shouldOfferUpdate(14,15,15,now,now+1000))
-        assertTrue(shouldOfferUpdate(14,15,15,now,now+86400000))
-        assertTrue(shouldOfferUpdate(14,16,15,now,now+1000))
+    private val available=UpdateTransfer(version=21)
+    private fun offer(session:UpdateOfferSession,state:UpdateTransfer=available,flexible:Boolean=true)=
+        session.prompt(20,state,true,flexible)
+
+    @Test fun laterReturnsOnNextOpeningWithoutWaiting24Hours() {
+        val session=UpdateOfferSession();session.startForeground()
+        assertEquals("Available",offer(session))
+        session.later(21)
+        repeat(3) {assertNull(offer(session))} // Includes periodic checks in the same visit.
+        session.stopForeground();session.startForeground()
+        assertEquals("Available",offer(session))
+        assertFalse(shouldOfferUpdate(20,20,0))
+        assertFalse(shouldOfferUpdate(20,19,0))
     }
-    @Test fun storeRouteDoesNotHideAnAvailableUpdateWhenFlexibleIsUnavailable() {
-        assertEquals("Store",updatePrompt(true,false,false,false,true,true))
-        assertEquals("Available",updatePrompt(true,false,false,true,true,true))
-        assertNull(updatePrompt(false,false,false,false,true,true))
+    @Test fun rotationAndTransientResumeDoNotUndoLater() {
+        val session=UpdateOfferSession();session.startForeground();session.later(21)
+        session.startForeground() // Pause/resume, without leaving the app.
+        assertNull(offer(session))
+        session.stopForeground(changingConfiguration=true);session.startForeground()
+        assertNull(offer(session))
     }
-    @Test fun activeDownloadDoesNotOfferASecondDownload() {
-        assertNull(updatePrompt(true,false,true,true,true,true))
-        assertNull(updatePrompt(true,false,true,false,true,true))
+    @Test fun acceptedPlayConsentNeverOffersAnotherDownloadBeforeReady() {
+        val session=UpdateOfferSession();session.startForeground();session.beginConsent(21)
+        session.stopForeground();session.startForeground() // Play's sheet is not a new app visit.
+        assertNull(offer(session))
+        var transfer=available.observe(20,21,UpdateStage.Waiting)
+        session.endConsent()
+        assertNull(offer(session,transfer))
+        transfer=transfer.observe(20,21,UpdateStage.Idle) // Late availability reply.
+        assertNull(offer(session,transfer))
+        transfer=transfer.observe(20,21,UpdateStage.Downloading,100,100)
+        assertNull(offer(session,transfer)) // 100% is insufficient.
+        transfer=transfer.observe(20,21,UpdateStage.Ready)
+        assertEquals("Ready",offer(session,transfer))
+        assertNull(offer(session,transfer.beginInstall()))
     }
-    @Test fun downloadedUpdateOffersRestartEvenWithoutAnAvailableDownload() {
-        assertEquals("Ready",updatePrompt(false,true,false,false,false,true))
-        assertNull(updatePrompt(true,true,false,true,true,false))
+    @Test fun readyBeforeConsentResultIsShownAfterConsentReturns() {
+        val session=UpdateOfferSession();session.startForeground();session.beginConsent(21)
+        val ready=available.observe(20,21,UpdateStage.Ready)
+        assertNull(offer(session,ready))
+        session.endConsent()
+        assertEquals("Ready",offer(session,ready))
     }
-    @Test fun restartDeferralOfOneVersionCannotHideTheNextVersion() {
-        val now=100000000L
-        assertFalse(shouldOfferRestart(16,16,now,now+1000))
-        assertTrue(shouldOfferRestart(17,16,now,now+1000))
-        assertTrue(shouldOfferRestart(16,16,now,now+86400000))
+    @Test fun restartLaterKeepsDownloadAndReturnsOnNextOpening() {
+        val session=UpdateOfferSession();session.startForeground()
+        val ready=available.observe(20,21,UpdateStage.Ready)
+        session.later(21,ready=true)
+        assertNull(offer(session,ready))
+        session.stopForeground();session.startForeground()
+        assertEquals("Ready",offer(session,ready))
+        assertEquals(UpdateStage.Ready,ready.stage)
     }
-    @Test fun explicitLaterSuppressesOnlyThatAvailableVersion() {
-        val now=100000000L
-        val deferred=shouldOfferUpdate(15,16,16,now,now+1000)
-        assertNull(updatePrompt(true,false,false,true,deferred,true))
-        val newer=shouldOfferUpdate(15,17,16,now,now+1000)
-        assertEquals("Available",updatePrompt(true,false,false,true,newer,true))
+    @Test fun deferralsAreSpecificToTheAvailableOrDownloadedVersion() {
+        val session=UpdateOfferSession();session.startForeground();session.later(21);session.later(21,true)
+        assertEquals("Available",offer(session,UpdateTransfer(version=22)))
+        assertEquals("Ready",offer(session,UpdateTransfer(version=22,stage=UpdateStage.Ready)))
+    }
+    @Test fun stoppedUpdateCanUseStoreFallbackAndRetryInstallationStillRequiresReady() {
+        val session=UpdateOfferSession();session.startForeground()
+        assertEquals("Store",offer(session,flexible=false))
+        assertEquals("Store",offer(session,available.observe(20,21,UpdateStage.Stopped)))
+        val installing=available.observe(20,21,UpdateStage.Ready).beginInstall()
+        assertNull(offer(session,installing))
+        assertEquals("Ready",offer(session,installing.installFailed()))
+    }
+    @Test fun installedAndObsoleteEventsCannotReviveEitherPrompt() {
+        val session=UpdateOfferSession();session.startForeground()
+        val installed=available.observe(20,21,UpdateStage.Installed)
+        assertNull(offer(session,installed))
+        assertNull(offer(session,installed.observe(20,0,UpdateStage.Idle).observe(20,21,UpdateStage.Ready)))
+        assertNull(offer(session,UpdateTransfer(version=20,stage=UpdateStage.Ready)))
     }
     @Test fun concurrentChecksAreCoalescedUntilTheRequestCompletes() {
         val gate=UpdateCheckGate()

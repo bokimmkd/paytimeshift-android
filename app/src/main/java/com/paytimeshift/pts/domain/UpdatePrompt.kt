@@ -1,19 +1,41 @@
 package com.paytimeshift.pts.domain
 
-/** A refused version can be offered again after 24 hours, or immediately for a newer version. */
-fun shouldOfferUpdate(installed: Int, available: Int, deferredVersion: Int, deferredAt: Long, now: Long): Boolean =
-    available>installed && (available!=deferredVersion || now-deferredAt>=24*60*60*1000L)
+/** Later suppresses only the current app visit, without a timed preference. */
+fun shouldOfferUpdate(installed:Int,available:Int,deferredVersion:Int):Boolean =
+    available>installed && available!=deferredVersion
 
-/** Restart deferral belongs to one downloaded version, never to all future updates. */
-fun shouldOfferRestart(available:Int, deferredVersion:Int, deferredAt:Long, now:Long):Boolean =
-    available!=deferredVersion || now-deferredAt>=24*60*60*1000L
+fun shouldOfferRestart(available:Int,deferredVersion:Int):Boolean = available!=deferredVersion
 
-fun updatePrompt(available:Boolean, downloaded:Boolean, installing:Boolean, flexibleAllowed:Boolean,
-                 offerVersion:Boolean, offerRestart:Boolean):String? = when {
-    downloaded -> if(offerRestart) "Ready" else null
-    installing -> null
-    available && offerVersion -> if(flexibleAllowed) "Available" else "Store"
-    else -> null
+/** Retained across activity recreation; Play consent is part of the same app visit. */
+class UpdateOfferSession {
+    private var foreground=false
+    private var deferredUpdate=0
+    private var deferredRestart=0
+    var consentVersion=0
+        private set
+    fun startForeground() {
+        if(!foreground) {deferredUpdate=0;deferredRestart=0}
+        foreground=true
+    }
+    fun stopForeground(changingConfiguration:Boolean=false) {
+        if(!changingConfiguration && consentVersion==0) foreground=false
+    }
+    fun beginConsent(version:Int) {consentVersion=version}
+    fun endConsent() {consentVersion=0}
+    fun later(version:Int,ready:Boolean=false) {
+        if(ready) deferredRestart=version else deferredUpdate=version
+    }
+    fun prompt(installed:Int,transfer:UpdateTransfer,available:Boolean,flexibleAllowed:Boolean):String? {
+        val version=transfer.version
+        if(consentVersion>0 || version<=maxOf(installed,transfer.completedVersion)) return null
+        return when(transfer.stage) {
+            UpdateStage.Ready -> if(shouldOfferRestart(version,deferredRestart)) "Ready" else null
+            UpdateStage.Stopped -> if(shouldOfferUpdate(installed,version,deferredUpdate)) "Store" else null
+            UpdateStage.Idle -> if(available && shouldOfferUpdate(installed,version,deferredUpdate))
+                if(flexibleAllowed) "Available" else "Store" else null
+            else -> null
+        }
+    }
 }
 
 /** Bounds an unanswered Play request and rejects callbacks from an old foreground session. */
