@@ -28,3 +28,15 @@ Source: af338cdf07f58bbb08225ac8595d8a84a73d8a28 on premium-analytics-upgrade. P
 This is an Android build candidate, not a Play publication. Published Alpha remains 0.2.5 / 15. No new Play rollout or backend deployment was performed.
 
 The owner's installed version and flexible-update download/restart completion still need physical-phone confirmation. Payment/restore and actual cloud backup/restore remain integration checks from RELEASE-0.2.5.md; RTDN, deferred report email and Meta integration are unchanged. Do not claim those integrations are verified or that production is ready solely from this candidate's CI result.
+
+
+## Owner-authorized Alpha submission — 2026-10-04
+
+- Owner confirms Settings shows 0.2.5 on the phone. Installed-version verification is now complete for the 0.2.4 -> 0.2.5 update report. The exact download/restart sequence was not separately observed; do not continue classifying installation as unconfirmed.
+- Owner explicitly requests publication of 0.2.6. Uploaded the exact validated PTS-0.2.6-16.aab, SHA-256 7908710c56beac49aaa2d8e470100ccf387aa750aae063a7262e6933fc5bbedb.
+- Google accepted versionCode 16 / 0.2.6. Existing Closed testing - Alpha track 4699298164505386169, release 6, name "0.2.6 · Compact account buttons", rollout 100%.
+- Reviewed the single nonblocking native debug-symbol warning. No supported devices were lost. Submitted exactly one release change for Google review.
+- Publishing overview positively shows "Changes in review" for this release; quick checks are still running (up to 13 minutes shown in proof). Managed publishing is off. Submission is confirmed; availability to testers is not yet confirmed.
+- Publishing URL: https://play.google.com/console/u/0/developers/4766816481672407684/app/4974514655440409843/publishing
+- Saved proof: PTS-0.2.6-Play-review-1791113363940.jpg.
+- No production publication or backend deployment. Payment/cloud/RTDN/report email/Meta items remain as recorded above.

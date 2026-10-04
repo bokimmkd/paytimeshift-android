@@ -213,3 +213,8 @@ Final build 37192622764 and UI validation 37192622779 passed: 73 debug + 73 rele
 ## Release candidate — 0.2.6 / 16, 2026-10-04
 
 Owner confirms that fixing the two remaining account buttons completes the release candidate. PR #2 is now included in af338cdf07f58bbb08225ac8595d8a84a73d8a28, with version increment to 0.2.6 / 16. Build 37198005522 and UI validation 37198005511 passed (73 debug + 73 release unit tests, 17 UI, 17 backend; no failures). Signed PTS-0.2.6-16.aab is validated, has the existing upload certificate, and is saved for delivery. SHA-256 7908710c56beac49aaa2d8e470100ccf387aa750aae063a7262e6933fc5bbedb. See RELEASE-0.2.6.md for artifact evidence. No 0.2.6 Play upload or rollout; currently published Alpha remains 0.2.5. The owner's installed-version/update-restart confirmation and physical payment/cloud checks remain open.
+
+
+## Alpha submission and device update confirmation — 2026-10-04
+
+Owner confirms Settings shows 0.2.5; the earlier physical installed-version question is resolved. Owner explicitly authorizes publication of 0.2.6. The exact validated AAB16 is uploaded and submitted on existing Alpha at 100%, release 6 / "0.2.6 · Compact account buttons". Publishing overview shows Changes in review with quick checks running and managed publishing off. Availability to testers is still pending; see RELEASE-0.2.6.md and saved PTS-0.2.6-Play-review-1791113363940.jpg proof. No production or backend deployment; physical payment/cloud tests and RTDN/report-email/Meta work are unchanged.
