@@ -123,3 +123,14 @@ This section supersedes the older “in review / live deployment pending” rele
 - User noticed another one or two situations needing correction. Their descriptions are not yet supplied; capture them individually with steps, expected behavior and screenshot before implementing. Do not invent these issues.
 - Resend work is explicitly deferred by the owner until the website work in the other session is finished and the email/sender path is chosen. Do not purchase a Resend upgrade or change the website from this task.
 - Current service evidence and the completed PTS-only Play grant are recorded in SERVICE-STATUS-2026-10-04.md. Purchase, RTDN and cloud/device QA remain separate from release availability.
+
+## User-reported calendar marker correction — 2026-10-04
+
+- Scenario: mark a specific job's shift/day as Non-working day while another job (for example Wolt) still has a Work shift on the same date.
+- Existing job/date replacement scope is correct: only entries for the chosen job/date are replaced. Preserve the other job's shift, reminder and pay.
+- Confirmed source defect in CalendarScreen: dayRows currently includes every kind and derives normal job-colored shift dots from all jobIds, so a Non-working day, Off, Vacation or Sick record still looks like a work shift.
+- Next Android update: normal colored shift dots must represent Work entries only. After marking the factory non-working, its work dot disappears while Wolt's work dot remains. Keep the non-working status visible in the selected-day details without counting it as a worked shift. Align the calendar's shift counts and accessibility description with actual Work entries.
+- Existing arithmetic is already correct for a specific shift converted to a non-working status: hourly/per-shift jobs produce zero paid hours, base pay and extras for that record. If it replaced a planned paid shift, the month's estimate falls by that shift's previous earnings; no additional automatic deduction is created. Other jobs' earnings are unaffected.
+- Fixed monthly salary remains unchanged by attendance; reductions only come from explicit monthly deductions. Preserve these rules and Android/server agreement.
+- Verify one date with factory + Wolt: mark factory non-working, confirm only factory replacement, Wolt marker/pay remain, factory hourly/daily earnings become zero, fixed salary remains unchanged, then change back to Work. Check overnight start-date scope and saved/cloud status preservation.
+- This correction is recorded for the next update; no Android patch, build or Play upload has been performed for it yet.
