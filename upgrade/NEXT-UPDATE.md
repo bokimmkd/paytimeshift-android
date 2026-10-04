@@ -134,3 +134,12 @@ This section supersedes the older “in review / live deployment pending” rele
 - Fixed monthly salary remains unchanged by attendance; reductions only come from explicit monthly deductions. Preserve these rules and Android/server agreement.
 - Verify one date with factory + Wolt: mark factory non-working, confirm only factory replacement, Wolt marker/pay remain, factory hourly/daily earnings become zero, fixed salary remains unchanged, then change back to Work. Check overnight start-date scope and saved/cloud status preservation.
 - This correction is recorded for the next update; no Android patch, build or Play upload has been performed for it yet.
+
+## Reminder behavior checked — 2026-10-04
+
+- User asked whether holiday/vacation/non-working statuses can leave unnecessary shift reminders.
+- Current Reminders.kt cancels alarms for the old schedule, then schedules only kind == Work entries. The receiver reloads local data and checks kind == Work again before notifying. Saving a job-specific non-working replacement therefore removes the original work reminder in the normal save flow.
+- Preserve independent reminders for another job on that date (factory non-working, Wolt working).
+- Global Holiday is a pay/calendar classification and does not automatically mean every job is off. A Work shift on a holiday still needs its reminder; a specific job/day changed to Non-working day, Off, Vacation or Sick must not notify.
+- Device regression check alongside the calendar marker correction: schedule near-future reminders for two jobs, change only one job to a non-working status, confirm its prior alarm is canceled and only the other job notifies. Also verify returning that job to Work schedules its reminder again.
+- No unnecessary reminder was reproduced on device in this session; this is verified source behavior plus pending physical QA, not a claim of a newly fixed reminder bug.
