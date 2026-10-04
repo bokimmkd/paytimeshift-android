@@ -47,3 +47,8 @@ A signed AAB is a build artifact, not evidence of a Play upload or rollout. Prod
 - Publishing URL: https://play.google.com/console/u/0/developers/4766816481672407684/app/4974514655440409843/publishing
 - Saved proof: PTS-0.2.5-Play-review-1791108373483.jpg.
 - Google approval/availability and actual device update/payment/cloud tests remain pending. Resend, RTDN and Meta integration are unchanged.
+
+
+## Live availability check — 2026-10-04
+
+The owner reported receiving the in-app update offer. A fresh Play Console Alpha track check positively shows `Latest release: 0.2.5 · Calendar & account fixes` and `Available to selected testers`. Google publication is therefore confirmed. The installed version on the owner's phone and completion of the flexible-update restart step remain unconfirmed until the phone's Settings version is checked. The two remaining large account buttons are prepared separately in draft PR #2 for the next incremented release.
