@@ -32,3 +32,21 @@ class UpdateCheckGate(private val timeoutMillis:Long=15000L) {
     }
     fun cancel() {active=null}
 }
+
+/** Play transfer state, independent of availability prompts and their Later preferences. */
+enum class UpdateStage { Idle, Waiting, Downloading, Ready, Installing, Stopped, Installed }
+data class UpdateTransfer(val version:Int=0,val stage:UpdateStage=UpdateStage.Idle,
+                          val downloaded:Long=0,val total:Long=0,val completedVersion:Int=0) {
+    val fraction:Float? get()=if(total>0) (downloaded.toDouble()/total).coerceIn(0.0,1.0).toFloat() else null
+    fun observe(installed:Int,available:Int,next:UpdateStage,bytes:Long=0,totalBytes:Long=0):UpdateTransfer {
+        if(available<=installed) return UpdateTransfer(completedVersion=completedVersion)
+        if(available<=completedVersion) return this
+        if(available<version || available==version && stage==UpdateStage.Installed) return this
+        if(available==version && stage in listOf(UpdateStage.Waiting,UpdateStage.Downloading) && next==UpdateStage.Idle) return this
+        if(available==version && stage in listOf(UpdateStage.Ready,UpdateStage.Installing) &&
+            next in listOf(UpdateStage.Idle,UpdateStage.Waiting,UpdateStage.Downloading,UpdateStage.Ready)) return this
+        return UpdateTransfer(available,next,bytes.coerceAtLeast(0),totalBytes.coerceAtLeast(0),if(next==UpdateStage.Installed) maxOf(completedVersion,available) else completedVersion)
+    }
+    fun beginInstall():UpdateTransfer = if(stage==UpdateStage.Ready) copy(stage=UpdateStage.Installing) else this
+    fun installFailed():UpdateTransfer = if(stage==UpdateStage.Installing) copy(stage=UpdateStage.Ready) else this
+}

@@ -489,5 +489,11 @@ internal val catalogsr = mapOf(
     "Entries outside this selection and job settings stay unchanged." to "Unosi van ovog izbora i podešavanja poslova ostaju nepromenjeni.",
     "Select valid From and To dates." to "Izaberi važeće datume Od i Do.",
     "Existing cloud backup" to "Postojeća cloud kopija",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Cloud kopija već postoji. Vrati je pre nego što uključiš backup na ovom telefonu. Prvo sačuvaj lokalnu kopiju da zadržiš trenutne podatke."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Cloud kopija već postoji. Vrati je pre nego što uključiš backup na ovom telefonu. Prvo sačuvaj lokalnu kopiju da zadržiš trenutne podatke.",
+    "Waiting to download…" to "Čeka se preuzimanje…",
+    "Downloading update…" to "Preuzimanje ažuriranja…",
+    "Installing update…" to "Instaliranje ažuriranja…",
+    "Google Play will restart PTS to finish the update." to "Google Play će ponovo pokrenuti PTS da završi ažuriranje.",
+    "You can keep using PTS while the update downloads." to "Možeš nastaviti da koristiš PTS dok se ažuriranje preuzima.",
+    "Could not finish installing. Tap Restart to try again." to "Instaliranje nije završeno. Dodirni Ponovo pokreni da pokušaš opet."
 )

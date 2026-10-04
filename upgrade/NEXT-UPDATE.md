@@ -316,3 +316,9 @@ Owner screenshot 39649.jpg shows the Calendar overflow menu with Mark as holiday
 - Verify the menu on small screens and with longer translations/font scaling, selected-date changes, already-marked holidays, Light/Dark, and deletion cancellation.
 
 Recorded next-update scope only. No application implementation, version increment, new AAB or Play submission is claimed for this plan change.
+
+## 0.2.9 / 19 implementation authorized — 2026-10-04
+
+Owner requests 0.2.9. Scope is the agreed Calendar actions menu polish and visible flexible-update transfer/install feedback. Calendar orders Import, Share, Holiday with the selected localized date, divider, then red Delete, with consistent leading icons. Update shows non-modal Waiting/Downloading/Installing feedback and percentage only when Play supplies a total, guards Ready behind actual DOWNLOADED, rejects stale/installed-version events and repeated Restart, and restores Ready with a localized retry explanation when completeUpdate fails. Existing Later preferences and optional Play consent/Store routes are retained. No changes to backup, billing, work/pay calculations or account grants.
+
+Owner confirmed at 18:13 that cloud backup works after changing local data; unchanged-data deduplication explains the earlier unchanged timestamp. That case is closed, without a new backup implementation change. 0.2.9 CI/UI/signature and Alpha submission are pending. A physical 0.2.8 → 0.2.9 test runs the updater already installed in 0.2.8; validating the new 0.2.9 progress UI on a real Play update requires a subsequent higher version. Do not claim that installing 0.2.9 alone proves its new updater flow.

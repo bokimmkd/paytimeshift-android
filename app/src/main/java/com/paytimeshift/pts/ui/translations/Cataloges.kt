@@ -489,5 +489,11 @@ internal val cataloges = mapOf(
     "Entries outside this selection and job settings stay unchanged." to "Los registros fuera de esta selección y los ajustes de los trabajos no cambian.",
     "Select valid From and To dates." to "Selecciona fechas Desde y Hasta válidas.",
     "Existing cloud backup" to "Copia en la nube existente",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Ya existe una copia en la nube. Restáurala antes de activar la copia en este teléfono. Guarda primero una copia local para conservar tus datos actuales."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Ya existe una copia en la nube. Restáurala antes de activar la copia en este teléfono. Guarda primero una copia local para conservar tus datos actuales.",
+    "Waiting to download…" to "Esperando la descarga…",
+    "Downloading update…" to "Descargando actualización…",
+    "Installing update…" to "Instalando actualización…",
+    "Google Play will restart PTS to finish the update." to "Google Play reiniciará PTS para completar la actualización.",
+    "You can keep using PTS while the update downloads." to "Puedes seguir usando PTS mientras se descarga la actualización.",
+    "Could not finish installing. Tap Restart to try again." to "No se pudo completar la instalación. Pulsa Reiniciar para reintentar."
 )

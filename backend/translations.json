@@ -487,7 +487,13 @@
     "Entries outside this selection and job settings stay unchanged.": "Записите надвор од изборот и поставките на работите остануваат непроменети.",
     "Select valid From and To dates.": "Избери валидни датуми Од и До.",
     "Existing cloud backup": "Постоечка cloud копија",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Веќе постои cloud копија. Врати ја пред да активираш backup на овој телефон. Прво зачувај локална копија за да ги задржиш сегашните податоци."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Веќе постои cloud копија. Врати ја пред да активираш backup на овој телефон. Прво зачувај локална копија за да ги задржиш сегашните податоци.",
+    "Waiting to download…": "Се чека преземање…",
+    "Downloading update…": "Се презема ажурирањето…",
+    "Installing update…": "Се инсталира ажурирањето…",
+    "Google Play will restart PTS to finish the update.": "Google Play ќе го рестартира PTS за да го заврши ажурирањето.",
+    "You can keep using PTS while the update downloads.": "Може да го користиш PTS додека се презема ажурирањето.",
+    "Could not finish installing. Tap Restart to try again.": "Инсталирањето не успеа. Притисни Рестарт за повторен обид."
   },
   "de": {
     "Today": "Heute",
@@ -977,7 +983,13 @@
     "Entries outside this selection and job settings stay unchanged.": "Einträge außerhalb der Auswahl und Job-Einstellungen bleiben unverändert.",
     "Select valid From and To dates.": "Gültige Von- und Bis-Daten auswählen.",
     "Existing cloud backup": "Vorhandene Cloud-Sicherung",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Es gibt bereits eine Cloud-Sicherung. Stelle sie wieder her, bevor du die Sicherung auf diesem Telefon aktivierst. Sichere zuerst lokal, um deine aktuellen Daten zu behalten."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Es gibt bereits eine Cloud-Sicherung. Stelle sie wieder her, bevor du die Sicherung auf diesem Telefon aktivierst. Sichere zuerst lokal, um deine aktuellen Daten zu behalten.",
+    "Waiting to download…": "Warten auf Download…",
+    "Downloading update…": "Update wird heruntergeladen…",
+    "Installing update…": "Update wird installiert…",
+    "Google Play will restart PTS to finish the update.": "Google Play startet PTS neu, um das Update abzuschließen.",
+    "You can keep using PTS while the update downloads.": "Du kannst PTS während des Downloads weiter nutzen.",
+    "Could not finish installing. Tap Restart to try again.": "Die Installation konnte nicht abgeschlossen werden. Tippe auf Neustart, um es erneut zu versuchen."
   },
   "it": {
     "Today": "Oggi",
@@ -1467,7 +1479,13 @@
     "Entries outside this selection and job settings stay unchanged.": "Le voci fuori dalla selezione e le impostazioni dei lavori restano invariate.",
     "Select valid From and To dates.": "Seleziona date Da e A valide.",
     "Existing cloud backup": "Backup cloud esistente",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Esiste già un backup cloud. Ripristinalo prima di attivare il backup su questo telefono. Salva prima una copia locale per conservare i dati attuali."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Esiste già un backup cloud. Ripristinalo prima di attivare il backup su questo telefono. Salva prima una copia locale per conservare i dati attuali.",
+    "Waiting to download…": "In attesa del download…",
+    "Downloading update…": "Download dell’aggiornamento…",
+    "Installing update…": "Installazione dell’aggiornamento…",
+    "Google Play will restart PTS to finish the update.": "Google Play riavvierà PTS per completare l’aggiornamento.",
+    "You can keep using PTS while the update downloads.": "Puoi continuare a usare PTS durante il download dell’aggiornamento.",
+    "Could not finish installing. Tap Restart to try again.": "Impossibile completare l’installazione. Tocca Riavvia per riprovare."
   },
   "es": {
     "Today": "Hoy",
@@ -1957,7 +1975,13 @@
     "Entries outside this selection and job settings stay unchanged.": "Los registros fuera de esta selección y los ajustes de los trabajos no cambian.",
     "Select valid From and To dates.": "Selecciona fechas Desde y Hasta válidas.",
     "Existing cloud backup": "Copia en la nube existente",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Ya existe una copia en la nube. Restáurala antes de activar la copia en este teléfono. Guarda primero una copia local para conservar tus datos actuales."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Ya existe una copia en la nube. Restáurala antes de activar la copia en este teléfono. Guarda primero una copia local para conservar tus datos actuales.",
+    "Waiting to download…": "Esperando la descarga…",
+    "Downloading update…": "Descargando actualización…",
+    "Installing update…": "Instalando actualización…",
+    "Google Play will restart PTS to finish the update.": "Google Play reiniciará PTS para completar la actualización.",
+    "You can keep using PTS while the update downloads.": "Puedes seguir usando PTS mientras se descarga la actualización.",
+    "Could not finish installing. Tap Restart to try again.": "No se pudo completar la instalación. Pulsa Reiniciar para reintentar."
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -2447,7 +2471,13 @@
     "Entries outside this selection and job settings stay unchanged.": "Les entrées hors de cette sélection et les paramètres des emplois restent inchangés.",
     "Select valid From and To dates.": "Choisissez des dates de début et de fin valides.",
     "Existing cloud backup": "Sauvegarde cloud existante",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Une sauvegarde cloud existe déjà. Restaurez-la avant d’activer la sauvegarde sur ce téléphone. Enregistrez d’abord une copie locale pour conserver vos données actuelles."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Une sauvegarde cloud existe déjà. Restaurez-la avant d’activer la sauvegarde sur ce téléphone. Enregistrez d’abord une copie locale pour conserver vos données actuelles.",
+    "Waiting to download…": "En attente du téléchargement…",
+    "Downloading update…": "Téléchargement de la mise à jour…",
+    "Installing update…": "Installation de la mise à jour…",
+    "Google Play will restart PTS to finish the update.": "Google Play redémarrera PTS pour terminer la mise à jour.",
+    "You can keep using PTS while the update downloads.": "Vous pouvez continuer à utiliser PTS pendant le téléchargement de la mise à jour.",
+    "Could not finish installing. Tap Restart to try again.": "Impossible de terminer l’installation. Appuyez sur Redémarrer pour réessayer."
   },
   "sr": {
     "Today": "Danas",
@@ -2937,7 +2967,13 @@
     "Entries outside this selection and job settings stay unchanged.": "Unosi van ovog izbora i podešavanja poslova ostaju nepromenjeni.",
     "Select valid From and To dates.": "Izaberi važeće datume Od i Do.",
     "Existing cloud backup": "Postojeća cloud kopija",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Cloud kopija već postoji. Vrati je pre nego što uključiš backup na ovom telefonu. Prvo sačuvaj lokalnu kopiju da zadržiš trenutne podatke."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Cloud kopija već postoji. Vrati je pre nego što uključiš backup na ovom telefonu. Prvo sačuvaj lokalnu kopiju da zadržiš trenutne podatke.",
+    "Waiting to download…": "Čeka se preuzimanje…",
+    "Downloading update…": "Preuzimanje ažuriranja…",
+    "Installing update…": "Instaliranje ažuriranja…",
+    "Google Play will restart PTS to finish the update.": "Google Play će ponovo pokrenuti PTS da završi ažuriranje.",
+    "You can keep using PTS while the update downloads.": "Možeš nastaviti da koristiš PTS dok se ažuriranje preuzima.",
+    "Could not finish installing. Tap Restart to try again.": "Instaliranje nije završeno. Dodirni Ponovo pokreni da pokušaš opet."
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -3427,7 +3463,13 @@
     "Entries outside this selection and job settings stay unchanged.": "Registros fora desta seleção e configurações dos trabalhos permanecem iguais.",
     "Select valid From and To dates.": "Selecione datas De e Até válidas.",
     "Existing cloud backup": "Backup existente na nuvem",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Já existe um backup na nuvem. Restaure-o antes de ativar o backup neste telefone. Salve primeiro uma cópia local para manter seus dados atuais."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Já existe um backup na nuvem. Restaure-o antes de ativar o backup neste telefone. Salve primeiro uma cópia local para manter seus dados atuais.",
+    "Waiting to download…": "Aguardando download…",
+    "Downloading update…": "Baixando atualização…",
+    "Installing update…": "Instalando atualização…",
+    "Google Play will restart PTS to finish the update.": "O Google Play reiniciará o PTS para concluir a atualização.",
+    "You can keep using PTS while the update downloads.": "Você pode continuar usando o PTS enquanto a atualização é baixada.",
+    "Could not finish installing. Tap Restart to try again.": "Não foi possível concluir a instalação. Toque em Reiniciar para tentar novamente."
   },
   "el": {
     "Today": "Σήμερα",
@@ -3917,6 +3959,12 @@
     "Entries outside this selection and job settings stay unchanged.": "Οι εγγραφές εκτός της επιλογής και οι ρυθμίσεις εργασιών παραμένουν αμετάβλητες.",
     "Select valid From and To dates.": "Επιλέξτε έγκυρες ημερομηνίες Από και Έως.",
     "Existing cloud backup": "Υπάρχον αντίγραφο στο cloud",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Υπάρχει ήδη αντίγραφο στο cloud. Επαναφέρετέ το πριν ενεργοποιήσετε το backup σε αυτό το τηλέφωνο. Αποθηκεύστε πρώτα ένα τοπικό αντίγραφο για να διατηρήσετε τα τρέχοντα δεδομένα."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data.": "Υπάρχει ήδη αντίγραφο στο cloud. Επαναφέρετέ το πριν ενεργοποιήσετε το backup σε αυτό το τηλέφωνο. Αποθηκεύστε πρώτα ένα τοπικό αντίγραφο για να διατηρήσετε τα τρέχοντα δεδομένα.",
+    "Waiting to download…": "Αναμονή λήψης…",
+    "Downloading update…": "Λήψη ενημέρωσης…",
+    "Installing update…": "Εγκατάσταση ενημέρωσης…",
+    "Google Play will restart PTS to finish the update.": "Το Google Play θα επανεκκινήσει το PTS για να ολοκληρώσει την ενημέρωση.",
+    "You can keep using PTS while the update downloads.": "Μπορείτε να συνεχίσετε να χρησιμοποιείτε το PTS όσο γίνεται λήψη της ενημέρωσης.",
+    "Could not finish installing. Tap Restart to try again.": "Δεν ήταν δυνατή η ολοκλήρωση της εγκατάστασης. Πατήστε Επανεκκίνηση για νέα προσπάθεια."
   }
 }

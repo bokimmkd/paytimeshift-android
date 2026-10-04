@@ -489,5 +489,11 @@ internal val catalogmk = mapOf(
     "Entries outside this selection and job settings stay unchanged." to "Записите надвор од изборот и поставките на работите остануваат непроменети.",
     "Select valid From and To dates." to "Избери валидни датуми Од и До.",
     "Existing cloud backup" to "Постоечка cloud копија",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Веќе постои cloud копија. Врати ја пред да активираш backup на овој телефон. Прво зачувај локална копија за да ги задржиш сегашните податоци."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Веќе постои cloud копија. Врати ја пред да активираш backup на овој телефон. Прво зачувај локална копија за да ги задржиш сегашните податоци.",
+    "Waiting to download…" to "Се чека преземање…",
+    "Downloading update…" to "Се презема ажурирањето…",
+    "Installing update…" to "Се инсталира ажурирањето…",
+    "Google Play will restart PTS to finish the update." to "Google Play ќе го рестартира PTS за да го заврши ажурирањето.",
+    "You can keep using PTS while the update downloads." to "Може да го користиш PTS додека се презема ажурирањето.",
+    "Could not finish installing. Tap Restart to try again." to "Инсталирањето не успеа. Притисни Рестарт за повторен обид."
 )

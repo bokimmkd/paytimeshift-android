@@ -2,7 +2,8 @@ package com.paytimeshift.pts
 
 import android.graphics.Bitmap
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.*
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -76,4 +77,38 @@ class ScheduleManagementUiTest {
         ui.onNodeWithText("Factory").assertIsDisplayed();ui.onNodeWithText("Wolt").assertIsDisplayed()
         screenshot("pay-period-covered-dates")
     }
+    @Test fun calendarMenuNamesSelectedDateAndKeepsDeletionLast() {
+        calendarMenu(false)
+    }
+    @Test fun calendarMenuIsReadableInDarkAndUnmarksTheSameDate() {
+        calendarMenu(true)
+    }
+    private fun calendarMenu(dark:Boolean) {
+        var current by mutableStateOf(data)
+        var selected=""
+        var imported=0
+        var shared=0
+        var deletionDate=""
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {
+            MaterialTheme(colorScheme=if(dark) darkColorScheme() else androidx.compose.material3.lightColorScheme()) {
+                CalendarScreen(current,"2026-10",{},{},{shared++},{imported++},{current=current.withHoliday(it)},{selected=it},{deletionDate=it})
+            }
+        }}
+        ui.onNodeWithText("7").performClick()
+        ui.onNodeWithContentDescription("Calendar actions").performClick()
+        val labels=listOf("Import roster","Share schedule","Mark as holiday","Delete shifts in a period")
+        val positions=labels.map {ui.onNodeWithText(it).assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top}
+        assertEquals(positions.sorted(),positions)
+        ui.onNodeWithText("7 Oct 2026").assertIsDisplayed()
+        screenshot(if(dark) "calendar-menu-dark" else "calendar-menu-light")
+        ui.onNodeWithText("Mark as holiday").performClick()
+        ui.runOnIdle {assertEquals("2026-10-07",selected);assertEquals(listOf(selected),current.holidays);assertEquals(data.shifts.map {it.id},current.shifts.map {it.id});assertEquals(0,imported);assertEquals(0,shared)}
+        ui.onNodeWithContentDescription("Calendar actions").performClick()
+        ui.onNodeWithText("Unmark holiday").performClick()
+        ui.runOnIdle {assertTrue(current.holidays.isEmpty())}
+        ui.onNodeWithContentDescription("Calendar actions").performClick()
+        ui.onNodeWithText("Delete shifts in a period").performClick()
+        ui.runOnIdle {assertEquals("2026-10-07",deletionDate);assertEquals(data.shifts.map {it.id},current.shifts.map {it.id})}
+    }
+
 }

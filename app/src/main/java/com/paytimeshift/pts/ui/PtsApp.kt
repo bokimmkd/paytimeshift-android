@@ -223,6 +223,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         ) { inset ->
             if (!loaded) Box(Modifier.fillMaxSize().padding(inset),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
             else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab in listOf(Tab.Today,Tab.Calendar) && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                if(updates?.transfer?.stage in listOf(UpdateStage.Waiting,UpdateStage.Downloading,UpdateStage.Installing)) item {UpdateProgress(updates!!.transfer)}
                 if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(data.withRestoredBackup(it))},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
@@ -264,7 +265,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),false)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("Image")}
         }},confirmButton={TextButton(onClick={shareMonth=null}){UiText("Cancel")}})}
         if(sampleConfirm) AlertDialog(onDismissRequest={sampleConfirm=false},title={UiText("Load example schedule?")},text={UiText("Add Factory, Taxi and Restaurant with example shifts. You can edit them or start with your own jobs instead.")},confirmButton={TextButton(onClick={if(data.jobs.isEmpty()) commit(sampleData().copy(preferences=data.preferences)) else message="Examples are available only before adding jobs.";sampleConfirm=false}){UiText("Load examples")}},dismissButton={TextButton(onClick={sampleConfirm=false}){UiText("Cancel")}})
-        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen && deleteShiftsDate==null) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store")
+        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen && deleteShiftsDate==null) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store",failed=updates.installFailed)
         if (saving) androidx.compose.ui.window.Dialog(onDismissRequest={}) { Surface(shape=Round) { Row(Modifier.padding(24.dp),verticalAlignment=Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(24.dp)); Spacer(Modifier.width(12.dp)); UiText("Saving…") } } }
         message?.let { text -> AlertDialog(onDismissRequest={message=null},title={UiText("PTS")},text={UiText(text)},confirmButton={TextButton(onClick={message=null}){UiText("OK")}}) }
     }
@@ -468,10 +469,11 @@ private fun shiftLabel(shift: Shift): String {
             Box {
                 IconButton(onClick={menu=true},modifier=Modifier.size(30.dp)){Icon(Icons.Outlined.MoreVert,translate("Calendar actions",LocalLanguage.current),Modifier.size(19.dp))}
                 DropdownMenu(menu,{menu=false}) {
-                    DropdownMenuItem(text={UiText(if(selectedText in data.holidays) "Unmark holiday" else "Mark as holiday")},leadingIcon={Icon(Icons.Outlined.Event,null)},onClick={menu=false;toggleHoliday(selectedText)})
-                    DropdownMenuItem(text={UiText("Import roster")},onClick={menu=false;openImport()})
-                    DropdownMenuItem(text={UiText("Delete shifts in a period")},leadingIcon={Icon(Icons.Outlined.DeleteOutline,null)},onClick={menu=false;openDelete(selectedText)})
-                    DropdownMenuItem(text={UiText("Share schedule")},onClick={menu=false;share(monthText)})
+                    DropdownMenuItem(text={UiText("Import roster")},leadingIcon={Icon(Icons.Outlined.FileDownload,null)},onClick={menu=false;openImport()})
+                    DropdownMenuItem(text={UiText("Share schedule")},leadingIcon={Icon(Icons.Outlined.Share,null)},onClick={menu=false;share(monthText)})
+                    DropdownMenuItem(text={Column {UiText(if(selectedText in data.holidays) "Unmark holiday" else "Mark as holiday");Text(selected.format(DateTimeFormatter.ofPattern("d MMM yyyy",locale)),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}},leadingIcon={Icon(Icons.Outlined.Event,null)},onClick={menu=false;toggleHoliday(selectedText)})
+                    HorizontalDivider()
+                    DropdownMenuItem(text={UiText("Delete shifts in a period",color=MaterialTheme.colorScheme.error)},leadingIcon={Icon(Icons.Outlined.DeleteOutline,null,tint=MaterialTheme.colorScheme.error)},onClick={menu=false;openDelete(selectedText)})
                 }
             }
             IconButton(onClick={onMonthChange(month.minusMonths(1).toString())},modifier=Modifier.size(36.dp)){Icon(Icons.Outlined.ChevronLeft,translate("Previous month",LocalLanguage.current),Modifier.size(20.dp))}

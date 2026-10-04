@@ -489,5 +489,11 @@ internal val catalogel = mapOf(
     "Entries outside this selection and job settings stay unchanged." to "Οι εγγραφές εκτός της επιλογής και οι ρυθμίσεις εργασιών παραμένουν αμετάβλητες.",
     "Select valid From and To dates." to "Επιλέξτε έγκυρες ημερομηνίες Από και Έως.",
     "Existing cloud backup" to "Υπάρχον αντίγραφο στο cloud",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Υπάρχει ήδη αντίγραφο στο cloud. Επαναφέρετέ το πριν ενεργοποιήσετε το backup σε αυτό το τηλέφωνο. Αποθηκεύστε πρώτα ένα τοπικό αντίγραφο για να διατηρήσετε τα τρέχοντα δεδομένα."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Υπάρχει ήδη αντίγραφο στο cloud. Επαναφέρετέ το πριν ενεργοποιήσετε το backup σε αυτό το τηλέφωνο. Αποθηκεύστε πρώτα ένα τοπικό αντίγραφο για να διατηρήσετε τα τρέχοντα δεδομένα.",
+    "Waiting to download…" to "Αναμονή λήψης…",
+    "Downloading update…" to "Λήψη ενημέρωσης…",
+    "Installing update…" to "Εγκατάσταση ενημέρωσης…",
+    "Google Play will restart PTS to finish the update." to "Το Google Play θα επανεκκινήσει το PTS για να ολοκληρώσει την ενημέρωση.",
+    "You can keep using PTS while the update downloads." to "Μπορείτε να συνεχίσετε να χρησιμοποιείτε το PTS όσο γίνεται λήψη της ενημέρωσης.",
+    "Could not finish installing. Tap Restart to try again." to "Δεν ήταν δυνατή η ολοκλήρωση της εγκατάστασης. Πατήστε Επανεκκίνηση για νέα προσπάθεια."
 )

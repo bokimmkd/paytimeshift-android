@@ -22,12 +22,9 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.paytimeshift.pts.BuildConfig
-import com.paytimeshift.pts.domain.UpdateCheckGate
-import com.paytimeshift.pts.domain.shouldOfferRestart
-import com.paytimeshift.pts.domain.shouldOfferUpdate
-import com.paytimeshift.pts.domain.updatePrompt
+import com.paytimeshift.pts.domain.*
 
-/** Optional updates: Play supplies availability, with a Store route if flexible flow is unavailable. */
+/** Optional flexible updates. Play owns consent, download, installation and process restart. */
 class PlayUpdates(private val activity:ComponentActivity):DefaultLifecycleObserver {
     private val manager=AppUpdateManagerFactory.create(activity)
     private val preferences=activity.getSharedPreferences("pts-play-updates",0)
@@ -37,49 +34,63 @@ class PlayUpdates(private val activity:ComponentActivity):DefaultLifecycleObserv
     private var info:AppUpdateInfo?=null
     private var flowInFlight=false
     private var flowVersion=0
-    private var downloadedVersion=0
     private var storeFallbackVersion=0
+    private var observation=0L
+    var transfer by mutableStateOf(UpdateTransfer())
+        private set
+    var installFailed by mutableStateOf(false)
+        private set
     var prompt by mutableStateOf<String?>(null)
         private set
+    private fun stage(status:Int)=when(status) {
+        InstallStatus.PENDING -> UpdateStage.Waiting
+        InstallStatus.DOWNLOADING -> UpdateStage.Downloading
+        InstallStatus.DOWNLOADED -> UpdateStage.Ready
+        InstallStatus.INSTALLING -> UpdateStage.Installing
+        InstallStatus.INSTALLED -> UpdateStage.Installed
+        InstallStatus.FAILED,InstallStatus.CANCELED -> UpdateStage.Stopped
+        else -> UpdateStage.Idle
+    }
+    private fun observe(version:Int,status:Int,bytes:Long=0,total:Long=0) {
+        transfer=transfer.observe(BuildConfig.VERSION_CODE,version,stage(status),bytes,total)
+        when(transfer.stage) {
+            UpdateStage.Ready -> prompt=if(shouldOfferRestart(transfer.version,preferences.getInt("restartLaterVersion",0),preferences.getLong("restartLaterAt",0),System.currentTimeMillis())) "Ready" else null
+            UpdateStage.Stopped -> {storeFallbackVersion=transfer.version;prompt=if(shouldOfferUpdate(BuildConfig.VERSION_CODE,transfer.version,preferences.getInt("laterVersion",0),preferences.getLong("laterAt",0),System.currentTimeMillis())) "Store" else null}
+            else -> prompt=null
+        }
+    }
     private val launcher=activity.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {result->
         flowInFlight=false
-        // The install listener may already have delivered Ready. Never erase it with a late result.
-        if(prompt!="Ready") {
+        // Consent can finish after a download event. Never replace a newer listener state.
+        if(transfer.stage !in listOf(UpdateStage.Ready,UpdateStage.Downloading,UpdateStage.Installing,UpdateStage.Installed,UpdateStage.Stopped)) {
+            observation++
             when(result.resultCode) {
-                Activity.RESULT_CANCELED -> {deferVersion(flowVersion);prompt=null}
-                Activity.RESULT_OK -> prompt=null
+                Activity.RESULT_CANCELED -> {deferVersion(flowVersion);transfer=UpdateTransfer();prompt=null}
+                Activity.RESULT_OK -> observe(flowVersion,InstallStatus.PENDING)
                 else -> {Log.w("PTSUpdates","Play update consent failed");storeFallbackVersion=flowVersion;prompt="Store"}
             }
         }
         check()
     }
     private val listener=InstallStateUpdatedListener {state->
-        when(state.installStatus()) {
-            InstallStatus.DOWNLOADED -> {
-                downloadedVersion=info?.availableVersionCode() ?: flowVersion
-                prompt="Ready"
-            }
-            InstallStatus.FAILED,InstallStatus.CANCELED -> {
-                Log.w("PTSUpdates","Update install stopped: ${state.installStatus()}, error ${state.installErrorCode()}")
-                if(prompt!="Ready") {storeFallbackVersion=info?.availableVersionCode() ?: flowVersion;prompt="Store"}
-            }
-        }
+        observation++
+        observe(maxOf(flowVersion,info?.availableVersionCode() ?: 0),
+            state.installStatus(),state.bytesDownloaded(),state.totalBytesToDownload())
+        if(state.installStatus()==InstallStatus.FAILED || state.installStatus()==InstallStatus.CANCELED)
+            Log.w("PTSUpdates","Update stopped: ${state.installStatus()}, error ${state.installErrorCode()}")
     }
     private val poll=object:Runnable {
         override fun run() {
             if(!resumed) return
-            check()
-            handler.postDelayed(this,30000L)
+            check();handler.postDelayed(this,30000L)
         }
     }
     init {activity.lifecycle.addObserver(this)}
     override fun onStart(owner:LifecycleOwner) {manager.registerListener(listener)}
     override fun onResume(owner:LifecycleOwner) {
-        resumed=true;flowInFlight=false;check();handler.removeCallbacks(poll);handler.postDelayed(poll,15000L)
+        resumed=true;check();handler.removeCallbacks(poll);handler.postDelayed(poll,15000L)
     }
-    override fun onPause(owner:LifecycleOwner) {
-        resumed=false;handler.removeCallbacks(poll);checks.cancel()
-    }
+    override fun onPause(owner:LifecycleOwner) {resumed=false;handler.removeCallbacks(poll);checks.cancel()}
     override fun onStop(owner:LifecycleOwner) {manager.unregisterListener(listener)}
     override fun onDestroy(owner:LifecycleOwner) {
         resumed=false;handler.removeCallbacks(poll);checks.cancel()
@@ -88,48 +99,40 @@ class PlayUpdates(private val activity:ComponentActivity):DefaultLifecycleObserv
     fun check() {
         if(!resumed || flowInFlight) return
         val ticket=checks.begin(SystemClock.elapsedRealtime()) ?: return
-        // Activity-bound success callbacks can be detached onStop before the completion callback.
-        // One unbound completion callback plus the session ticket handles both success and failure.
+        val queriedAt=observation
         manager.appUpdateInfo.addOnCompleteListener {task->
-            if(!checks.complete(ticket) || !resumed) return@addOnCompleteListener
+            if(!checks.complete(ticket) || !resumed || queriedAt!=observation) return@addOnCompleteListener
             if(!task.isSuccessful) {Log.w("PTSUpdates","Could not check Play update",task.exception);return@addOnCompleteListener}
             val value=task.result
             info=value
-            val now=System.currentTimeMillis()
             val version=value.availableVersionCode()
-            val status=value.installStatus()
-            if(status==InstallStatus.DOWNLOADED) downloadedVersion=version
-            val next=updatePrompt(
-                value.updateAvailability()==UpdateAvailability.UPDATE_AVAILABLE,
-                status==InstallStatus.DOWNLOADED,
-                status==InstallStatus.PENDING || status==InstallStatus.DOWNLOADING || status==InstallStatus.INSTALLING,
-                value.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE) && version!=storeFallbackVersion,
-                shouldOfferUpdate(BuildConfig.VERSION_CODE,version,preferences.getInt("laterVersion",0),preferences.getLong("laterAt",0),now),
-                shouldOfferRestart(version,preferences.getInt("restartLaterVersion",0),preferences.getLong("restartLaterAt",0),now))
-            // A callback queried before DOWNLOADED must not erase the listener's newer Ready event.
-            if(prompt!="Ready" || next=="Ready") prompt=next
+            observe(version,value.installStatus(),value.bytesDownloaded(),value.totalBytesToDownload())
+            if(version<=BuildConfig.VERSION_CODE || transfer.stage==UpdateStage.Installed) {prompt=null;return@addOnCompleteListener}
+            if(transfer.stage==UpdateStage.Idle && value.updateAvailability()==UpdateAvailability.UPDATE_AVAILABLE &&
+                shouldOfferUpdate(BuildConfig.VERSION_CODE,version,preferences.getInt("laterVersion",0),preferences.getLong("laterAt",0),System.currentTimeMillis()))
+                prompt=if(value.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE) && version!=storeFallbackVersion) "Available" else "Store"
         }
     }
     private fun deferVersion(version:Int) {
         if(version>0) preferences.edit().putInt("laterVersion",version).putLong("laterAt",System.currentTimeMillis()).apply()
     }
     fun later() {
-        if(prompt=="Ready") preferences.edit().putInt("restartLaterVersion",downloadedVersion).putLong("restartLaterAt",System.currentTimeMillis()).apply()
+        observation++
+        if(prompt=="Ready") preferences.edit().putInt("restartLaterVersion",transfer.version).putLong("restartLaterAt",System.currentTimeMillis()).apply()
         else deferVersion(info?.availableVersionCode() ?: flowVersion)
         prompt=null
     }
     fun download() {
         if(prompt=="Store") {openStore();return}
+        if(prompt!="Available" || flowInFlight) return
         val current=info ?: run {check();return}
         flowVersion=current.availableVersionCode()
-        checks.cancel()
-        info=null // A Play intent can only be used once, including failed launch attempts.
-        prompt=null
-        flowInFlight=true
+        checks.cancel();observation++;installFailed=false
+        info=null // Play intents are single-use, including failed launch attempts.
+        prompt=null;flowInFlight=true
         val started=runCatching {manager.startUpdateFlowForResult(current,launcher,AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build())}
             .onFailure {Log.w("PTSUpdates","Could not start Play update",it)}.getOrDefault(false)
         if(!started) {flowInFlight=false;storeFallbackVersion=flowVersion;prompt="Store"}
-        // Only an explicit Later/cancel action writes the 24-hour deferral.
     }
     private fun openStore() {
         prompt=null
@@ -138,7 +141,12 @@ class PlayUpdates(private val activity:ComponentActivity):DefaultLifecycleObserv
         opened.onFailure {Log.w("PTSUpdates","Could not open Play Store",it);prompt="Store"}
     }
     fun restart() {
-        prompt=null
-        manager.completeUpdate().addOnFailureListener {Log.w("PTSUpdates","Could not complete update",it);prompt="Ready"}
+        if(prompt!="Ready" || transfer.stage!=UpdateStage.Ready) return
+        checks.cancel();observation++;installFailed=false
+        transfer=transfer.beginInstall();prompt=null
+        manager.completeUpdate().addOnFailureListener {
+            Log.w("PTSUpdates","Could not complete update",it)
+            if(transfer.stage==UpdateStage.Installing) {observation++;transfer=transfer.installFailed();installFailed=true;prompt="Ready"}
+        }
     }
 }

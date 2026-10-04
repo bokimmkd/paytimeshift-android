@@ -261,4 +261,28 @@ class PremiumUiTest {
             org.junit.Assert.assertTrue(next.shifts.any {it.jobId==job.id && it.date==date.toString()})
         }
     }
+    @Test fun updateProgressAllowsNormalUseAndShowsLocalizedInstallationFailure() {
+        var transfer by mutableStateOf(UpdateTransfer(20,UpdateStage.Downloading,25,100))
+        var taps=0
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "mk") {Theme {
+            androidx.compose.foundation.layout.Column {
+                UpdateProgress(transfer)
+                Button(onClick={taps++}) {UiText("Today")}
+                if(transfer.stage==UpdateStage.Ready) UpdateOffer(true,{transfer=transfer.beginInstall()},{},failed=true)
+            }
+        }}}
+        ui.onNodeWithText(translate("Downloading update…","mk")).assertIsDisplayed()
+        ui.onNodeWithText(translate("Restart to update","mk")).assertDoesNotExist()
+        ui.onNodeWithText(translate("Today","mk")).performClick()
+        ui.runOnIdle {org.junit.Assert.assertEquals(1,taps)}
+        screenshot("update-download-progress")
+        ui.runOnIdle {transfer=transfer.copy(stage=UpdateStage.Ready)}
+        ui.onNodeWithText(translate("Could not finish installing. Tap Restart to try again.","mk")).assertIsDisplayed()
+        screenshot("update-install-retry")
+        ui.onNodeWithText(translate("Restart to update","mk")).performClick()
+        ui.onNodeWithText(translate("Installing update…","mk")).assertIsDisplayed()
+        ui.onNodeWithText(translate("Restart to update","mk")).assertDoesNotExist()
+        screenshot("update-installing")
+    }
+
 }

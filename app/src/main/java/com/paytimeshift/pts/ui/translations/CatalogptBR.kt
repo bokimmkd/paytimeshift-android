@@ -489,5 +489,11 @@ internal val catalogptBR = mapOf(
     "Entries outside this selection and job settings stay unchanged." to "Registros fora desta seleção e configurações dos trabalhos permanecem iguais.",
     "Select valid From and To dates." to "Selecione datas De e Até válidas.",
     "Existing cloud backup" to "Backup existente na nuvem",
-    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Já existe um backup na nuvem. Restaure-o antes de ativar o backup neste telefone. Salve primeiro uma cópia local para manter seus dados atuais."
+    "A cloud backup already exists. Restore it before enabling backup on this phone. Save a local backup first to keep your current data." to "Já existe um backup na nuvem. Restaure-o antes de ativar o backup neste telefone. Salve primeiro uma cópia local para manter seus dados atuais.",
+    "Waiting to download…" to "Aguardando download…",
+    "Downloading update…" to "Baixando atualização…",
+    "Installing update…" to "Instalando atualização…",
+    "Google Play will restart PTS to finish the update." to "O Google Play reiniciará o PTS para concluir a atualização.",
+    "You can keep using PTS while the update downloads." to "Você pode continuar usando o PTS enquanto a atualização é baixada.",
+    "Could not finish installing. Tap Restart to try again." to "Não foi possível concluir a instalação. Toque em Reiniciar para tentar novamente."
 )
