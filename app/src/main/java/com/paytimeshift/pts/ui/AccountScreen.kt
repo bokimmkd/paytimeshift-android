@@ -52,7 +52,7 @@ import kotlinx.coroutines.tasks.await
                     if(price==null) UiText("Subscription is not available in Google Play yet. Please try again later.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     if(status.uid==null) UiText("Sign in before subscribing.",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
                 }
-                OutlinedButton(onClick=restorePurchase,enabled=status.uid!=null && !busy,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)) {Icon(Icons.Outlined.Restore,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore purchases",fontSize=11.sp)}
+                OutlinedButton(onClick=restorePurchase,enabled=status.uid!=null && !busy,modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {Icon(Icons.Outlined.Restore,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore purchases",fontSize=11.sp)}
             }}
             if(status.uid==null) item {FormSection(if(signup) "Create account" else "Sign in") {
                 GoogleAccountButton("Continue with Google",!busy) {task {continueWithGoogle(context,repo.auth)}}
@@ -77,7 +77,7 @@ import kotlinx.coroutines.tasks.await
                         TextButton(enabled=!busy,onClick={task {repo.auth.currentUser?.sendEmailVerification()?.await();error="Verification email sent."}}){UiText("Send verification email",fontSize=11.sp)}
                     }
                     FormPair(first={OutlinedButton(onClick=refresh,enabled=!busy && !checking,modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.Refresh,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Refresh account",fontSize=11.sp)}},second={
-                    OutlinedButton(onClick={stopCloudBackup(context,status.uid);repo.unbind();repo.auth.signOut();refresh();scope.launch {clearGoogleSession(context)}},enabled=!busy,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp),contentPadding=PaddingValues(6.dp)){Icon(Icons.Outlined.Logout,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Sign out",fontSize=11.sp)}})
+                    OutlinedButton(onClick={stopCloudBackup(context,status.uid);repo.unbind();repo.auth.signOut();refresh();scope.launch {clearGoogleSession(context)}},enabled=!busy,modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.Logout,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Sign out",fontSize=11.sp)}})
                 }}
                 item {FormSection("Cloud backup") {
                     UiText(if(checking) "Checking account…" else cloudBackupLabel(status,repo.bound(status.uid!!),resolved,statusError!=null),fontSize=11.sp)
