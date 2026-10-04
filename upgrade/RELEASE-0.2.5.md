@@ -34,4 +34,16 @@ A signed AAB is a build artifact, not evidence of a Play upload or rollout. Prod
 - Android unit tests: 73 debug and 73 release; zero failures, errors or skipped tests. Debug and release lint/build checks passed.
 - Instrumented UI tests: 17; zero failures, errors or skipped tests. The final screenshot was inspected: the red-minus marker stays distinct on a red-colored job and the short-rest exclamation mark has its own corner.
 - Backend tests: 17 passed, zero failures. Generated language catalogs checked cleanly (476 messages, eight translated languages).
-- The signed AAB has been saved and delivered as a file. No Play Console upload, closed-testing rollout, production publication or backend deployment was performed.
+- The signed AAB was saved and delivered before the owner subsequently authorized the closed-testing submission below. No production publication or backend deployment was performed.
+
+
+## Owner-authorized Play submission — 2026-10-04
+
+- Owner instruction: publish the delivered AAB. Google session was reauthenticated using the secure browser credential flow.
+- Uploaded the exact verified PTS-0.2.5-15.aab (SHA-256 49b29ce9d68ee674c718d9130c0d14c1862a9ae96e1ab57b46a62774daa000b3).
+- Google accepted version code 15 / versionName 0.2.5. Existing Closed testing - Alpha, track 4699298164505386169, release 5, name `0.2.5 · Calendar & account fixes`, rollout 100%.
+- Reviewed the single non-blocking native debug-symbol warning. No supported phone/tablet devices were lost. Submitted only this one release change for review.
+- Publishing overview visibly shows `Changes in review` with `Running quick checks for commonly found issues`; changes go onward for review after successful quick checks. Managed publishing remains off. This is submission confirmation, not confirmation that 0.2.5 is already available to testers.
+- Publishing URL: https://play.google.com/console/u/0/developers/4766816481672407684/app/4974514655440409843/publishing
+- Saved proof: PTS-0.2.5-Play-review-1791108373483.jpg.
+- Google approval/availability and actual device update/payment/cloud tests remain pending. Resend, RTDN and Meta integration are unchanged.
