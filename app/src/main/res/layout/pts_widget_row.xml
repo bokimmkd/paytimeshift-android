@@ -8,8 +8,8 @@
   <TextView android:id="@+id/widget_job" android:layout_width="match_parent" android:layout_height="wrap_content" android:textStyle="bold" android:textSize="12sp" android:includeFontPadding="false" android:maxLines="1" android:ellipsize="end"/>
   <TextView android:id="@+id/widget_time" android:layout_width="match_parent" android:layout_height="wrap_content" android:textStyle="bold" android:textSize="16sp" android:includeFontPadding="false" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="12sp" android:autoSizeMaxTextSize="16sp" android:autoSizeStepGranularity="1sp" android:maxLines="1" android:ellipsize="end"/>
  </LinearLayout>
- <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="5dp">
+ <FrameLayout android:id="@+id/widget_duration_container" android:layout_width="40dp" android:layout_height="22dp" android:layout_marginStart="5dp">
   <ImageView android:id="@+id/widget_badge_background" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_duration_badge" android:scaleType="fitXY" android:alpha="0.18" android:importantForAccessibility="no"/>
-  <TextView android:id="@+id/widget_duration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:textStyle="bold" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1"/>
+  <TextView android:id="@+id/widget_duration" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:paddingStart="4dp" android:paddingEnd="4dp" android:textStyle="bold" android:textSize="10sp" android:includeFontPadding="false" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="10sp" android:autoSizeStepGranularity="1sp" android:maxLines="1"/>
  </FrameLayout>
 </LinearLayout>

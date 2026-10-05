@@ -119,8 +119,10 @@ private fun openDay(context: Context, date: LocalDate, shift: Shift? = null): Pe
 internal fun widgetViews(context: Context, data: AppData, height: Int, today: LocalDate = LocalDate.now(),
     width: Int = 350): RemoteViews {
     val fontScale = context.resources.configuration.fontScale.coerceAtLeast(1f)
+    val days = widgetDays(data, today)
     val compact = height < (250 * fontScale).toInt() || width < 260
-    val large = !compact && height >= (340 * fontScale).toInt() && width >= 300
+    val largeHeight = if (days.all { it.shifts.size <= 1 }) 250 else 340
+    val large = !compact && height >= (largeHeight * fontScale).toInt() && width >= 300
     val capacity = 2
     val lang = data.preferences.language
     val locale = localeForLanguage(lang)
@@ -198,6 +200,7 @@ internal fun widgetViews(context: Context, data: AppData, height: Int, today: Lo
                 row.setTextColor(R.id.widget_duration, ink)
                 row.setViewVisibility(R.id.widget_duration, if (shift.kind == "Work") View.VISIBLE else View.GONE)
                 row.setViewVisibility(R.id.widget_badge_background, if (shift.kind == "Work") View.VISIBLE else View.GONE)
+                row.setViewVisibility(R.id.widget_duration_container, if (shift.kind == "Work") View.VISIBLE else View.GONE)
             }
             row.setContentDescription(R.id.widget_row, "${job.name}, $time")
             row.setOnClickPendingIntent(R.id.widget_row, openDay(context, day.date, shift))

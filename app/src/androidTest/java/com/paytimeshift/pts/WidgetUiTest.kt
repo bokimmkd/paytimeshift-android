@@ -58,6 +58,12 @@ class WidgetUiTest {
             val more=view.findViewById<TextView>(moreId)
             assertEquals(if(panelId==R.id.widget_today && hiddenToday>0) View.VISIBLE else View.GONE,more.visibility)
             if(more.visibility==View.VISIBLE) assertEquals("+$hiddenToday",more.text.toString())
+            for(rowIndex in 0 until rows.childCount) {
+                val badge=rows.getChildAt(rowIndex).findViewById<View>(R.id.widget_badge_background)
+                if(badge!=null && badge.visibility==View.VISIBLE) {
+                    assertTrue("$name does not paint its duration badge",badge.width>0 && badge.height>0)
+                }
+            }
             texts(panel).filter {it.visibility==View.VISIBLE && it.text.isNotBlank()}.forEach { text ->
                 val bounds=Rect(0,0,text.width,text.height);panel.offsetDescendantRectToMyCoords(text,bounds)
                 assertTrue("$name clips ${text.text}: $bounds vs ${panel.width}×${panel.height}",
@@ -92,7 +98,7 @@ class WidgetUiTest {
         instrumentation.runOnMainSync {
             renderAndCheck(context,fixture,350,250,"widget-owner-two-events",hiddenToday=0)
             val reference=data().copy(shifts=listOf(data().shifts[0],data().shifts.last()))
-            renderAndCheck(context,reference,350,350,"widget-approved-reference",1,1,0)
+            renderAndCheck(context,reference,350,250,"widget-approved-reference",1,1,0)
         }
     }
     @Test fun largerFontStillShowsBothEventsAtTheMinimumAndDefaultSizes() {
