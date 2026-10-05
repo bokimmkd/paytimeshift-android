@@ -61,15 +61,20 @@ class PtsWidget : AppWidgetProvider() {
             ids.forEach { id ->
                 val options = manager.getAppWidgetOptions(id)
                 val views = if (Build.VERSION.SDK_INT >= 31) {
-                    RemoteViews(mapOf(
-                        SizeF(240f, 128f) to widgetViews(context, data, 128),
-                        SizeF(260f, 250f) to widgetViews(context, data, 250),
-                        SizeF(260f, 350f) to widgetViews(context, data, 350)
+                    val sizes = options.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
+                        ?.filter { it.width >= 1 && it.height >= 1 }?.distinct()?.take(16)
+                    // Use the launcher's actual portrait/landscape sizes, including Samsung grids.
+                    if (!sizes.isNullOrEmpty()) RemoteViews(sizes.associateWith {
+                        widgetViews(context, data, it.height.toInt(), width = it.width.toInt())
+                    }) else RemoteViews(mapOf(
+                        SizeF(240f, 128f) to widgetViews(context, data, 128, width = 240),
+                        SizeF(260f, 220f) to widgetViews(context, data, 220, width = 260),
+                        SizeF(300f, 340f) to widgetViews(context, data, 340, width = 300)
                     ))
                 } else {
                     val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 260)
                     val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
-                    widgetViews(context, data, if (width < 260) 128 else height)
+                    widgetViews(context, data, height, width = width)
                 }
                 manager.updateAppWidget(id, views)
             }
@@ -111,9 +116,12 @@ private fun openDay(context: Context, date: LocalDate, shift: Shift? = null): Pe
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
 /** Shared by the real launcher renderer and instrumented rendering checks. */
-internal fun widgetViews(context: Context, data: AppData, height: Int, today: LocalDate = LocalDate.now()): RemoteViews {
-    val compact = height < 250
-    val capacity = if (height >= 350) 2 else 1
+internal fun widgetViews(context: Context, data: AppData, height: Int, today: LocalDate = LocalDate.now(),
+    width: Int = 350): RemoteViews {
+    val fontScale = context.resources.configuration.fontScale.coerceAtLeast(1f)
+    val compact = height < (220 * fontScale).toInt() || width < 260
+    val large = !compact && height >= (340 * fontScale).toInt() && width >= 300
+    val capacity = 2
     val lang = data.preferences.language
     val locale = localeForLanguage(lang)
     val dark = data.preferences.appearance == "Dark" || (data.preferences.appearance == "System" &&
@@ -121,24 +129,36 @@ internal fun widgetViews(context: Context, data: AppData, height: Int, today: Lo
     val ink = if (dark) 0xFFF3F7FB.toInt() else 0xFF071C43.toInt()
     val muted = if (dark) 0xFFB7C9D0.toInt() else 0xFF586877.toInt()
     val teal = if (dark) 0xFF73D4C9.toInt() else 0xFF00857C.toInt()
+    val divider = if (dark) 0xFF304A53.toInt() else 0xFFE2E6EC.toInt()
     val views = RemoteViews(context.packageName, if (compact) R.layout.pts_widget_compact else R.layout.pts_widget)
     views.setInt(R.id.widget_root, "setBackgroundResource", if (dark) R.drawable.widget_background_dark else R.drawable.widget_background)
     views.setImageViewResource(R.id.widget_logo, if (dark) R.drawable.widget_logo_dark else R.drawable.widget_logo)
     views.setTextColor(R.id.widget_brand, ink)
     views.setTextColor(R.id.widget_title, muted)
     views.setTextViewText(R.id.widget_title, translate("Your shifts", lang))
+    for (id in listOf(R.id.widget_header_divider, R.id.widget_day_divider))
+        views.setInt(id, "setColorFilter", divider)
+    views.setInt(R.id.widget_calendar, "setColorFilter", muted)
+    views.setContentDescription(R.id.widget_calendar, translate("Calendar", lang))
+    views.setOnClickPendingIntent(R.id.widget_calendar, openDay(context, today))
     views.setOnClickPendingIntent(R.id.widget_root, openDay(context, today))
     views.setContentDescription(R.id.widget_root, "PTS · ${translate("Your shifts", lang)}")
     widgetDays(data, today).forEachIndexed { index, day ->
         val panel = if (index == 0) R.id.widget_today else R.id.widget_tomorrow
         val heading = if (index == 0) R.id.widget_today_label else R.id.widget_tomorrow_label
+        val dateView = if (index == 0) R.id.widget_today_date else R.id.widget_tomorrow_date
         val body = if (index == 0) R.id.widget_today_rows else R.id.widget_tomorrow_rows
         val more = if (index == 0) R.id.widget_today_more else R.id.widget_tomorrow_more
         val label = translate(if (index == 0) "Today" else "Tomorrow", lang)
         val date = day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM", locale))
-        views.setInt(panel, "setBackgroundResource", if (dark) R.drawable.widget_panel_dark else R.drawable.widget_panel)
-        views.setTextViewText(heading, if (compact) label else "$label · $date")
+        views.setTextViewText(heading, label.uppercase(locale))
+        views.setTextViewText(dateView, date)
         views.setTextColor(heading, teal)
+        views.setTextColor(dateView, muted)
+        if (large) {
+            views.setTextViewTextSize(heading, android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+            views.setTextViewTextSize(dateView, android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+        }
         views.setOnClickPendingIntent(panel, openDay(context, day.date))
         views.removeAllViews(body)
         val displayed = day.shifts.take(capacity)
@@ -151,7 +171,11 @@ internal fun widgetViews(context: Context, data: AppData, height: Int, today: Lo
         }
         displayed.forEach { shift ->
             val job = data.jobs.first { it.id == shift.jobId }
-            val row = RemoteViews(context.packageName, if (compact) R.layout.pts_widget_row_compact else R.layout.pts_widget_row)
+            val row = RemoteViews(context.packageName, when {
+                compact -> R.layout.pts_widget_row_compact
+                large -> R.layout.pts_widget_row_large
+                else -> R.layout.pts_widget_row
+            })
             val timeFormat = DateTimeFormatter.ofPattern(if (data.preferences.time24) "HH:mm" else "h:mm a", locale)
             val time = if (shift.kind == "Work") {
                 "${LocalTime.parse(shift.start).format(timeFormat)}–${LocalTime.parse(shift.end).format(timeFormat)}" +
@@ -162,25 +186,24 @@ internal fun widgetViews(context: Context, data: AppData, height: Int, today: Lo
             row.setTextColor(R.id.widget_job, ink)
             row.setTextColor(R.id.widget_time, ink)
             row.setInt(R.id.widget_marker, "setColorFilter", job.color.toInt())
-            if (compact) {
-                row.setTextViewText(R.id.widget_count, if (hidden > 0) "+$hidden" else "")
-                row.setTextColor(R.id.widget_count, teal)
-                row.setOnClickPendingIntent(R.id.widget_count, openDay(context, day.date))
-            } else {
+            if (!compact) {
+                row.setInt(R.id.widget_job_icon, "setColorFilter", ink)
+                row.setInt(R.id.widget_job_circle, "setColorFilter", job.color.toInt())
+                row.setInt(R.id.widget_badge_background, "setColorFilter", job.color.toInt())
                 row.setTextViewText(R.id.widget_duration, if (shift.kind == "Work") translate(hours(shift.paidMinutes), lang) else "")
-                row.setTextColor(R.id.widget_duration, teal)
+                row.setTextColor(R.id.widget_duration, ink)
                 row.setViewVisibility(R.id.widget_duration, if (shift.kind == "Work") View.VISIBLE else View.GONE)
+                row.setViewVisibility(R.id.widget_badge_background, if (shift.kind == "Work") View.VISIBLE else View.GONE)
             }
             row.setContentDescription(R.id.widget_row, "${job.name}, $time")
             row.setOnClickPendingIntent(R.id.widget_row, openDay(context, day.date, shift))
             views.addView(body, row)
         }
-        if (!compact) {
-            views.setTextViewText(more, "+$hidden ${translate("more shifts", lang)}")
-            views.setTextColor(more, teal)
-            views.setViewVisibility(more, if (hidden > 0) View.VISIBLE else View.GONE)
-            views.setOnClickPendingIntent(more, openDay(context, day.date))
-        }
+        views.setTextViewText(more, "+$hidden")
+        views.setContentDescription(more, "+$hidden ${translate("more shifts", lang)}")
+        views.setTextColor(more, teal)
+        views.setViewVisibility(more, if (hidden > 0) View.VISIBLE else View.GONE)
+        views.setOnClickPendingIntent(more, openDay(context, day.date))
     }
     return views
 }

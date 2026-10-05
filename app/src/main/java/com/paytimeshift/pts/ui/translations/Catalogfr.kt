@@ -249,6 +249,8 @@ internal val catalogfr = mapOf(
     "Current job prices" to "Tarifs actuels",
     "Calendar actions" to "Actions du calendrier",
     "Selected color" to "Couleur sélectionnée",
+    "Job color" to "Couleur du travail",
+    "Color already used by another job." to "Cette couleur est déjà utilisée pour un autre travail.",
     "Image" to "Image",
     "Android widget" to "Widget Android",
     "Share schedule" to "Partager le planning",

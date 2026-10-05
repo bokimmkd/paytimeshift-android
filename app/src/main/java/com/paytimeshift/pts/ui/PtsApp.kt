@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
@@ -250,7 +251,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             finally {saving=false}
         },{accountOpen=false},resolved=accountResolved,checking=accountChecking,statusError=accountError)
         if(analyticsOpen && account.premium) AnalyticsDialog(data,YearMonth.parse(reportMonthText)){analyticsOpen=false}
-        if (addJob || jobEditor != null) JobDialog(jobEditor,data.preferences.currency,onClose={addJob=false;jobEditor=null}) { job, applyUpcoming ->
+        if (addJob || jobEditor != null) JobDialog(jobEditor,data.jobs,data.preferences.currency,onClose={addJob=false;jobEditor=null}) { job, applyUpcoming ->
             commit(data.withJob(job,applyUpcoming,LocalDate.now())); addJob=false;jobEditor=null
         }
         if (addShift || shiftEditor != null) ShiftDialog(shiftEditor,data,newShiftDate,onClose={addShift=false;shiftEditor=null},onDelete={ id ->
@@ -851,7 +852,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         TimePickerDialog(context,{_,h,m->change(LocalTime.of(h,m).toString())},value.hour,value.minute,true).show()
     }
 }
-@Composable private fun JobDialog(original: Job?, defaultCurrency: String, onClose: ()->Unit, save: (Job,Boolean)->Unit) {
+@Composable internal fun JobDialog(original: Job?, jobs: List<Job>, defaultCurrency: String, onClose: ()->Unit, save: (Job,Boolean)->Unit) {
     val initialRules=original?.hourlyRules() ?: PayRules(useHourlyRates=true)
     var name by remember {mutableStateOf(original?.name ?: "")};var rate by remember {mutableStateOf(original?.rate ?: "")}
     var currency by remember {mutableStateOf(original?.currency ?: defaultCurrency)};var currencyOpen by remember {mutableStateOf(false)}
@@ -864,7 +865,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
     var salaryUntil by remember {mutableStateOf(previousSalary?.until?.ifBlank {LocalDate.now().toString()} ?: LocalDate.now().toString())}
     var salaryEnds by remember {mutableStateOf(previousSalary?.until?.isNotBlank() ?: false)}
     var anchor by remember {mutableStateOf(original?.paydayAnchor ?: LocalDate.now().withDayOfMonth(15).toString())}
-    var color by remember {mutableStateOf(original?.color ?: 0xFF2488FF)}
+    var color by remember {mutableStateOf(original?.color ?: newJobColor(jobs))}
     var shiftStart by remember {mutableStateOf(original?.defaultStart ?: "07:00")};var shiftEnd by remember {mutableStateOf(original?.defaultEnd ?: "15:00")}
     var pause by remember {mutableStateOf((original?.defaultBreakMinutes ?: 0).toString())};var paid by remember {mutableStateOf(original?.paidBreak ?: false)}
     var reminder by remember {mutableStateOf((original?.reminderMinutes?.takeIf {it>=0} ?: 30).toString())}
@@ -895,9 +896,19 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
                     RateField("Reference hourly rate",rate,currency){rate=it}
                 }
             }
-            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){listOf(0xFF2488FF,0xFFFFA000,0xFFA040C5,0xFF00857C,0xFFDE5353).forEach {c->
-                Box(Modifier.size(32.dp).clip(CircleShape).background(Color(c)).clickable {color=c},contentAlignment=Alignment.Center){if(color==c) Icon(Icons.Outlined.Check,translate("Selected color",LocalLanguage.current),Modifier.size(19.dp),tint=Color.White)}
-            }}
+            jobColorChoices(jobs,original?.id).chunked(5).forEach {swatches->
+                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){swatches.forEach {c->
+                    val available=jobColorAvailable(jobs,c,original?.id)
+                    val colorLabel=translate(if(available) "Job color" else "Color already used by another job.",LocalLanguage.current)
+                    Box(Modifier.size(32.dp).clip(CircleShape).background(Color(c).copy(alpha=if(available) 1f else .25f))
+                        .clickable(enabled=available,role=androidx.compose.ui.semantics.Role.RadioButton){color=c}
+                        .semantics {contentDescription="$colorLabel #"+c.toString(16).takeLast(6);selected=color==c},
+                        contentAlignment=Alignment.Center) {
+                        if(!available) Icon(Icons.Outlined.Close,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
+                        else if(color==c) Icon(Icons.Outlined.Check,translate("Selected color",LocalLanguage.current),Modifier.size(19.dp),tint=Color.White)
+                    }
+                }}
+            }
         }}
         if(!fixed) item {FormSection("Hourly prices") {
             FormPair(first={NumberField("Overtime after (paid hours)",overtimeAfter){overtimeAfter=it}},
@@ -955,6 +966,7 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
         val b=pause.toIntOrNull();val r=if(ownReminder) reminder.toIntOrNull() else -1;val gap=if(!ownRest) -1.0 else rest.replace(',','.').toDoubleOrNull()
         val duration=java.time.Duration.between(LocalTime.parse(shiftStart),LocalTime.parse(shiftEnd)).toMinutes().let {if(it<=0) it+1440 else it}
         when {
+            !jobColorAvailable(jobs,color,original?.id) -> error="Color already used by another job."
             monthly && (salaryAmount==null || salaryAmount.signum()<0 || salary.length>32 || salaryEnds && salaryUntil<salaryFrom) -> error="Enter a valid monthly salary and date range."
             name.isBlank() || amount==null || amount.signum()<0 -> error="Enter a job name and a valid rate (0 or more)."
             prices.any {it.isNotBlank() && (it.toBigDecimalOrNull()?.signum() ?: -1)<0} || hoursValue==null || !hoursValue.isFinite() || hoursValue !in 0.0..168.0 || nightValue==null || !nightValue.isFinite() || nightValue !in 0.0..10000.0 || b==null || b<0 || b>=duration || r==null || r !in -1..10080 || (ownReminder && r<0) || gap==null || !gap.isFinite() || (gap!=-1.0 && gap !in 0.0..168.0) || (ownRest && gap<0) || shiftStart==shiftEnd -> error="Numbers must be valid and non-negative."
@@ -1062,4 +1074,3 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
             }})
     }
 }
-

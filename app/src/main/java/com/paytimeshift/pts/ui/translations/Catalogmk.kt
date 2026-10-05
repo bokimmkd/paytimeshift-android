@@ -249,6 +249,8 @@ internal val catalogmk = mapOf(
     "Current job prices" to "Актуелни цени",
     "Calendar actions" to "Дејства за календар",
     "Selected color" to "Избрана боја",
+    "Job color" to "Боја на работата",
+    "Color already used by another job." to "Бојата веќе се користи за друга работа.",
     "Image" to "Слика",
     "Android widget" to "Android додаток",
     "Share schedule" to "Сподели распоред",

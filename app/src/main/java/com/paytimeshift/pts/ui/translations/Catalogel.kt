@@ -249,6 +249,8 @@ internal val catalogel = mapOf(
     "Current job prices" to "Τρέχουσες τιμές",
     "Calendar actions" to "Ενέργειες ημερολογίου",
     "Selected color" to "Επιλεγμένο χρώμα",
+    "Job color" to "Χρώμα εργασίας",
+    "Color already used by another job." to "Αυτό το χρώμα χρησιμοποιείται ήδη για άλλη εργασία.",
     "Image" to "Εικόνα",
     "Android widget" to "Widget Android",
     "Share schedule" to "Κοινοποίηση προγράμματος",

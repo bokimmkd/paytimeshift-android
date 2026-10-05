@@ -249,6 +249,8 @@ internal val catalogsr = mapOf(
     "Current job prices" to "Aktuelne cene",
     "Calendar actions" to "Radnje u kalendaru",
     "Selected color" to "Izabrana boja",
+    "Job color" to "Boja posla",
+    "Color already used by another job." to "Ovu boju već koristi drugi posao.",
     "Image" to "Slika",
     "Android widget" to "Android dodatak",
     "Share schedule" to "Podeli raspored",

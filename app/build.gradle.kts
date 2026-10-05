@@ -10,8 +10,8 @@ android {
         applicationId = "com.paytimeshift.pts"
         minSdk = 26
         targetSdk = 36
-        versionCode = 22
-        versionName = "0.2.12"
+        versionCode = 23
+        versionName = "0.2.13"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
@@ -76,4 +76,3 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }
-

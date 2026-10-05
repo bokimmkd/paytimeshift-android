@@ -29,43 +29,79 @@ class WidgetUiTest {
             Shift(id="one",jobId="a",date=today.toString(),start="07:00",end="15:00",breakMinutes=30,rate="10",currency="EUR"),
             Shift(id="two",jobId="b",date=today.toString(),start="18:00",end="21:00",rate="10",currency="EUR"),
             Shift(id="three",jobId="a",date=today.toString(),start="22:00",end="06:00",rate="10",currency="EUR"),
+            Shift(id="tomorrow-a",jobId="a",date=today.plusDays(1).toString(),start="07:00",end="15:00",rate="10",currency="EUR"),
             Shift(id="tomorrow",jobId="b",date=today.plusDays(1).toString(),start="18:00",end="21:00",rate="10",currency="EUR"))
         return AppData(jobs=jobs,shifts=shifts,preferences=Preferences(language=language,appearance=appearance))
     }
     private fun texts(view: View): List<TextView> = if(view is TextView) listOf(view) else
         if(view is ViewGroup) (0 until view.childCount).flatMap {texts(view.getChildAt(it))} else emptyList()
-    @Test fun realRemoteViewsFitCompactExpandedAndTallSizesInBothThemesAndLanguages() {
+    private fun renderAndCheck(context: android.content.Context, fixture: AppData, width: Int, height: Int,
+        name: String, expectedToday: Int = 2, expectedTomorrow: Int = 2, hiddenToday: Int = 1) {
+        val parent=FrameLayout(context)
+        val view=widgetViews(context,fixture,height,today,width).apply(context,parent)
+        val density=context.resources.displayMetrics.density
+        val w=(width*density).toInt();val h=(height*density).toInt()
+        view.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,View.MeasureSpec.EXACTLY))
+        view.layout(0,0,w,h)
+        val lang=fixture.preferences.language
+        for(index in 0..1) {
+            val panelId=if(index==0) R.id.widget_today else R.id.widget_tomorrow
+            val rowsId=if(index==0) R.id.widget_today_rows else R.id.widget_tomorrow_rows
+            val headingId=if(index==0) R.id.widget_today_label else R.id.widget_tomorrow_label
+            val moreId=if(index==0) R.id.widget_today_more else R.id.widget_tomorrow_more
+            val expected=if(index==0) expectedToday else expectedTomorrow
+            val heading=if(index==0) (if(lang=="mk") "ДЕНЕС" else "TODAY") else (if(lang=="mk") "УТРЕ" else "TOMORROW")
+            val panel=view.findViewById<ViewGroup>(panelId)
+            val rows=view.findViewById<ViewGroup>(rowsId)
+            assertEquals(expected,rows.childCount)
+            assertEquals(heading,view.findViewById<TextView>(headingId).text.toString())
+            val more=view.findViewById<TextView>(moreId)
+            assertEquals(if(panelId==R.id.widget_today && hiddenToday>0) View.VISIBLE else View.GONE,more.visibility)
+            if(more.visibility==View.VISIBLE) assertEquals("+$hiddenToday",more.text.toString())
+            texts(panel).filter {it.visibility==View.VISIBLE && it.text.isNotBlank()}.forEach { text ->
+                val bounds=Rect(0,0,text.width,text.height);panel.offsetDescendantRectToMyCoords(text,bounds)
+                assertTrue("$name clips ${text.text}: $bounds vs ${panel.width}×${panel.height}",
+                    bounds.top>=0 && bounds.bottom<=panel.height && bounds.left>=0 && bounds.right<=panel.width)
+                assertTrue("$name gives zero height to ${text.text}",text.height>0)
+                if(text.id==R.id.widget_time && fixture.preferences.time24)
+                    assertEquals("$name truncates ${text.text}",0,text.layout?.getEllipsisCount(0) ?: 0)
+            }
+        }
+        val bitmap=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888)
+        try {
+            view.draw(Canvas(bitmap))
+            val file=File(context.getExternalFilesDir("screenshots"),"$name.png")
+            file.parentFile!!.mkdirs();file.outputStream().use {bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
+        } finally {bitmap.recycle()}
+    }
+    @Test fun twoEventsForBothDaysFitTheActualLauncherSizesInBothThemesAndLanguages() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext
-        for(language in listOf("en","mk")) for(theme in listOf("Light","Dark")) for(height in listOf(128,250,350)) {
-            instrumentation.runOnMainSync {
-                val parent=FrameLayout(context)
-                val view=widgetViews(context,data(language,theme),height,today).apply(context,parent)
-                val width=(if(height==128) 280 else 350)
-                val density=context.resources.displayMetrics.density
-                val w=(width*density).toInt();val h=(height*density).toInt()
-                view.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,View.MeasureSpec.EXACTLY))
-                view.layout(0,0,w,h)
-                val labels=texts(view).map {it.text.toString()}
-                assertTrue(labels.contains(if(language=="en") "Today" else "Денес") || labels.any {it.startsWith(if(language=="en") "Today ·" else "Денес ·")})
-                assertTrue(labels.contains(if(language=="en") "Tomorrow" else "Утре") || labels.any {it.startsWith(if(language=="en") "Tomorrow ·" else "Утре ·")})
-                assertTrue(labels.contains("07:00–15:00"));assertTrue(labels.contains("18:00–21:00"))
-                assertTrue(labels.any {it.startsWith(if(height==350) "+1" else "+2")})
-                if(height>=250) assertTrue(labels.contains(if(language=="mk") "7.5 ч" else "7.5h"))
-                for(id in listOf(R.id.widget_today,R.id.widget_tomorrow)) {
-                    val panel=view.findViewById<ViewGroup>(id)
-                    texts(panel).filter {it.visibility==View.VISIBLE && it.text.isNotBlank()}.forEach { text ->
-                        val bounds=Rect(0,0,text.width,text.height);panel.offsetDescendantRectToMyCoords(text,bounds)
-                        assertTrue("$language $theme $height clips ${text.text}",bounds.bottom<=panel.height)
-                    }
+        for(language in listOf("en","mk")) for(theme in listOf("Light","Dark"))
+            for((width,height) in listOf(240 to 128,280 to 128,260 to 220,350 to 250,350 to 350)) {
+                instrumentation.runOnMainSync {
+                    renderAndCheck(context,data(language,theme),width,height,"widget-$language-$theme-$width-$height")
                 }
-                val bitmap=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888)
-                try {
-                    view.draw(Canvas(bitmap))
-                    val file=File(context.getExternalFilesDir("screenshots"),"widget-$language-$theme-$height.png")
-                    file.parentFile!!.mkdirs();file.outputStream().use {bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
-                } finally {bitmap.recycle()}
             }
+    }
+    @Test fun ownerNonWorkingDaysAndBothJobsAreVisibleWithoutAMoreBadge() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
+        val fixture=data("mk").copy(shifts=data().shifts.filter {it.id!="three"}.map {
+            if(it.date==today.toString()) it.copy(kind="Non-working day") else it
+        })
+        instrumentation.runOnMainSync {
+            renderAndCheck(context,fixture,350,250,"widget-owner-two-events",hiddenToday=0)
+            val reference=data().copy(shifts=listOf(data().shifts[0],data().shifts.last()))
+            renderAndCheck(context,reference,350,350,"widget-approved-reference",1,1,0)
+        }
+    }
+    @Test fun largerFontStillShowsBothEventsAtTheMinimumAndDefaultSizes() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
+        val config=android.content.res.Configuration(context.resources.configuration).apply {fontScale=1.3f}
+        val larger=context.createConfigurationContext(config)
+        instrumentation.runOnMainSync {
+            renderAndCheck(larger,data("mk"),280,128,"widget-large-font-compact")
+            renderAndCheck(larger,data("mk"),350,250,"widget-large-font-default")
         }
     }
     @Test fun emptyDaysOvernightAndTwelveHourTimesRenderWithoutDuplicateRows() {
