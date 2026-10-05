@@ -69,7 +69,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     Earnings("Earnings", Icons.Outlined.BarChart), Jobs("Jobs", Icons.Outlined.WorkOutline)
 }
 
-@Composable fun PtsApp(shortcutAction: ShortcutAction? = null, updates: PlayUpdates? = null, onShortcutHandled: () -> Unit = {}) {
+@Composable fun PtsApp(shortcutAction: ShortcutAction? = null, updates: PlayUpdates? = null, widgetTarget: WidgetTarget? = null, onShortcutHandled: () -> Unit = {}) {
     val context = LocalContext.current
     val store = remember { LocalStore(context) }
     val scope = rememberCoroutineScope()
@@ -145,6 +145,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var newShiftDate by rememberSaveable {mutableStateOf(LocalDate.now().toString())}
     var patterns by remember {mutableStateOf(false)}
     var deleteShiftsDate by remember {mutableStateOf<String?>(null)}
+    var widgetCalendarDate by rememberSaveable {mutableStateOf<String?>(null)}
     var exporter by remember {mutableStateOf(false)}
     var importer by remember {mutableStateOf(false)}
     var shareMonth by remember {mutableStateOf<String?>(null)}
@@ -162,7 +163,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     LaunchedEffect(loaded, data.preferences.language) {
         if (loaded) publishPtsShortcuts(context, data.preferences.language)
     }
-    LaunchedEffect(loaded, shortcutAction) {
+    LaunchedEffect(loaded, shortcutAction, widgetTarget) {
         if (!loaded || shortcutAction == null) return@LaunchedEffect
         settings=false;accountOpen=false;analyticsOpen=false
         addJob=false;jobEditor=null;addShift=false;shiftEditor=null
@@ -175,7 +176,15 @@ private enum class Tab(val title: String, val icon: ImageVector) {
                     if (data.jobs.none { !it.archived }) addJob=true else addShift=true
                 }
             }
-            ShortcutAction.Calendar -> tab=Tab.Calendar
+            ShortcutAction.Calendar -> {
+                tab=Tab.Calendar
+                widgetTarget?.let { target ->
+                    reportMonthText=YearMonth.from(LocalDate.parse(target.date)).toString()
+                    newShiftDate=target.date
+                    widgetCalendarDate=target.date
+                    shiftEditor=data.shifts.find {it.id==target.shiftId && it.date==target.date}
+                }
+            }
             ShortcutAction.Earnings -> tab=Tab.Earnings
             ShortcutAction.Jobs -> tab=Tab.Jobs
         }
@@ -228,7 +237,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
                 if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(data.withRestoredBackup(it))},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
-                    Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it},{deleteShiftsDate=it}) }
+                    Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it},{deleteShiftsDate=it},widgetCalendarDate) }
                     Tab.Earnings -> item { EarningsScreen(data,reportMonthText,{reportMonthText=it},{if(account.premium) analyticsOpen=true else accountOpen=true}) {commit(data.copy(adjustments=it))} }
                     Tab.Jobs -> item { JobsScreen(data,{jobEditor=it},{addJob=true},{message=it},{patterns=true},{accountOpen=true}) }
                 }
@@ -456,9 +465,10 @@ private fun shiftLabel(shift: Shift): String {
         }
     }
 }
-@Composable internal fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit,openDelete:(String)->Unit = {}) {
+@Composable internal fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit,openDelete:(String)->Unit = {}, widgetDate:String? = null) {
     val month=YearMonth.parse(monthText)
     var selectedText by rememberSaveable(monthText) {mutableStateOf(if(month==YearMonth.now()) LocalDate.now().toString() else month.atDay(1).toString())};val selected=LocalDate.parse(selectedText);val locale=uiLocale();var menu by remember {mutableStateOf(false)}
+    LaunchedEffect(widgetDate,monthText) {widgetDate?.takeIf {YearMonth.from(LocalDate.parse(it))==month}?.let {selectedText=it}}
     LaunchedEffect(selectedText) {onSelected(selectedText)}
     val selectedShifts=data.shifts.filter {it.date==selectedText}.sortedBy {it.begins}
     val alerts=remember(data.shifts,data.jobs,data.preferences.gapHours) {scheduleWarnings(data.shifts,data.preferences.gapHours,data.jobs)}
@@ -780,7 +790,11 @@ private fun shiftLabel(shift: Shift): String {
             OutlinedButton(onClick={com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(context as android.app.Activity){}},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){UiText("Privacy choices",fontSize=11.sp)}
         }
         MeasurementChoice(settings=true)
-        FormSection("Android widget") {UiText("Add a widget from your phone home screen.",fontSize=11.sp)}
+        if(canActivatePtsWidget(context)) FormSection("Android widget") {
+            TextButton(onClick={
+                if(!activatePtsWidget(context)) android.widget.Toast.makeText(context,translate("Could not add widget. Try again.",p.language),android.widget.Toast.LENGTH_SHORT).show()
+            },contentPadding=PaddingValues(horizontal=0.dp,vertical=4.dp)) {UiText("Activate widget",fontSize=12.sp)}
+        }
         FormSection("PTS · Pay Time Shift") {
             UiText("${com.paytimeshift.pts.BuildConfig.VERSION_NAME} · PTS",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
             FormPair(first={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://paytimeshift.com/")))},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
@@ -1048,3 +1062,4 @@ internal fun localizedPickerContext(base: android.content.Context, locale: Local
             }})
     }
 }
+

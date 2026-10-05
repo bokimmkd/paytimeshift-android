@@ -501,5 +501,10 @@ internal val catalogel = mapOf(
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared." to "Να επιτρέπεται στη Meta να μετρά εγκαταστάσεις και ανοίγματα του PTS; Κοινοποιούνται στοιχεία συσκευής/εφαρμογής και δικτύου. Οι βάρδιες, οι αποδοχές και τα στοιχεία λογαριασμού δεν κοινοποιούνται.",
     "Optional. You can change this in Settings. Advertising ID collection is off." to "Προαιρετικό. Αλλάζει στις Ρυθμίσεις. Η συλλογή διαφημιστικού ID είναι απενεργοποιημένη.",
     "Not now" to "Όχι τώρα",
-    "Allow" to "Να επιτρέπεται"
+    "Allow" to "Να επιτρέπεται",
+    "Tomorrow" to "Αύριο",
+    "Your shifts" to "Οι βάρδιές σου",
+    "more shifts" to "ακόμη βάρδιες",
+    "Activate widget" to "Ενεργοποίηση widget",
+    "Could not add widget. Try again." to "Δεν ήταν δυνατή η προσθήκη του widget. Δοκίμασε ξανά."
 )

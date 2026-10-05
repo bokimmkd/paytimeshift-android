@@ -501,5 +501,10 @@ internal val cataloges = mapOf(
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared." to "¿Permites que Meta mida instalaciones y aperturas de PTS? Se comparten detalles del dispositivo/app e información de red. No se comparten turnos, salarios ni datos de la cuenta.",
     "Optional. You can change this in Settings. Advertising ID collection is off." to "Opcional. Puedes cambiarlo en Ajustes. La recopilación del ID publicitario está desactivada.",
     "Not now" to "Ahora no",
-    "Allow" to "Permitir"
+    "Allow" to "Permitir",
+    "Tomorrow" to "Mañana",
+    "Your shifts" to "Tus turnos",
+    "more shifts" to "turnos más",
+    "Activate widget" to "Activar widget",
+    "Could not add widget. Try again." to "No se pudo añadir el widget. Inténtalo de nuevo."
 )

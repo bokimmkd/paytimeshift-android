@@ -499,7 +499,12 @@
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Дозволуваш Meta да ги мери инсталациите и отворањата на PTS? Се споделуваат податоци за уредот/апликацијата и мрежата. Смените, платата и податоците за сметката не се споделуваат.",
     "Optional. You can change this in Settings. Advertising ID collection is off.": "Изборно. Може да се смени во Поставки. Собирањето рекламен ID е исклучено.",
     "Not now": "Не сега",
-    "Allow": "Дозволи"
+    "Allow": "Дозволи",
+    "Tomorrow": "Утре",
+    "Your shifts": "Твои смени",
+    "more shifts": "други смени",
+    "Activate widget": "Активирај виџет",
+    "Could not add widget. Try again.": "Виџетот не се додаде. Обиди се повторно."
   },
   "de": {
     "Today": "Heute",
@@ -1001,7 +1006,12 @@
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Darf Meta PTS-Installationen und App-Starts messen? Geräte-/App-Details und Netzwerkinformationen werden geteilt. Schichten, Bezahlung und Kontodaten werden nicht geteilt.",
     "Optional. You can change this in Settings. Advertising ID collection is off.": "Optional. In den Einstellungen änderbar. Die Werbe-ID wird nicht erfasst.",
     "Not now": "Jetzt nicht",
-    "Allow": "Erlauben"
+    "Allow": "Erlauben",
+    "Tomorrow": "Morgen",
+    "Your shifts": "Deine Schichten",
+    "more shifts": "weitere Schichten",
+    "Activate widget": "Widget aktivieren",
+    "Could not add widget. Try again.": "Widget konnte nicht hinzugefügt werden. Versuche es erneut."
   },
   "it": {
     "Today": "Oggi",
@@ -1503,7 +1513,12 @@
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Consenti a Meta di misurare installazioni e aperture di PTS? Vengono condivisi dettagli del dispositivo/app e informazioni di rete. Turni, retribuzione e dati dell’account non vengono condivisi.",
     "Optional. You can change this in Settings. Advertising ID collection is off.": "Facoltativo. Puoi modificare la scelta nelle Impostazioni. La raccolta dell’ID pubblicitario è disattivata.",
     "Not now": "Non ora",
-    "Allow": "Consenti"
+    "Allow": "Consenti",
+    "Tomorrow": "Domani",
+    "Your shifts": "I tuoi turni",
+    "more shifts": "altri turni",
+    "Activate widget": "Attiva widget",
+    "Could not add widget. Try again.": "Impossibile aggiungere il widget. Riprova."
   },
   "es": {
     "Today": "Hoy",
@@ -2005,7 +2020,12 @@
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "¿Permites que Meta mida instalaciones y aperturas de PTS? Se comparten detalles del dispositivo/app e información de red. No se comparten turnos, salarios ni datos de la cuenta.",
     "Optional. You can change this in Settings. Advertising ID collection is off.": "Opcional. Puedes cambiarlo en Ajustes. La recopilación del ID publicitario está desactivada.",
     "Not now": "Ahora no",
-    "Allow": "Permitir"
+    "Allow": "Permitir",
+    "Tomorrow": "Mañana",
+    "Your shifts": "Tus turnos",
+    "more shifts": "turnos más",
+    "Activate widget": "Activar widget",
+    "Could not add widget. Try again.": "No se pudo añadir el widget. Inténtalo de nuevo."
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -2507,7 +2527,12 @@
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Autoriser Meta à mesurer les installations et ouvertures de PTS ? Les détails de l’appareil/app et les informations réseau sont partagés. Vos postes, salaires et données de compte ne sont pas partagés.",
     "Optional. You can change this in Settings. Advertising ID collection is off.": "Facultatif. Modifiable dans les paramètres. La collecte de l’identifiant publicitaire est désactivée.",
     "Not now": "Pas maintenant",
-    "Allow": "Autoriser"
+    "Allow": "Autoriser",
+    "Tomorrow": "Demain",
+    "Your shifts": "Vos postes",
+    "more shifts": "autres postes",
+    "Activate widget": "Activer le widget",
+    "Could not add widget. Try again.": "Impossible d’ajouter le widget. Réessayez."
   },
   "sr": {
     "Today": "Danas",
@@ -3009,7 +3034,12 @@
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Dozvoljavaš da Meta meri instalacije i otvaranja PTS-a? Dele se podaci o uređaju/aplikaciji i mreži. Smene, zarada i podaci naloga se ne dele.",
     "Optional. You can change this in Settings. Advertising ID collection is off.": "Opciono. Možeš promeniti u Podešavanjima. Prikupljanje reklamnog ID-a je isključeno.",
     "Not now": "Ne sada",
-    "Allow": "Dozvoli"
+    "Allow": "Dozvoli",
+    "Tomorrow": "Sutra",
+    "Your shifts": "Tvoje smene",
+    "more shifts": "dodatne smene",
+    "Activate widget": "Aktiviraj vidžet",
+    "Could not add widget. Try again.": "Vidžet nije dodat. Pokušaj ponovo."
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -3511,7 +3541,12 @@
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Permitir que a Meta meça instalações e aberturas do PTS? Detalhes do dispositivo/app e informações de rede são compartilhados. Turnos, salários e dados da conta não são compartilhados.",
     "Optional. You can change this in Settings. Advertising ID collection is off.": "Opcional. Pode alterar nas Configurações. A coleta do ID de publicidade está desativada.",
     "Not now": "Agora não",
-    "Allow": "Permitir"
+    "Allow": "Permitir",
+    "Tomorrow": "Amanhã",
+    "Your shifts": "Seus turnos",
+    "more shifts": "outros turnos",
+    "Activate widget": "Ativar widget",
+    "Could not add widget. Try again.": "Não foi possível adicionar o widget. Tente novamente."
   },
   "el": {
     "Today": "Σήμερα",
@@ -4013,6 +4048,11 @@
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared.": "Να επιτρέπεται στη Meta να μετρά εγκαταστάσεις και ανοίγματα του PTS; Κοινοποιούνται στοιχεία συσκευής/εφαρμογής και δικτύου. Οι βάρδιες, οι αποδοχές και τα στοιχεία λογαριασμού δεν κοινοποιούνται.",
     "Optional. You can change this in Settings. Advertising ID collection is off.": "Προαιρετικό. Αλλάζει στις Ρυθμίσεις. Η συλλογή διαφημιστικού ID είναι απενεργοποιημένη.",
     "Not now": "Όχι τώρα",
-    "Allow": "Να επιτρέπεται"
+    "Allow": "Να επιτρέπεται",
+    "Tomorrow": "Αύριο",
+    "Your shifts": "Οι βάρδιές σου",
+    "more shifts": "ακόμη βάρδιες",
+    "Activate widget": "Ενεργοποίηση widget",
+    "Could not add widget. Try again.": "Δεν ήταν δυνατή η προσθήκη του widget. Δοκίμασε ξανά."
   }
 }

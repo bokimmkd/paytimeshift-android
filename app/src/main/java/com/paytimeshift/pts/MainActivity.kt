@@ -10,24 +10,31 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.paytimeshift.pts.platform.ShortcutAction
 import com.paytimeshift.pts.platform.PlayUpdates
+import com.paytimeshift.pts.platform.WidgetTarget
 import com.paytimeshift.pts.platform.MetaMeasurement
 import com.paytimeshift.pts.ui.PtsApp
 
 class MainActivity : ComponentActivity() {
     private var shortcutAction by mutableStateOf<ShortcutAction?>(null)
 
+    private var widgetTarget by mutableStateOf<WidgetTarget?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) shortcutAction = ShortcutAction.fromIntent(intent)
+        if (savedInstanceState == null) {
+            shortcutAction = ShortcutAction.fromIntent(intent)
+            widgetTarget = WidgetTarget.fromIntent(intent)
+        }
         enableEdgeToEdge()
         val updates=PlayUpdates(this)
-        setContent { PtsApp(shortcutAction, updates) { shortcutAction = null } }
+        setContent { PtsApp(shortcutAction, updates, widgetTarget) { shortcutAction = null; widgetTarget = null } }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         shortcutAction = ShortcutAction.fromIntent(intent)
+        widgetTarget = WidgetTarget.fromIntent(intent)
     }
 
     override fun onResume() {
@@ -40,3 +47,4 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 }
+

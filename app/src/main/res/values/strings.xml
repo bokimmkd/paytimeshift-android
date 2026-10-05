@@ -1,1 +1,8 @@
-<resources><string name="app_name">PTS · Pay Time Shift</string><string name="widget_title">PTS</string></resources>
+<resources>
+    <string name="app_name">PTS · Pay Time Shift</string>
+    <string name="widget_title">Your shifts</string>
+    <string name="widget_brand">PTS</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_tomorrow">Tomorrow</string>
+    <string name="widget_empty">No shifts added</string>
+</resources>

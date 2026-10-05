@@ -501,5 +501,10 @@ internal val catalogmk = mapOf(
     "Allow Meta to measure PTS installs and app opens? Device/app details and network information are shared. Your shifts, pay and account data are not shared." to "Дозволуваш Meta да ги мери инсталациите и отворањата на PTS? Се споделуваат податоци за уредот/апликацијата и мрежата. Смените, платата и податоците за сметката не се споделуваат.",
     "Optional. You can change this in Settings. Advertising ID collection is off." to "Изборно. Може да се смени во Поставки. Собирањето рекламен ID е исклучено.",
     "Not now" to "Не сега",
-    "Allow" to "Дозволи"
+    "Allow" to "Дозволи",
+    "Tomorrow" to "Утре",
+    "Your shifts" to "Твои смени",
+    "more shifts" to "други смени",
+    "Activate widget" to "Активирај виџет",
+    "Could not add widget. Try again." to "Виџетот не се додаде. Обиди се повторно."
 )
