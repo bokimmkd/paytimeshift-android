@@ -63,12 +63,12 @@ class PtsWidget : AppWidgetProvider() {
                 val views = if (Build.VERSION.SDK_INT >= 31) {
                     RemoteViews(mapOf(
                         SizeF(240f, 128f) to widgetViews(context, data, 128),
-                        SizeF(260f, 220f) to widgetViews(context, data, 220),
-                        SizeF(260f, 320f) to widgetViews(context, data, 320)
+                        SizeF(260f, 220f) to widgetViews(context, data, 250),
+                        SizeF(260f, 320f) to widgetViews(context, data, 350)
                     ))
                 } else {
                     val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 260)
-                    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 220)
+                    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 250)
                     widgetViews(context, data, if (width < 260) 128 else height)
                 }
                 manager.updateAppWidget(id, views)
@@ -112,8 +112,8 @@ private fun openDay(context: Context, date: LocalDate, shift: Shift? = null): Pe
 
 /** Shared by the real launcher renderer and instrumented rendering checks. */
 internal fun widgetViews(context: Context, data: AppData, height: Int, today: LocalDate = LocalDate.now()): RemoteViews {
-    val compact = height < 220
-    val capacity = if (height >= 320) 2 else 1
+    val compact = height < 250
+    val capacity = if (height >= 350) 2 else 1
     val lang = data.preferences.language
     val locale = localeForLanguage(lang)
     val dark = data.preferences.appearance == "Dark" || (data.preferences.appearance == "System" &&

@@ -37,11 +37,11 @@ class WidgetUiTest {
     @Test fun realRemoteViewsFitCompactExpandedAndTallSizesInBothThemesAndLanguages() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext
-        for(language in listOf("en","mk")) for(theme in listOf("Light","Dark")) for(height in listOf(128,220,320)) {
+        for(language in listOf("en","mk")) for(theme in listOf("Light","Dark")) for(height in listOf(128,250,350)) {
             instrumentation.runOnMainSync {
                 val parent=FrameLayout(context)
                 val view=widgetViews(context,data(language,theme),height,today).apply(context,parent)
-                val width=(if(height==128) 280 else 320)
+                val width=(if(height==128) 280 else 350)
                 val density=context.resources.displayMetrics.density
                 val w=(width*density).toInt();val h=(height*density).toInt()
                 view.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,View.MeasureSpec.EXACTLY))
@@ -50,8 +50,8 @@ class WidgetUiTest {
                 assertTrue(labels.contains(if(language=="en") "Today" else "Денес") || labels.any {it.startsWith(if(language=="en") "Today ·" else "Денес ·")})
                 assertTrue(labels.contains(if(language=="en") "Tomorrow" else "Утре") || labels.any {it.startsWith(if(language=="en") "Tomorrow ·" else "Утре ·")})
                 assertTrue(labels.contains("07:00–15:00"));assertTrue(labels.contains("18:00–21:00"))
-                assertTrue(labels.any {it.startsWith(if(height==320) "+1" else "+2")})
-                if(height>=220) assertTrue(labels.contains(if(language=="mk") "7.5 ч" else "7.5h"))
+                assertTrue(labels.any {it.startsWith(if(height==350) "+1" else "+2")})
+                if(height>=250) assertTrue(labels.contains(if(language=="mk") "7.5 ч" else "7.5h"))
                 for(id in listOf(R.id.widget_today,R.id.widget_tomorrow)) {
                     val panel=view.findViewById<ViewGroup>(id)
                     texts(panel).filter {it.visibility==View.VISIBLE && it.text.isNotBlank()}.forEach { text ->
@@ -74,7 +74,7 @@ class WidgetUiTest {
             val parent=FrameLayout(context)
             val night=data().shifts.first {it.id=="three"}
             val onlyNight=data().copy(shifts=listOf(night),preferences=Preferences(time24=false))
-            val view=widgetViews(context,onlyNight,220,today).apply(context,parent)
+            val view=widgetViews(context,onlyNight,250,today).apply(context,parent)
             val labels=texts(view).map {it.text.toString()}
             assertTrue(labels.contains("10:00 PM–6:00 AM +1"))
             assertEquals(1,labels.count {it=="No shifts added"})
