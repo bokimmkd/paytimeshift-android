@@ -63,8 +63,8 @@ class PtsWidget : AppWidgetProvider() {
                 val views = if (Build.VERSION.SDK_INT >= 31) {
                     RemoteViews(mapOf(
                         SizeF(240f, 128f) to widgetViews(context, data, 128),
-                        SizeF(260f, 220f) to widgetViews(context, data, 250),
-                        SizeF(260f, 320f) to widgetViews(context, data, 350)
+                        SizeF(260f, 250f) to widgetViews(context, data, 250),
+                        SizeF(260f, 350f) to widgetViews(context, data, 350)
                     ))
                 } else {
                     val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 260)
