@@ -68,7 +68,7 @@ class PtsWidget : AppWidgetProvider() {
                         widgetViews(context, data, it.height.toInt(), width = it.width.toInt())
                     }) else RemoteViews(mapOf(
                         SizeF(240f, 128f) to widgetViews(context, data, 128, width = 240),
-                        SizeF(260f, 220f) to widgetViews(context, data, 220, width = 260),
+                        SizeF(260f, 250f) to widgetViews(context, data, 250, width = 260),
                         SizeF(300f, 340f) to widgetViews(context, data, 340, width = 300)
                     ))
                 } else {
@@ -119,7 +119,7 @@ private fun openDay(context: Context, date: LocalDate, shift: Shift? = null): Pe
 internal fun widgetViews(context: Context, data: AppData, height: Int, today: LocalDate = LocalDate.now(),
     width: Int = 350): RemoteViews {
     val fontScale = context.resources.configuration.fontScale.coerceAtLeast(1f)
-    val compact = height < (220 * fontScale).toInt() || width < 260
+    val compact = height < (250 * fontScale).toInt() || width < 260
     val large = !compact && height >= (340 * fontScale).toInt() && width >= 300
     val capacity = 2
     val lang = data.preferences.language
@@ -132,6 +132,10 @@ internal fun widgetViews(context: Context, data: AppData, height: Int, today: Lo
     val divider = if (dark) 0xFF304A53.toInt() else 0xFFE2E6EC.toInt()
     val views = RemoteViews(context.packageName, if (compact) R.layout.pts_widget_compact else R.layout.pts_widget)
     views.setInt(R.id.widget_root, "setBackgroundResource", if (dark) R.drawable.widget_background_dark else R.drawable.widget_background)
+    if (large) {
+        val inset = (14 * context.resources.displayMetrics.density).toInt()
+        views.setViewPadding(R.id.widget_root, inset, inset, inset, inset)
+    }
     views.setImageViewResource(R.id.widget_logo, if (dark) R.drawable.widget_logo_dark else R.drawable.widget_logo)
     views.setTextColor(R.id.widget_brand, ink)
     views.setTextColor(R.id.widget_title, muted)
