@@ -64,6 +64,8 @@ class LauncherUiTest {
         }
         fun screenshot(name: String) {
             val instrumentation=InstrumentationRegistry.getInstrumentation()
+            ui.waitForIdle()
+            android.os.SystemClock.sleep(300)
             val bitmap=instrumentation.uiAutomation.takeScreenshot()
             try {
                 val file=File(instrumentation.targetContext.getExternalFilesDir("screenshots"),name)
@@ -74,7 +76,7 @@ class LauncherUiTest {
         try {
             store.save(original.copy(preferences=original.preferences.copy(language="en",appearance="Light",showHints=false)))
             ui.activityRule.scenario.recreate()
-            ui.waitUntil(10000) {ui.onAllNodes(hasContentDescription("Settings") and isEnabled()).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+            ui.waitUntil(10000) {ui.onAllNodes(hasContentDescription("Account & Premium") and isEnabled()).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
             ui.onNodeWithContentDescription("Settings").performClick()
             ui.onNodeWithText("Display").assertIsDisplayed()
             assertIcons(false)
@@ -89,7 +91,7 @@ class LauncherUiTest {
             ui.waitUntil(10000) {store.load().preferences.appearance=="Light"}
             assertIcons(false)
             ui.activityRule.scenario.recreate()
-            ui.waitUntil(10000) {ui.onAllNodes(hasContentDescription("Settings") and isEnabled()).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+            ui.waitUntil(10000) {ui.onAllNodes(hasContentDescription("Account & Premium") and isEnabled()).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
             assertIcons(false)
         } finally {
             store.save(original)
