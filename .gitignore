@@ -10,3 +10,8 @@ release-signing/
 signing.env
 validation/*
 !validation/0.1.5/
+
+backend/node_modules/
+backend/.env*
+backend/.secret*
+backend/sample-reports/

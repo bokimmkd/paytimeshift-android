@@ -6,6 +6,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -31,14 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.paytimeshift.pts.data.LocalStore
 import com.paytimeshift.pts.domain.*
 import com.paytimeshift.pts.platform.*
+import com.paytimeshift.pts.premium.*
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import kotlinx.coroutines.Dispatchers
@@ -70,7 +72,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     Earnings("Earnings", Icons.Outlined.BarChart), Jobs("Jobs", Icons.Outlined.WorkOutline)
 }
 
-@Composable fun PtsApp() {
+@Composable fun PtsApp(shortcutAction: ShortcutAction? = null, updates: PlayUpdates? = null, widgetTarget: WidgetTarget? = null, onShortcutHandled: () -> Unit = {}) {
     val context = LocalContext.current
     val store = remember { LocalStore(context) }
     val scope = rememberCoroutineScope()
@@ -79,6 +81,63 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var writable by remember { mutableStateOf(true) }
     var saving by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    val premiumRepo=remember {PremiumRepository(context)}
+    var account by remember {mutableStateOf(AccountStatus(uid=premiumRepo.auth.currentUser?.uid))}
+    var accountResolved by remember {mutableStateOf(premiumRepo.auth.currentUser==null)}
+    var accountChecking by remember {mutableStateOf(false)}
+    var accountError by remember {mutableStateOf<String?>(null)}
+    var refreshJob by remember {mutableStateOf<kotlinx.coroutines.Job?>(null)}
+    var refreshUid by remember {mutableStateOf<String?>(null)}
+    var accountOpen by remember {mutableStateOf(false)}
+    var analyticsOpen by remember {mutableStateOf(false)}
+    var annualPrice by remember {mutableStateOf<String?>(null)}
+    val verifyingTokens=remember {mutableSetOf<String>()}
+    fun refreshAccount() {
+        val requestedUid=premiumRepo.auth.currentUser?.uid
+        if(refreshJob?.isActive==true && refreshUid==requestedUid) return
+        refreshJob?.cancel();refreshUid=requestedUid;accountChecking=true;accountError=null
+        refreshJob=scope.launch {
+            try {
+                val refreshed=try {premiumRepo.status()} catch(e:com.google.firebase.functions.FirebaseFunctionsException) {
+                    if(e.code!=com.google.firebase.functions.FirebaseFunctionsException.Code.RESOURCE_EXHAUSTED) throw e
+                    kotlinx.coroutines.delay(2200);premiumRepo.status()
+                }
+                if(premiumRepo.auth.currentUser?.uid==requestedUid) {account=refreshed;accountResolved=true}
+            } catch(e:kotlinx.coroutines.CancellationException) {throw e}
+            catch(_:Exception) {if(premiumRepo.auth.currentUser?.uid==requestedUid) {accountResolved=requestedUid==null;accountError="Could not refresh account. Try again."}}
+            finally {if(refreshUid==requestedUid) accountChecking=false}
+        }
+    }
+    val billing=remember {PlayBilling(context as android.app.Activity,{premiumRepo.auth.currentUser?.uid},{token->scope.launch {
+        if(!verifyingTokens.add(token)) return@launch
+        val requestedUid=premiumRepo.auth.currentUser?.uid
+        try {
+            premiumRepo.verifyPurchase(token)
+            // A status request started before purchase verification may still return Free.
+            refreshJob?.join()
+            if(premiumRepo.auth.currentUser?.uid==requestedUid) refreshAccount()
+        }
+        catch(e:kotlinx.coroutines.CancellationException) {throw e}
+        catch(e:Exception) {message=cloudError(e)}
+        finally {verifyingTokens.remove(token)}
+    }},{message=it},{annualPrice=it})}
+    DisposableEffect(Unit) {
+        val listener=com.google.firebase.auth.FirebaseAuth.AuthStateListener {
+            if(account.uid!=it.currentUser?.uid) {account=AccountStatus(uid=it.currentUser?.uid);accountResolved=it.currentUser==null}
+            account=account.copy(email=it.currentUser?.email ?: "",verified=it.currentUser?.isEmailVerified==true,displayName=it.currentUser?.displayName ?: "")
+            refreshAccount();billing.restore()
+        }
+        val host=context as androidx.activity.ComponentActivity
+        val observer=object:androidx.lifecycle.DefaultLifecycleObserver {override fun onResume(owner:androidx.lifecycle.LifecycleOwner) {refreshAccount()}}
+        host.lifecycle.addObserver(observer)
+        premiumRepo.auth.addAuthStateListener(listener);billing.start()
+        onDispose {host.lifecycle.removeObserver(observer);premiumRepo.auth.removeAuthStateListener(listener);refreshJob?.cancel();billing.close()}
+    }
+    LaunchedEffect(accountOpen) {if(accountOpen) refreshAccount()}
+    LaunchedEffect(account.uid,accountResolved,loaded,data.preferences.language) {
+        if(account.uid!=null && accountResolved && loaded) try {premiumRepo.reportPreferences(account.monthlyEmail,account.yearlyEmail,data.preferences.language)} catch(_:Exception) { }
+    }
+    LaunchedEffect(account.premium,account.uid,accountResolved) {if(account.premium && accountResolved && premiumRepo.bound(account.uid!!)) queueCloudBackup(context,account.uid)}
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     var reportMonthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     var settings by rememberSaveable { mutableStateOf(false) }
@@ -88,6 +147,9 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var addShift by remember { mutableStateOf(false) }
     var newShiftDate by rememberSaveable {mutableStateOf(LocalDate.now().toString())}
     var patterns by remember {mutableStateOf(false)}
+    var deleteShiftsDate by remember {mutableStateOf<String?>(null)}
+    var widgetCalendarDate by rememberSaveable {mutableStateOf<String?>(null)}
+    var exporter by remember {mutableStateOf(false)}
     var importer by remember {mutableStateOf(false)}
     var shareMonth by remember {mutableStateOf<String?>(null)}
     val permission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {allowed->
@@ -101,11 +163,41 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         loaded = true
         if(writable) withContext(Dispatchers.IO){syncReminders(context,data,data);refreshWidgets(context)}
     }
+    LaunchedEffect(loaded, data.preferences.language) {
+        if (loaded) publishPtsShortcuts(context, data.preferences.language)
+    }
+    LaunchedEffect(loaded, shortcutAction, widgetTarget) {
+        if (!loaded || shortcutAction == null) return@LaunchedEffect
+        settings=false;accountOpen=false;analyticsOpen=false
+        addJob=false;jobEditor=null;addShift=false;shiftEditor=null
+        patterns=false;importer=false;shareMonth=null;sampleConfirm=false;deleteShiftsDate=null
+        when (shortcutAction) {
+            ShortcutAction.AddShift -> {
+                tab=Tab.Today
+                newShiftDate=LocalDate.now().toString()
+                if (writable) {
+                    if (data.jobs.none { !it.archived }) addJob=true else addShift=true
+                }
+            }
+            ShortcutAction.Calendar -> {
+                tab=Tab.Calendar
+                widgetTarget?.let { target ->
+                    reportMonthText=YearMonth.from(LocalDate.parse(target.date)).toString()
+                    newShiftDate=target.date
+                    widgetCalendarDate=target.date
+                    shiftEditor=data.shifts.find {it.id==target.shiftId && it.date==target.date}
+                }
+            }
+            ShortcutAction.Earnings -> tab=Tab.Earnings
+            ShortcutAction.Jobs -> tab=Tab.Jobs
+        }
+        onShortcutHandled()
+    }
     fun commit(next: AppData) {
         if (!loaded || !writable || saving) return
         saving = true
         scope.launch {
-            try { withContext(Dispatchers.IO) { store.save(next);try {syncReminders(context,data,next);refreshWidgets(context)} catch(_:Exception) { } }; data = next
+            try { withContext(Dispatchers.IO) { store.save(next);try {syncReminders(context,data,next);refreshWidgets(context)} catch(_:Exception) { } }; data = next;queueCloudBackup(context,premiumRepo.auth.currentUser?.uid)
                 val wantsReminders=next.preferences.reminderMinutes>0 || next.jobs.any {it.reminderMinutes>0}
                 if(wantsReminders && android.os.Build.VERSION.SDK_INT>=33 && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED) permission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -114,51 +206,99 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         }
     }
     val dark = data.preferences.appearance == "Dark" || (data.preferences.appearance == "System" && isSystemInDarkTheme())
-    androidx.compose.runtime.CompositionLocalProvider(LocalLanguage provides data.preferences.language) {
-    MaterialTheme(colorScheme = if (dark) darkColorScheme(primary=Color(0xFF69D6C6), secondary=Color(0xFF69D6C6))
-        else lightColorScheme(primary=Teal, secondary=Teal, background=Pale, surface=Color.White, onSurface=Navy, onBackground=Navy, onSurfaceVariant=Color(0xFF4F5F7B), outlineVariant=Color(0xFFE5E8ED),surfaceVariant=Color(0xFFEBEDF1))) {
+    val colors = if (dark) darkColorScheme(primary=Color(0xFF69D6C6), secondary=Color(0xFF69D6C6),primaryContainer=Color(0xFF104A49),onPrimaryContainer=Color(0xFFB8F4E8),secondaryContainer=Color(0xFF164440),onSecondaryContainer=Color(0xFFB8F4E8))
+        else lightColorScheme(primary=Teal, secondary=Teal,primaryContainer=Color(0xFFD8EFEB),onPrimaryContainer=Navy,secondaryContainer=Color(0xFFD8EFEB),onSecondaryContainer=Navy, background=Pale, surface=Color.White, onSurface=Navy, onBackground=Navy, onSurfaceVariant=Color(0xFF4F5F7B), outlineVariant=Color(0xFFE5E8ED),surfaceVariant=Color(0xFFEBEDF1))
+    SideEffect {
+        // System bars and their background follow PTS's selected appearance.
+        val host = context as androidx.activity.ComponentActivity
+        val transparent = android.graphics.Color.TRANSPARENT
+        val background = colors.background.toArgb()
+        host.window.decorView.setBackgroundColor(background)
+        host.enableEdgeToEdge(
+            statusBarStyle = if (dark) androidx.activity.SystemBarStyle.dark(transparent)
+                else androidx.activity.SystemBarStyle.light(transparent, transparent),
+            navigationBarStyle = if (dark) androidx.activity.SystemBarStyle.dark(background)
+                else androidx.activity.SystemBarStyle.light(background, background)
+        )
+    }
+    androidx.compose.runtime.CompositionLocalProvider(LocalLanguage provides data.preferences.language, LocalPremium provides account.premium, LocalAdsResolved provides accountResolved) {
+    HintProvider(data.preferences,{commit(data.copy(preferences=it))}) {
+    MaterialTheme(colorScheme = colors) {
         BackHandler(settings || tab != Tab.Today) { if (settings) settings=false else tab=Tab.Today }
         Scaffold(
             topBar = { Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start=16.dp,end=8.dp,top=3.dp,bottom=5.dp), verticalAlignment=Alignment.CenterVertically) {
                 BrandLogo()
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) { UiText("PTS",fontSize=18.sp,fontWeight=FontWeight.Bold); UiText("Pay Time Shift",fontSize=9.sp) }
-                IconButton(onClick={settings=!settings}) { Icon(if(settings) Icons.Outlined.Close else Icons.Outlined.Settings,if(settings) "Close settings" else "Settings") }
+                IconButton(onClick={accountOpen=true}, enabled=loaded && writable) {
+                    Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primary.copy(alpha=.10f),CircleShape),contentAlignment=Alignment.Center) {
+                        Icon(if(account.uid==null) Icons.Outlined.PersonOutline else Icons.Outlined.Person,
+                            translate("Account & Premium",LocalLanguage.current),Modifier.size(21.dp),tint=MaterialTheme.colorScheme.primary)
+                    }
+                }
+                IconButton(onClick={settings=!settings}) { Icon(if(settings) Icons.Outlined.Close else Icons.Outlined.Settings,translate(if(settings) "Close settings" else "Settings",LocalLanguage.current)) }
             } },
-            bottomBar = { if (!settings) BrandNavigation(tab) {tab=it} },
+            bottomBar = { if (!settings) Column {
+                Box(Modifier.fillMaxWidth().padding(horizontal=16.dp)) { PtsBanner() }
+                BrandNavigation(tab) {tab=it}
+            } },
             floatingActionButton = { if (!settings && tab in listOf(Tab.Today,Tab.Calendar) && loaded && writable)
                 ShiftButton(if(data.jobs.none { !it.archived }) "Job" else "Shift") {if(data.jobs.none { !it.archived }) addJob=true else {if(tab==Tab.Today) newShiftDate=LocalDate.now().toString();addShift=true}}
             }
 
         ) { inset ->
             if (!loaded) Box(Modifier.fillMaxSize().padding(inset),contentAlignment=Alignment.Center) { CircularProgressIndicator() }
-            else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab==Tab.Calendar && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) });FormSection("Local backup"){BackupControls(data,{commit(it)},{message=it})}} }
+            else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab in listOf(Tab.Today,Tab.Calendar) && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                if(updates?.transfer?.stage in listOf(UpdateStage.Waiting,UpdateStage.Downloading,UpdateStage.Installing)) item {UpdateProgress(updates!!.transfer)}
+                if(!settings) item {MeasurementChoice()}
+                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(data.withRestoredBackup(it))},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
-                    Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it}) }
-                    Tab.Earnings -> item { EarningsScreen(data,reportMonthText,{reportMonthText=it}) }
-                    Tab.Jobs -> item { JobsScreen(data,{jobEditor=it},{addJob=true},{message=it},{patterns=true}) }
+                    Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it},{deleteShiftsDate=it},widgetCalendarDate) }
+                    Tab.Earnings -> item { EarningsScreen(data,reportMonthText,{reportMonthText=it},{if(account.premium) analyticsOpen=true else accountOpen=true}) {commit(data.copy(adjustments=it))} }
+                    Tab.Jobs -> item { JobsScreen(data,{jobEditor=it},{addJob=true},{message=it},{patterns=true},{accountOpen=true}) }
                 }
             }
         }
-        if (addJob || jobEditor != null) JobDialog(jobEditor,data.preferences.currency,onClose={addJob=false;jobEditor=null}) { job, applyUpcoming ->
+        if(accountOpen) AccountDialog(premiumRepo,account,annualPrice,{refreshAccount()},{billing.buy()},{billing.restore()},data,{next->
+            check(loaded && writable && !saving);saving=true
+            val restored=data.withRestoredBackup(next)
+            try {withContext(Dispatchers.IO){store.save(restored);syncReminders(context,data,restored);refreshWidgets(context)};data=restored}
+            finally {saving=false}
+        },{accountOpen=false},resolved=accountResolved,checking=accountChecking,statusError=accountError)
+        if(analyticsOpen && account.premium) AnalyticsDialog(data,YearMonth.parse(reportMonthText)){analyticsOpen=false}
+        if (addJob || jobEditor != null) JobDialog(jobEditor,data.jobs,data.preferences.currency,onClose={addJob=false;jobEditor=null}) { job, applyUpcoming ->
             commit(data.withJob(job,applyUpcoming,LocalDate.now())); addJob=false;jobEditor=null
         }
         if (addShift || shiftEditor != null) ShiftDialog(shiftEditor,data,newShiftDate,onClose={addShift=false;shiftEditor=null},onDelete={ id ->
             commit(data.copy(shifts=data.shifts.filterNot {it.id==id}));addShift=false;shiftEditor=null
-        }) { shift -> commit(data.copy(shifts=data.shifts.filterNot {it.id==shift.id} + shift));addShift=false;shiftEditor=null }
-        if(patterns) PatternDialog(data,{patterns=false}) {rows->commit(data.copy(shifts=data.shifts+rows));patterns=false}
+        }) { change ->
+            val next=runCatching {data.withManualShiftChange(change)}.getOrElse {message="Schedule changed. Review the shifts again.";return@ShiftDialog}
+            commit(next);addShift=false;shiftEditor=null }
+        if(patterns) PatternDialog(data,{patterns=false}) {change->
+            val next=runCatching {data.withPatternChange(change)}.getOrElse {message="Schedule changed. Review the shifts again.";return@PatternDialog}
+            commit(next);patterns=false
+        }
+        deleteShiftsDate?.let {date->DeleteShiftsDialog(data,date,{deleteShiftsDate=null}) {change->
+            val next=runCatching {data.withShiftDeletion(change)}.getOrElse {message="Schedule changed. Review the shifts again.";return@DeleteShiftsDialog}
+            commit(next);deleteShiftsDate=null
+        }}
+        if(exporter) ColleagueExportDialog(data,YearMonth.parse(reportMonthText),{exporter=false}) {job,from,until->scope.launch {try {shareColleagueSchedule(context,job,data,from,until)} catch(_:Exception){message="File could not be saved."}};exporter=false}
         if(importer) ImportDialog(data,{importer=false}) {rows->commit(data.copy(shifts=data.shifts+rows));importer=false}
-        shareMonth?.let {month->AlertDialog(onDismissRequest={shareMonth=null},title={ScreenHeading("Share schedule", Icons.Outlined.Share, "Export as PDF or image", compact=true)},text={Row {
+        shareMonth?.let {month->AlertDialog(onDismissRequest={shareMonth=null},title={ScreenHeading("Share schedule", Icons.Outlined.Share, "Export as PDF or image", compact=true)},text={Column {
+            TextButton(onClick={exporter=true;shareMonth=null}){UiText("Export schedule for colleague")}
+            TextButton(onClick={importer=true;shareMonth=null}){UiText("Import schedule from colleague")}
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),true)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("PDF")}
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),false)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("Image")}
         }},confirmButton={TextButton(onClick={shareMonth=null}){UiText("Cancel")}})}
         if(sampleConfirm) AlertDialog(onDismissRequest={sampleConfirm=false},title={UiText("Load example schedule?")},text={UiText("Add Factory, Taxi and Restaurant with example shifts. You can edit them or start with your own jobs instead.")},confirmButton={TextButton(onClick={if(data.jobs.isEmpty()) commit(sampleData().copy(preferences=data.preferences)) else message="Examples are available only before adding jobs.";sampleConfirm=false}){UiText("Load examples")}},dismissButton={TextButton(onClick={sampleConfirm=false}){UiText("Cancel")}})
+        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen && deleteShiftsDate==null) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store",failed=updates.installFailed)
         if (saving) androidx.compose.ui.window.Dialog(onDismissRequest={}) { Surface(shape=Round) { Row(Modifier.padding(24.dp),verticalAlignment=Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(24.dp)); Spacer(Modifier.width(12.dp)); UiText("Saving…") } } }
         message?.let { text -> AlertDialog(onDismissRequest={message=null},title={UiText("PTS")},text={UiText(text)},confirmButton={TextButton(onClick={message=null}){UiText("OK")}}) }
     }
 }
+}
+
 }
 
 @Composable private fun Stack(content: @Composable ColumnScope.()->Unit) {
@@ -227,10 +367,10 @@ private fun jobGlyph(job: Job): ImageVector = when {
         }
     }
 }
-@Composable private fun displayMoney(value: java.math.BigDecimal,code: String): String {
+@Composable internal fun displayMoney(value: java.math.BigDecimal,code: String): String {
     val currency=java.util.Currency.getInstance(code)
-    val formatter=java.text.NumberFormat.getNumberInstance(Locale.US).apply {minimumFractionDigits=0;maximumFractionDigits=currency.defaultFractionDigits.coerceAtLeast(0)}
-    val symbol=currency.getSymbol(Locale.US)
+    val formatter=java.text.NumberFormat.getNumberInstance(uiLocale()).apply {minimumFractionDigits=0;maximumFractionDigits=currency.defaultFractionDigits.coerceAtLeast(0)}
+    val symbol=currency.getSymbol(uiLocale())
     return (if(symbol.length>3 || symbol==code) "$code " else symbol)+formatter.format(value)
 }
 @Composable private fun timeLabel(time: String,p: Preferences)=LocalTime.parse(time).format(DateTimeFormatter.ofPattern(if(p.time24) "HH:mm" else "h:mm a",uiLocale()))
@@ -272,12 +412,6 @@ private fun shiftLabel(shift: Shift): String {
 @Composable private fun MiniRow(icon: ImageVector,tint: Color,click: ()->Unit,content: @Composable RowScope.()->Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min=42.dp).clickable(onClick=click).padding(horizontal=12.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically) {
         Icon(icon,null,Modifier.size(23.dp),tint=tint);Spacer(Modifier.width(10.dp));content();Spacer(Modifier.width(4.dp));Icon(Icons.Outlined.ChevronRight,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-@Composable private fun AdSlot() {
-    // Explicit design placeholder; live AdMob is a separate milestone.
-    Box(Modifier.fillMaxWidth().height(48.dp).clip(Round).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha=.60f)),contentAlignment=Alignment.Center) {
-        UiText("Ad space",fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 @Composable private fun TodayScreen(data: AppData,edit: (Shift)->Unit,add: ()->Unit,sample: ()->Unit,openEarnings: ()->Unit) {
@@ -330,7 +464,6 @@ private fun shiftLabel(shift: Shift): String {
                     }}
                 }
             }
-            Spacer(Modifier.height(4.dp));AdSlot()
         }
     }
 }
@@ -349,11 +482,14 @@ private fun shiftLabel(shift: Shift): String {
         }
     }
 }
-@Composable private fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit) {
+@Composable internal fun CalendarScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,edit: (Shift)->Unit,share:(String)->Unit,openImport:()->Unit,toggleHoliday:(String)->Unit,onSelected:(String)->Unit,openDelete:(String)->Unit = {}, widgetDate:String? = null) {
     val month=YearMonth.parse(monthText)
     var selectedText by rememberSaveable(monthText) {mutableStateOf(if(month==YearMonth.now()) LocalDate.now().toString() else month.atDay(1).toString())};val selected=LocalDate.parse(selectedText);val locale=uiLocale();var menu by remember {mutableStateOf(false)}
+    LaunchedEffect(widgetDate,monthText) {widgetDate?.takeIf {YearMonth.from(LocalDate.parse(it))==month}?.let {selectedText=it}}
     LaunchedEffect(selectedText) {onSelected(selectedText)}
     val selectedShifts=data.shifts.filter {it.date==selectedText}.sortedBy {it.begins}
+    val alerts=remember(data.shifts,data.jobs,data.preferences.gapHours) {scheduleWarnings(data.shifts,data.preferences.gapHours,data.jobs)}
+    val shortRestDates=remember(alerts) {alerts.filter {it.shortRest}.flatMap {it.dates}.toSet()}
     val offset=(month.atDay(1).dayOfWeek.value-(if(data.preferences.mondayFirst) 1 else 7)+7)%7
     Stack {
         Row(verticalAlignment=Alignment.CenterVertically) {
@@ -361,9 +497,11 @@ private fun shiftLabel(shift: Shift): String {
             Box {
                 IconButton(onClick={menu=true},modifier=Modifier.size(30.dp)){Icon(Icons.Outlined.MoreVert,translate("Calendar actions",LocalLanguage.current),Modifier.size(19.dp))}
                 DropdownMenu(menu,{menu=false}) {
-                    DropdownMenuItem(text={UiText(if(selectedText in data.holidays) "Unmark holiday" else "Mark as holiday")},leadingIcon={Icon(Icons.Outlined.Event,null)},onClick={menu=false;toggleHoliday(selectedText)})
-                    DropdownMenuItem(text={UiText("Import roster")},onClick={menu=false;openImport()})
-                    DropdownMenuItem(text={UiText("Share schedule")},onClick={menu=false;share(monthText)})
+                    DropdownMenuItem(text={UiText("Import roster")},leadingIcon={Icon(Icons.Outlined.FileDownload,null)},onClick={menu=false;openImport()})
+                    DropdownMenuItem(text={UiText("Share schedule")},leadingIcon={Icon(Icons.Outlined.Share,null)},onClick={menu=false;share(monthText)})
+                    DropdownMenuItem(text={Column {UiText(if(selectedText in data.holidays) "Unmark holiday" else "Mark as holiday");Text(selected.format(DateTimeFormatter.ofPattern("d MMM yyyy",locale)),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}},leadingIcon={Icon(Icons.Outlined.Event,null)},onClick={menu=false;toggleHoliday(selectedText)})
+                    HorizontalDivider()
+                    DropdownMenuItem(text={UiText("Delete shifts in a period",color=MaterialTheme.colorScheme.error)},leadingIcon={Icon(Icons.Outlined.DeleteOutline,null,tint=MaterialTheme.colorScheme.error)},onClick={menu=false;openDelete(selectedText)})
                 }
             }
             IconButton(onClick={onMonthChange(month.minusMonths(1).toString())},modifier=Modifier.size(36.dp)){Icon(Icons.Outlined.ChevronLeft,translate("Previous month",LocalLanguage.current),Modifier.size(20.dp))}
@@ -383,17 +521,26 @@ private fun shiftLabel(shift: Shift): String {
                         if(day !in 1..month.lengthOfMonth()) Box(base)
                         else {
                             val date=month.atDay(day);val dayRows=data.shifts.filter {it.date==date.toString()}
+                            val markers=calendarMarkers(dayRows)
+                            val shortRest=date.toString() in shortRestDates
+                            val warningLabel=translate("Short rest",LocalLanguage.current)
                             val holiday=date.toString() in data.holidays
                             val holidayBackground=if(holiday) MaterialTheme.colorScheme.primary.copy(alpha=.10f) else Color.Transparent
                             val selectedModifier=Modifier.padding(2.dp).background(holidayBackground,RoundedCornerShape(7.dp)).then(if(date==selected) Modifier.border(1.2.dp,MaterialTheme.colorScheme.primary,RoundedCornerShape(7.dp)) else Modifier)
-                            Box(base.clickable {selectedText=date.toString()}.semantics {contentDescription="${date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d",locale))}, ${dayRows.size} shifts"}) {
+                            Box(base.clickable {selectedText=date.toString()}.semantics {contentDescription="${date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d",locale))}, ${dayRows.count {it.kind=="Work"}} ${translate("shifts",data.preferences.language)}"+(if(shortRest) ", $warningLabel" else "")}) {
                                 Column(Modifier.fillMaxSize().then(selectedModifier).padding(top=7.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)) {
                                     UiText(day.toString(),fontSize=12.sp,lineHeight=15.sp,fontWeight=if(date==selected) FontWeight.Bold else FontWeight.Normal)
                                     Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                                        dayRows.map {it.jobId}.distinct().take(3).forEach {id->data.jobs.find {it.id==id}?.let {j->Box(Modifier.size(7.dp).background(Color(j.color),CircleShape))}}
-                                        if(dayRows.map {it.jobId}.distinct().size>3) UiText("+",fontSize=10.sp,lineHeight=10.sp)
+                                        markers.take(3).forEach {marker->data.jobs.find {it.id==marker.jobId}?.let {j->
+                                            Box(Modifier.size(if(marker.kind=="Work") 7.dp else 11.dp).background(Color(j.color),CircleShape)
+                                                .semantics {contentDescription="${j.name}: ${translate(marker.kind,data.preferences.language)}"},contentAlignment=Alignment.Center) {
+                                                if(marker.kind!="Work") Text("−",Modifier.background(Color.White,CircleShape).padding(horizontal=1.dp),fontSize=8.sp,lineHeight=8.sp,fontWeight=FontWeight.Bold,color=Color(0xFFB3261E))
+                                            }
+                                        }}
+                                        if(markers.size>3) UiText("+",fontSize=10.sp,lineHeight=10.sp)
                                     }
                                 }
+                                if(shortRest) Text("!",Modifier.align(Alignment.TopEnd).padding(top=3.dp,end=5.dp),fontSize=10.sp,lineHeight=12.sp,fontWeight=FontWeight.Bold,color=Color(0xFFFFA000))
                             }
                         }
                     }
@@ -402,22 +549,23 @@ private fun shiftLabel(shift: Shift): String {
         }
         Spacer(Modifier.height(1.dp))
         Row(verticalAlignment=Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) {SectionLabel("${selected.format(DateTimeFormatter.ofPattern("EEE, MMM d",uiLocale()))} · ${selectedShifts.size} shifts")}
+            Box(Modifier.weight(1f)) {SectionLabel("${selected.format(DateTimeFormatter.ofPattern("EEE, MMM d",uiLocale()))} · ${selectedShifts.count {it.kind=="Work"}} shifts")}
             if(selectedText in data.holidays) Surface(shape=RoundedCornerShape(5.dp),color=MaterialTheme.colorScheme.primary.copy(alpha=.12f)){UiText("Holiday",Modifier.padding(horizontal=7.dp,vertical=3.dp),fontSize=10.sp,color=MaterialTheme.colorScheme.primary)}
         }
         if(selectedShifts.isEmpty()) UiText("No shifts added",fontSize=13.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
         selectedShifts.forEach {ShiftCard(it,data,{edit(it)},compact=true)}
-        val nearby=data.shifts.filter {it.begins.toLocalDate()>=selected.minusDays(1) && it.begins.toLocalDate()<=selected.plusDays(1)}
-        warnings(nearby,data.preferences.gapHours,data.jobs).filter {it.contains(selectedText)}.forEach {warning->
-            val concise=if(warning.startsWith("Only ")) warning.substringAfter("Only ").substringBefore(" between")+" between shifts" else "Overlapping shifts"
-            Surface(shape=RoundedCornerShape(8.dp),color=Color(0xFFFFF0D2)) {Row(Modifier.fillMaxWidth().padding(horizontal=13.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically) {Icon(Icons.Outlined.Schedule,null,Modifier.size(21.dp),tint=Color(0xFF9B4A00));Spacer(Modifier.width(10.dp));UiText(concise,fontSize=12.sp,color=Color(0xFF9B4A00))}}
+        alerts.filter {selectedText in it.dates}.forEach {warning->
+            Surface(shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.errorContainer.copy(alpha=.25f)) {
+                Box(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=8.dp)) {ScheduleWarningDetails(warning,data.jobs)}
+            }
         }
     }
 }
-@Composable private fun EarningsScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit) {
+@Composable internal fun EarningsScreen(data: AppData,monthText:String,onMonthChange:(String)->Unit,openAnalytics:()->Unit,saveAdjustments:(List<MonthlyAdjustment>)->Unit) {
     val month=YearMonth.parse(monthText)
     var picker by remember {mutableStateOf(false)};var period by rememberSaveable(monthText) {mutableStateOf("Month")}
     var paymentDetails by remember {mutableStateOf<Job?>(null)}
+    var adjustmentJob by remember {mutableStateOf<Job?>(null)}
     val today=LocalDate.now();val weekStart=today.minusDays((today.dayOfWeek.value-(if(data.preferences.mondayFirst) 1 else 7)+7L)%7)
     val rows=if(period=="Month") shiftsForMonth(data.shifts,month) else data.shifts.filter {s->
         val date=s.begins.toLocalDate()
@@ -425,29 +573,51 @@ private fun shiftLabel(shift: Shift): String {
             "Pay period"->data.jobs.find {it.id==s.jobId}?.let {j->val (from,to)=payPeriod(j,nextPayday(j,today));date>=from && date<=to} ?: false
             else->YearMonth.from(s.begins)==month}
     }
+    val analysis=when(period) {
+        "Week" -> analytics(data,weekStart,weekStart.plusDays(6))
+        "Pay period" -> WorkReport(month.atDay(1),month.atEndOfMonth(),data.jobs.flatMap {j->val (a,b)=payPeriod(j,nextPayday(j,today));analytics(data.copy(jobs=listOf(j)),a,b).currencies.flatMap {it.jobs}}.groupBy {it.currency}.map {(c,j)->CurrencyAnalysis(c,j)})
+        else -> monthlyAnalytics(data,month)
+    }
     val payments=data.jobs.filter {j->data.shifts.any {it.jobId==j.id} && nextPayday(j,today)>=today}.sortedBy {nextPayday(it,today)}
     Column(verticalArrangement=Arrangement.spacedBy(5.dp)) {
         ScreenHeading("Estimated earnings", Icons.Outlined.AccountBalanceWallet, "Hours, pay and next payments")
         Surface(onClick={picker=true},shape=RoundedCornerShape(7.dp),color=MaterialTheme.colorScheme.surface,border=BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant)) {
             Row(Modifier.fillMaxWidth().heightIn(min=36.dp).padding(horizontal=13.dp,vertical=7.dp),verticalAlignment=Alignment.CenterVertically) {
-                UiText(if(period=="Week") "${weekStart.format(DateTimeFormatter.ofPattern("MMM d",uiLocale()))} – ${weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("MMM d",uiLocale()))}" else if(period=="Pay period") translate("Current pay period",LocalLanguage.current) else month.format(DateTimeFormatter.ofPattern("MMMM yyyy",uiLocale())),Modifier.weight(1f),fontSize=14.sp,fontWeight=FontWeight.Medium)
+                UiText(if(period=="Week") "${weekStart.format(DateTimeFormatter.ofPattern("MMM d",uiLocale()))} – ${weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("MMM d",uiLocale()))}" else if(period=="Pay period") translate("Payday and covered dates",LocalLanguage.current) else month.format(DateTimeFormatter.ofPattern("MMMM yyyy",uiLocale())),Modifier.weight(1f),fontSize=14.sp,fontWeight=FontWeight.Medium)
                 Icon(Icons.Outlined.KeyboardArrowDown,"Select month",Modifier.size(20.dp))
+            }
+        }
+        if(period=="Pay period" && data.jobs.isNotEmpty()) Panel {
+            val dateFormat=DateTimeFormatter.ofPattern("d MMM yyyy",uiLocale())
+            data.jobs.forEach {job->
+                val (from,to)=payPeriod(job,nextPayday(job,today))
+                Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
+                    Text(job.name,fontSize=12.sp,fontWeight=FontWeight.Medium)
+                    Text("${from.format(dateFormat)} – ${to.format(dateFormat)}",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         Surface(shape=Round,color=Color(0xFF004A56)) {
             Row(Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(Color(0xFF005460),Color(0xFF00434F)))).padding(12.dp),verticalAlignment=Alignment.Top) {
                 Box(Modifier.padding(top=2.dp).size(40.dp).background(Color.White.copy(alpha=.12f),CircleShape),contentAlignment=Alignment.Center){Icon(Icons.Filled.AccountBalanceWallet,null,Modifier.size(26.dp),tint=Color.White)}
                 Spacer(Modifier.width(12.dp));Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
-                    if(rows.isEmpty()) UiText("No shifts added",fontSize=21.sp,fontWeight=FontWeight.Bold,color=Color.White)
-                    totals(rows).forEach {(c,a)->UiText(displayMoney(a,c),fontSize=33.sp,lineHeight=39.sp,fontWeight=FontWeight.Bold,color=Color.White)}
+                    if(analysis.currencies.isEmpty()) UiText("No shifts added",fontSize=21.sp,fontWeight=FontWeight.Bold,color=Color.White)
+                    analysis.currencies.forEach {c->UiText(displayMoney(c.adjusted,c.currency),fontSize=33.sp,lineHeight=39.sp,fontWeight=FontWeight.Bold,color=Color.White)}
                     UiText("${hours(rows.sumOf {it.paidMinutes})} scheduled ${if(period=="Week") "this week" else if(period=="Pay period") "in period" else "this month"}",fontSize=13.sp,color=Color.White)
                     UiText("Based on your pay rules",fontSize=11.sp,color=Color(0xFFB5D7DB))
                 }
             }
         }
+        WorkAnalyticsCard(openAnalytics,LocalPremium.current)
         data.jobs.forEach {job->
             val jobRows=rows.filter {it.jobId==job.id}
-            if(jobRows.isNotEmpty()) EarningsBreakdown(job,jobRows)
+            val jobAnalysis=analysis.currencies.flatMap {it.jobs}.filter {it.jobId==job.id}
+            if(jobRows.isNotEmpty() || jobAnalysis.isNotEmpty()) EarningsBreakdown(job,jobRows,jobAnalysis)
+            if(period=="Month" && (!job.archived || jobAnalysis.isNotEmpty())) HintAnchor("Monthly adjustments") {show,_ ->
+                TextButton(onClick={show();adjustmentJob=job},contentPadding=PaddingValues(horizontal=8.dp,vertical=2.dp)) {
+                    Icon(Icons.Outlined.Tune,null,Modifier.size(15.dp));Spacer(Modifier.width(5.dp));UiText("Monthly adjustments",fontSize=11.sp);Text(" · "+job.name,Modifier.weight(1f),fontSize=11.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
+                }
+            }
         }
         Row(verticalAlignment=Alignment.Top) {Icon(Icons.Filled.Info,null,Modifier.size(15.dp),tint=Color(0xFF71859D));Spacer(Modifier.width(8.dp));UiText("Hourly prices applied. Unpaid breaks are deducted.",fontSize=10.sp,lineHeight=14.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         if(payments.isNotEmpty()) {
@@ -469,6 +639,9 @@ private fun shiftLabel(shift: Shift): String {
             }}
         }
     }
+    adjustmentJob?.let {j->MonthlyAdjustmentsDialog(j,month,data.adjustments,{adjustmentJob=null}) {items->
+        saveAdjustments(data.adjustments.filterNot {it.jobId==j.id && it.month==month.toString()}+items);adjustmentJob=null
+    }}
     if(picker) ReportMonthDialog(month,{onMonthChange(it.toString());period="Month";picker=false},{picker=false})
     paymentDetails?.let {job->PaymentDetailsDialog(job,today){paymentDetails=null}}
 }
@@ -520,25 +693,25 @@ private fun shiftLabel(shift: Shift): String {
             }
         }},confirmButton={Button(onClick=onClose,contentPadding=PaddingValues(horizontal=14.dp,vertical=7.dp)) {Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("OK",fontSize=12.sp)}})
 }
-@Composable private fun EarningsBreakdown(job: Job,rows: List<Shift>) {
+@Composable private fun EarningsBreakdown(job: Job,rows: List<Shift>,analysis:List<JobAnalysis>) {
     var expanded by rememberSaveable(job.id) {mutableStateOf(true)}
     Panel {
         Row(Modifier.fillMaxWidth().clickable {expanded=!expanded},verticalAlignment=Alignment.CenterVertically) {
             JobIcon(job,42.dp);Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(2.dp)) {
                 androidx.compose.material3.Text(job.name,lineHeight=15.sp,fontSize=12.sp,fontWeight=FontWeight.Medium)
-                UiText("${hours(rows.sumOf {it.paidMinutes})} · ${totals(rows).map {(c,a)->displayMoney(a,c)}.joinToString(" / ")}",fontSize=15.sp,fontWeight=FontWeight.Medium)
+                UiText("${hours(rows.sumOf {it.paidMinutes})} · ${analysis.map {displayMoney(it.adjusted,it.currency)}.joinToString(" / ")}",fontSize=15.sp,fontWeight=FontWeight.Medium)
             };Icon(if(expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,"${if(expanded) "Collapse" else "Expand"} ${job.name}",Modifier.size(18.dp))
         }
         if(expanded) Surface(shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.48f)) {
             Column(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=6.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-                rows.filter {it.fixedPay || !it.rules.useHourlyRates}.groupBy {Triple(it.currency,it.rate,it.fixedPay)}.forEach {(rule,group)->
+                rows.filter {!it.monthlyPay && (it.fixedPay || !it.rules.useHourlyRates)}.groupBy {Triple(it.currency,it.rate,it.fixedPay)}.forEach {(rule,group)->
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                         UiText(if(rule.third) "Fixed shifts" else "Regular base",Modifier.weight(1f),fontSize=10.sp)
                         UiText("${if(rule.third) group.count {it.kind=="Work"}.toString() else hours(group.sumOf {it.paidMinutes})} × ${displayMoney(java.math.BigDecimal(rule.second),rule.first)}",Modifier.weight(1f),fontSize=10.sp)
                         UiText(displayMoney(group.fold(java.math.BigDecimal.ZERO){a,s->a+s.baseEarnings()},rule.first),fontSize=11.sp)
                     }
                 }
-                rows.flatMap {it.hourlyLines()}.groupBy {Triple(it.label,it.currency,it.rate)}.forEach {(key,lines)->
+                rows.flatMap {it.hourlyLines()}.filter {it.amount.signum()!=0}.groupBy {Triple(it.label,it.currency,it.rate)}.forEach {(key,lines)->
                     Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                             UiText(key.first,Modifier.weight(1f),fontSize=11.sp)
@@ -550,8 +723,16 @@ private fun shiftLabel(shift: Shift): String {
                 rows.flatMap {s->s.additions().map {(label,amount)->Triple(label,s.currency,amount)}}.groupBy {it.first to it.second}.forEach {(key,values)->
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {UiText(key.first,fontSize=11.sp);UiText(displayMoney(values.fold(java.math.BigDecimal.ZERO){a,v->a+v.third},key.second),fontSize=11.sp)}
                 }
+                analysis.forEach {a->
+                    if(a.salaryBase.signum()!=0) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){UiText("Monthly salary",fontSize=11.sp);UiText(displayMoney(a.salaryBase,a.currency),fontSize=11.sp)}
+                    if(a.adjustments.isNotEmpty()) {
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){UiText("Gross estimated earnings",fontSize=11.sp);UiText(displayMoney(a.gross,a.currency),fontSize=11.sp)}
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){UiText("Monthly bonuses",fontSize=11.sp);UiText("+ "+displayMoney(a.monthlyBonuses,a.currency),fontSize=11.sp,color=MaterialTheme.colorScheme.primary)}
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){UiText("Monthly deductions",fontSize=11.sp);UiText("− "+displayMoney(a.monthlyDeductions,a.currency),fontSize=11.sp,color=MaterialTheme.colorScheme.error)}
+                    }
+                }
                 HorizontalDivider(thickness=.5.dp,color=MaterialTheme.colorScheme.outlineVariant)
-                totals(rows).forEach {(c,a)->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {UiText("Total",fontSize=11.sp,fontWeight=FontWeight.Bold);UiText(displayMoney(a,c),fontSize=11.sp,fontWeight=FontWeight.Bold)}}
+                analysis.forEach {a->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {UiText("Total",fontSize=11.sp,fontWeight=FontWeight.Bold);UiText(displayMoney(a.adjusted,a.currency),fontSize=11.sp,fontWeight=FontWeight.Bold)}}
             }
         }
     }
@@ -562,20 +743,23 @@ private fun shiftLabel(shift: Shift): String {
     "Biweekly" -> "Biweekly · ${LocalDate.parse(job.paydayAnchor).dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL,uiLocale())}"
     else -> "Custom payday"
 }
-@Composable private fun JobsScreen(data: AppData,edit: (Job)->Unit,add: ()->Unit,info: (String)->Unit,patterns:()->Unit) {
+@Composable private fun JobsScreen(data: AppData,edit: (Job)->Unit,add: ()->Unit,info: (String)->Unit,patterns:()->Unit,premium:()->Unit) {
     Stack {
         Heading("Your jobs","Separate pay rules for every job.")
         Spacer(Modifier.height(2.dp))
         data.jobs.filterNot {it.archived}.forEach {job->StripedCard(Color(job.color),{edit(job)}) {
             JobIcon(job,42.dp);Spacer(Modifier.width(13.dp));Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
                 androidx.compose.material3.Text(job.name,lineHeight=19.sp,fontSize=15.sp,fontWeight=FontWeight.Bold)
-                UiText("${displayMoney(java.math.BigDecimal(job.rate),job.currency)} / ${if(job.fixedPay) "shift" else "hour"}",fontSize=16.sp,fontWeight=FontWeight.Medium)
+                UiText("${displayMoney(java.math.BigDecimal(if(job.monthlyPay) job.salaryPeriods.lastOrNull()?.amount ?: "0" else job.rate),job.currency)} / ${if(job.monthlyPay) "month" else if(job.fixedPay) "shift" else "hour"}",fontSize=16.sp,fontWeight=FontWeight.Medium)
                 UiText(jobPayLabel(job),fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
             };Icon(Icons.Outlined.ChevronRight,null,Modifier.size(20.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
         }}
-        Box(Modifier.fillMaxWidth().height(44.dp).clip(Round).drawBehind {
-            drawRoundRect(color=Color(0xFF8EBFC3),cornerRadius=CornerRadius(9.dp.toPx()),style=Stroke(1.dp.toPx(),pathEffect=PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(),3.dp.toPx()))))
-        }.clickable(onClick=add),contentAlignment=Alignment.Center) {Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(7.dp)){Icon(Icons.Outlined.Add,null,Modifier.size(22.dp),tint=Color(0xFF00535B));UiText("Add job",fontSize=15.sp,fontWeight=FontWeight.Medium,color=Color(0xFF00535B))}}
+        Button(onClick=add,modifier=Modifier.fillMaxWidth().height(44.dp),shape=Round,
+            colors=ButtonDefaults.buttonColors(containerColor=Teal,contentColor=Color.White),
+            contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {
+            Icon(Icons.Outlined.Add,null,Modifier.size(22.dp));Spacer(Modifier.width(7.dp))
+            UiText("Add job",fontSize=15.sp,fontWeight=FontWeight.Medium,color=Color.White)
+        }
         if(data.jobs.any {it.archived}) {
             SectionLabel("Archived jobs")
             data.jobs.filter {it.archived}.forEach {j->TextButton(onClick={edit(j)}){androidx.compose.material3.Text(j.name)}}
@@ -591,7 +775,7 @@ private fun shiftLabel(shift: Shift): String {
                     UiText("Buy us a coffee ☕",fontSize=14.sp,fontWeight=FontWeight.Bold,color=Navy)
                     UiText("$1.99 / year",fontSize=15.sp,fontWeight=FontWeight.Medium,color=Navy)
                     UiText("No ads + automatic backup",fontSize=11.sp,color=Color(0xFF33425D))
-                    UiText("Explore Premium →",Modifier.clickable {info("Premium purchases and cloud backup will be connected after the local core is tested. No payment is taken in this preview.")}.padding(vertical=3.dp),fontSize=12.sp,fontWeight=FontWeight.Bold,color=Color(0xFF0087FF))
+                    UiText("Explore Premium →",Modifier.clickable {premium()}.padding(vertical=3.dp),fontSize=12.sp,fontWeight=FontWeight.Bold,color=Color(0xFF0087FF))
                 }
             }
         }
@@ -599,37 +783,52 @@ private fun shiftLabel(shift: Shift): String {
     }
 }
 
-@Composable private fun SettingsScreen(p: Preferences, change: (Preferences)->Unit) {
+@Composable private fun SettingsScreen(p: Preferences, change: (Preferences)->Unit,premium:()->Unit,isPremium:Boolean,resolved:Boolean=true,statusError:String?=null) {
     var currencyOpen by remember {mutableStateOf(false)}
     val context=LocalContext.current
-    Stack {
+    Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {
         Heading("Settings")
         FormSection("Display") {
-            FormPair(first={SelectionField("Language",if(p.language=="mk") "Македонски" else "English",listOf("Македонски","English")){change(p.copy(language=if(it=="Македонски") "mk" else "en"))}},
+            FormPair(first={SelectionField("Language",languageNames[p.language] ?: "English",languageNames.values.toList()){choice->change(p.copy(language=languageNames.entries.first {it.value==choice}.key))}},
                 second={SelectionField("Appearance",p.appearance,listOf("Light","Dark","System")){change(p.copy(appearance=it))}})
             FormPair(first={CompactChoice("Default currency",p.currency,icon={Icon(Icons.Outlined.KeyboardArrowDown,null,Modifier.size(18.dp))}){currencyOpen=true}},
                 second={Column {CompactToggle("24-hour time",p.time24){change(p.copy(time24=it))}}})
             CompactToggle("Start week on Monday",p.mondayFirst){change(p.copy(mondayFirst=it))}
             UiText("Used for new jobs. Each job keeps its own currency.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        FormSection("Field help") {CompactToggle("Show hints",p.showHints){change(p.copy(showHints=it))}}
         FormSection("Calendar warnings") {GapSetting(p,change)}
         FormSection("Reminders") {ReminderSetting(p,change)}
         FormSection("Premium & backup") {
-            UiText("Free · Local storage",fontSize=13.sp,fontWeight=FontWeight.Bold)
-            UiText("No login required. Cloud backup and purchases are not connected in this preview.",fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            FormPair(first={UiText("Access until: —",fontSize=10.sp)},second={UiText("Next billing: —",fontSize=10.sp)})
-            UiText("Last cloud backup: —",fontSize=10.sp)
+            OutlinedButton(onClick=premium,modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.PersonOutline,null,Modifier.size(18.dp));Spacer(Modifier.width(5.dp));UiText("Account & Premium",fontSize=12.sp)}
+            UiText(if(!resolved) (if(statusError!=null) "Account status unavailable" else "Checking account…") else if(isPremium) "Premium active" else "Free · Local storage",fontSize=11.sp)
         }
-        FormSection("Android widget") {UiText("Add a widget from your phone home screen.",fontSize=11.sp)}
+        FormSection("Ad privacy") {
+            OutlinedButton(onClick={com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(context as android.app.Activity){}},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){UiText("Privacy choices",fontSize=11.sp)}
+        }
+        MeasurementChoice(settings=true)
+        if(canActivatePtsWidget(context)) FormSection("Android widget") {
+            TextButton(onClick={
+                if(!activatePtsWidget(context)) android.widget.Toast.makeText(context,translate("Could not add widget. Try again.",p.language),android.widget.Toast.LENGTH_SHORT).show()
+            },contentPadding=PaddingValues(horizontal=0.dp,vertical=4.dp)) {UiText("Activate widget",fontSize=12.sp)}
+        }
         FormSection("PTS · Pay Time Shift") {
-            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                UiText("0.1.7 · Local core preview",Modifier.weight(1f),fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/")))}) {
-                    Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(14.dp));Spacer(Modifier.width(4.dp));UiText("Website",fontSize=11.sp)
+            UiText("${com.paytimeshift.pts.BuildConfig.VERSION_NAME} · PTS",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            FormPair(first={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://paytimeshift.com/")))},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
+                Icon(Icons.AutoMirrored.Outlined.OpenInNew,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Website",fontSize=11.sp)
+            }},second={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://paytimeshift.com/privacy-premium.html")))},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
+                Icon(Icons.Outlined.PrivacyTip,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Privacy policy",fontSize=11.sp)
+            }})
+            OutlinedButton(onClick={
+                val mail=Intent(Intent.ACTION_SENDTO,android.net.Uri.parse("mailto:bokimk.ap@gmail.com"))
+                try {context.startActivity(mail)} catch(_:android.content.ActivityNotFoundException) {
+                    (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                        .setPrimaryClip(android.content.ClipData.newPlainText("PTS support","bokimk.ap@gmail.com"))
+                    android.widget.Toast.makeText(context,translate("Support email copied.",p.language),android.widget.Toast.LENGTH_SHORT).show()
                 }
-            }
-            TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://bokimmkd.github.io/paytimeshift-android/privacy.html")))}) {
-                Icon(Icons.Outlined.PrivacyTip,null,Modifier.size(16.dp));Spacer(Modifier.width(6.dp));UiText("Privacy policy",fontSize=12.sp)
+            },modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
+                Icon(Icons.Outlined.Email,null,Modifier.size(16.dp));Spacer(Modifier.width(6.dp))
+                UiText("Support",fontSize=11.sp);Spacer(Modifier.width(6.dp));Text("bokimk.ap@gmail.com",fontSize=11.sp)
             }
         }
     }
@@ -649,26 +848,40 @@ private fun shiftLabel(shift: Shift): String {
         }}
     }},confirmButton={TextButton(onClick=close){UiText("Close")}})
 }
+// A resources-only configuration Context loses the Activity's window token.
+// Override locale on an Activity-backed themed wrapper so native pickers can attach.
+internal fun localizedPickerContext(base: android.content.Context, locale: Locale) =
+    android.view.ContextThemeWrapper(base, com.paytimeshift.pts.R.style.Theme_PTS).apply {
+        applyOverrideConfiguration(android.content.res.Configuration().apply { setLocale(locale) })
+    }
+
 @Composable fun DateControl(label: String, date: String, change: (String)->Unit) {
-    val context=LocalContext.current;val value=LocalDate.parse(date)
+    val base=LocalContext.current;val locale=uiLocale();val context=remember(base,locale) {localizedPickerContext(base,locale)};val value=LocalDate.parse(date)
     CompactChoice(label,value.format(DateTimeFormatter.ofPattern("d MMM yyyy",uiLocale())),
         icon={Icon(Icons.Outlined.CalendarMonth,null,Modifier.size(17.dp))}) {
         DatePickerDialog(context,{_,y,m,d->change(LocalDate.of(y,m+1,d).toString())},value.year,value.monthValue-1,value.dayOfMonth).show()
     }
 }
 @Composable fun TimeControl(label: String, time: String, modifier: Modifier=Modifier, change: (String)->Unit) {
-    val context=LocalContext.current;val value=LocalTime.parse(time)
+    val base=LocalContext.current;val locale=uiLocale();val context=remember(base,locale) {localizedPickerContext(base,locale)};val value=LocalTime.parse(time)
     CompactChoice(label,time,modifier,icon={Icon(Icons.Outlined.Schedule,null,Modifier.size(17.dp))}) {
         TimePickerDialog(context,{_,h,m->change(LocalTime.of(h,m).toString())},value.hour,value.minute,true).show()
     }
 }
-@Composable private fun JobDialog(original: Job?, defaultCurrency: String, onClose: ()->Unit, save: (Job,Boolean)->Unit) {
+@Composable internal fun JobDialog(original: Job?, jobs: List<Job>, defaultCurrency: String, onClose: ()->Unit, save: (Job,Boolean)->Unit) {
     val initialRules=original?.hourlyRules() ?: PayRules(useHourlyRates=true)
     var name by remember {mutableStateOf(original?.name ?: "")};var rate by remember {mutableStateOf(original?.rate ?: "")}
     var currency by remember {mutableStateOf(original?.currency ?: defaultCurrency)};var currencyOpen by remember {mutableStateOf(false)}
     var fixed by remember {mutableStateOf(original?.fixedPay ?: false)};var cycle by remember {mutableStateOf(original?.payCycle ?: "Monthly")}
+    val previousSalary=original?.salaryPeriods?.lastOrNull()
+    val initialSalaryFrom=if(previousSalary?.until?.isNotBlank()==true && previousSalary.until<YearMonth.now().atDay(1).toString()) previousSalary.from else maxOf(YearMonth.now().atDay(1).toString(),previousSalary?.from ?: "0001-01-01")
+    var monthly by remember {mutableStateOf(original?.monthlyPay ?: false)}
+    var salary by remember {mutableStateOf(previousSalary?.amount ?: "")}
+    var salaryFrom by remember {mutableStateOf(initialSalaryFrom)}
+    var salaryUntil by remember {mutableStateOf(previousSalary?.until?.ifBlank {LocalDate.now().toString()} ?: LocalDate.now().toString())}
+    var salaryEnds by remember {mutableStateOf(previousSalary?.until?.isNotBlank() ?: false)}
     var anchor by remember {mutableStateOf(original?.paydayAnchor ?: LocalDate.now().withDayOfMonth(15).toString())}
-    var color by remember {mutableStateOf(original?.color ?: 0xFF2488FF)}
+    var color by remember {mutableStateOf(original?.color ?: newJobColor(jobs))}
     var shiftStart by remember {mutableStateOf(original?.defaultStart ?: "07:00")};var shiftEnd by remember {mutableStateOf(original?.defaultEnd ?: "15:00")}
     var pause by remember {mutableStateOf((original?.defaultBreakMinutes ?: 0).toString())};var paid by remember {mutableStateOf(original?.paidBreak ?: false)}
     var reminder by remember {mutableStateOf((original?.reminderMinutes?.takeIf {it>=0} ?: 30).toString())}
@@ -680,17 +893,38 @@ private fun shiftLabel(shift: Shift): String {
     var night by remember {mutableStateOf(initialRules.nightPercent.toString().removeSuffix(".0"))}
     var nightStart by remember {mutableStateOf(initialRules.nightStart)};var nightEnd by remember {mutableStateOf(initialRules.nightEnd)}
     var archived by remember {mutableStateOf(original?.archived ?: false)};var applyUpcoming by remember {mutableStateOf(true)}
+    var extraShifts by remember {mutableStateOf((original ?: Job(name="")).shiftTemplates().drop(1))}
+    var costs by remember {mutableStateOf(original?.costs ?: emptyList<JobCost>())}
     var error by remember {mutableStateOf<String?>(null)}
     BrandedEditor(onDismissRequest=onClose,error=error,title={ScreenHeading(if(original==null) "Add job" else "Edit job", Icons.Outlined.WorkOutline, "Pay and shift rules", compact=true)},
         text={LazyColumn(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(8.dp)) {
         item {FormSection("Job & pay") {
             CompactField("Job name",name,{name=it})
-            FormPair(first={if(fixed) NumberField("Amount per shift",rate){rate=it} else RateField("Regular hourly rate",rate,currency){rate=it}},
+            SelectionField("Pay basis",if(monthly) "Fixed monthly salary" else if(fixed) "Per shift / daily" else "Hourly",listOf("Hourly","Per shift / daily","Fixed monthly salary")){monthly=it=="Fixed monthly salary";fixed=it=="Per shift / daily";if(monthly && rate.isBlank()) rate="0"}
+            FormPair(first={if(monthly) CompactField("Monthly salary",salary,{salary=it},keyboardType=androidx.compose.ui.text.input.KeyboardType.Decimal,suffix=currency) else if(fixed) NumberField("Amount per shift",rate){rate=it} else RateField("Regular hourly rate",rate,currency){rate=it}},
                 second={CompactChoice("Currency",currency,icon={Icon(Icons.Outlined.KeyboardArrowDown,null,Modifier.size(18.dp))}){currencyOpen=true}})
-            CompactToggle("Fixed amount per shift",fixed){fixed=it}
-            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){listOf(0xFF2488FF,0xFFFFA000,0xFFA040C5,0xFF00857C,0xFFDE5353).forEach {c->
-                Box(Modifier.size(32.dp).clip(CircleShape).background(Color(c)).clickable {color=c},contentAlignment=Alignment.Center){if(color==c) Icon(Icons.Outlined.Check,translate("Selected color",LocalLanguage.current),Modifier.size(19.dp),tint=Color.White)}
-            }}
+            if(monthly || original?.salaryPeriods?.isNotEmpty()==true) {
+                DateControl("Effective from",salaryFrom){salaryFrom=it}
+                if(monthly) {
+                    CompactToggle("Employment ends",salaryEnds){salaryEnds=it}
+                    if(salaryEnds) DateControl("To",salaryUntil){salaryUntil=it}
+                    UiText("Full months use the fixed salary. Partial periods use calendar days. Attendance does not reduce the base.",fontSize=10.sp,lineHeight=14.sp,color=MaterialTheme.colorScheme.primary)
+                    RateField("Reference hourly rate",rate,currency){rate=it}
+                }
+            }
+            jobColorChoices(jobs,original?.id).chunked(5).forEach {swatches->
+                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){swatches.forEach {c->
+                    val available=jobColorAvailable(jobs,c,original?.id)
+                    val colorLabel=translate(if(available) "Job color" else "Color already used by another job.",LocalLanguage.current)
+                    Box(Modifier.size(32.dp).clip(CircleShape).background(Color(c).copy(alpha=if(available) 1f else .25f))
+                        .clickable(enabled=available,role=androidx.compose.ui.semantics.Role.RadioButton){color=c}
+                        .semantics {contentDescription="$colorLabel #"+c.toString(16).takeLast(6);selected=color==c},
+                        contentAlignment=Alignment.Center) {
+                        if(!available) Icon(Icons.Outlined.Close,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
+                        else if(color==c) Icon(Icons.Outlined.Check,translate("Selected color",LocalLanguage.current),Modifier.size(19.dp),tint=Color.White)
+                    }
+                }}
+            }
         }}
         if(!fixed) item {FormSection("Hourly prices") {
             FormPair(first={NumberField("Overtime after (paid hours)",overtimeAfter){overtimeAfter=it}},
@@ -699,7 +933,7 @@ private fun shiftLabel(shift: Shift): String {
                 second={RateField("Sunday hourly rate",sunday,currency){sunday=it}})
             FormPair(first={RateField("Holiday hourly rate",holiday,currency){holiday=it}},
                 second={Column(verticalArrangement=Arrangement.spacedBy(3.dp)) {
-                    UiText("Blank = regular price",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    UiText(if(monthly) "Blank = no extra payment" else "Blank = regular price",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     UiText("Holiday: Calendar → date → ⋮",fontSize=10.sp,color=MaterialTheme.colorScheme.primary)
                 }})
             UiText("Holidays replace weekend prices. Overtime uses the higher price.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -709,6 +943,7 @@ private fun shiftLabel(shift: Shift): String {
                 second={DateControl(if(cycle=="Monthly") "Day of month" else "Next / anchor payday",anchor){anchor=it}})
         }}
         item {FormSection("Default shift & break") {
+            UiText("First shift",fontSize=12.sp,fontWeight=FontWeight.Bold)
             FormPair(first={TimeControl("Starts",shiftStart){shiftStart=it}},second={TimeControl("Ends",shiftEnd){shiftEnd=it}})
             FormPair(first={NumberField("Break (minutes)",pause){pause=it}},second={CompactToggle("Paid break",paid){paid=it}})
             FormPair(first={Column {
@@ -719,33 +954,51 @@ private fun shiftLabel(shift: Shift): String {
                 if(ownReminder) NumberField("Reminder (minutes)",reminder){reminder=it}
             }})
         }}
+        items(2) {index->FormSection(if(index==0) "Second shift" else "Third shift") {
+            val t=extraShifts[index]
+            fun update(next: ShiftTemplate) {extraShifts=extraShifts.toMutableList().apply {set(index,next)}}
+            CompactToggle("Enabled",t.active){update(t.copy(active=it))}
+            if(t.active) {
+                FormPair(first={TimeControl("Starts",t.start){update(t.copy(start=it))}},second={TimeControl("Ends",t.end){update(t.copy(end=it))}})
+                FormPair(first={NumberField("Break (minutes)",t.breakMinutes.toString()){v->v.toIntOrNull()?.let {update(t.copy(breakMinutes=it))}}},second={CompactToggle("Paid break",t.paidBreak){update(t.copy(paidBreak=it))}})
+            }
+        }}
         if(!fixed) item {FormSection("Night work") {
             NumberField("Night addition (%)",night){night=it}
             FormPair(first={TimeControl("Night starts",nightStart){nightStart=it}},second={TimeControl("Night ends",nightEnd){nightEnd=it}})
             UiText("Night additions use the regular hourly price.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }}
+        item {JobCostsEditor(costs,currency){costs=it}}
         if(original!=null) item {FormSection("Existing shifts") {
             CompactToggle("Apply prices to today's and future shifts",applyUpcoming){applyUpcoming=it}
             UiText("Past shifts keep their saved prices. Shift times and breaks stay as entered.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            CompactToggle(if(archived) "Restore job" else "Archive job",archived){archived=it}
+            CompactToggle(if(archived) "Restore job" else "Archive job",archived){archived=it;if(!it) salaryEnds=false}
         }}
     }},confirmButton={Button(contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp),onClick={
+        val salaryAmount=salary.replace(',','.').toBigDecimalOrNull()
         val amount=rate.replace(',','.').toBigDecimalOrNull()
         val prices=listOf(overtime,saturday,sunday,holiday).map {it.trim().replace(',','.')}
         val hoursValue=overtimeAfter.replace(',','.').toDoubleOrNull();val nightValue=night.replace(',','.').toDoubleOrNull()
         val b=pause.toIntOrNull();val r=if(ownReminder) reminder.toIntOrNull() else -1;val gap=if(!ownRest) -1.0 else rest.replace(',','.').toDoubleOrNull()
         val duration=java.time.Duration.between(LocalTime.parse(shiftStart),LocalTime.parse(shiftEnd)).toMinutes().let {if(it<=0) it+1440 else it}
         when {
+            !jobColorAvailable(jobs,color,original?.id) -> error="Color already used by another job."
+            monthly && (salaryAmount==null || salaryAmount.signum()<0 || salary.length>32 || salaryEnds && salaryUntil<salaryFrom) -> error="Enter a valid monthly salary and date range."
             name.isBlank() || amount==null || amount.signum()<0 -> error="Enter a job name and a valid rate (0 or more)."
             prices.any {it.isNotBlank() && (it.toBigDecimalOrNull()?.signum() ?: -1)<0} || hoursValue==null || !hoursValue.isFinite() || hoursValue !in 0.0..168.0 || nightValue==null || !nightValue.isFinite() || nightValue !in 0.0..10000.0 || b==null || b<0 || b>=duration || r==null || r !in -1..10080 || (ownReminder && r<0) || gap==null || !gap.isFinite() || (gap!=-1.0 && gap !in 0.0..168.0) || (ownRest && gap<0) || shiftStart==shiftEnd -> error="Numbers must be valid and non-negative."
+            extraShifts.any {runCatching {it.validate()}.isFailure} -> error="Break must be shorter than the shift."
+            costs.any {it.amount.replace(',','.').toBigDecimalOrNull()?.signum()?.let {n->n<0} != false} -> error="Enter valid cost amounts (0 or more)."
             else -> save(Job(original?.id ?: java.util.UUID.randomUUID().toString(),name.trim(),color,currency,amount.toPlainString(),fixed,cycle,anchor,
                 PayRules(overtimeAfterHours=hoursValue,nightPercent=nightValue,nightStart=nightStart,nightEnd=nightEnd,useHourlyRates=true,
-                    overtimeRate=prices[0],saturdayRate=prices[1],sundayRate=prices[2],holidayRate=prices[3]),archived,shiftStart,shiftEnd,b,paid,r,gap),original!=null && applyUpcoming)
+                    overtimeRate=prices[0],saturdayRate=prices[1],sundayRate=prices[2],holidayRate=prices[3]),archived,shiftStart,shiftEnd,b,paid,r,gap,costs.map {it.copy(amount=it.amount.replace(',','.'))},extraShifts,monthly,
+                    if(monthly!=(original?.monthlyPay ?: false) || monthly && (salaryAmount!!.compareTo(previousSalary?.amount?.toBigDecimal() ?: java.math.BigDecimal.valueOf(-1))!=0 || currency!=previousSalary?.currency || (if(salaryEnds) salaryUntil else "")!=(previousSalary?.until ?: "") || salaryFrom!=initialSalaryFrom) || archived!=(original?.archived ?: false) && monthly)
+                        if(archived) salaryPeriodsEnding(original?.salaryPeriods ?: emptyList(),LocalDate.now()) else salaryPeriodsAfterEdit(original?.salaryPeriods ?: emptyList(),salaryFrom,if(monthly) salaryAmount!!.toPlainString() else null,currency,if(salaryEnds) salaryUntil else "")
+                    else original?.salaryPeriods ?: emptyList()),original!=null && applyUpcoming)
         }
     }){Icon(Icons.Outlined.Save,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save job",fontSize=12.sp)}},dismissButton={TextButton(onClick=onClose,contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)){Icon(Icons.Outlined.Close,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Cancel",fontSize=12.sp)}})
     if(currencyOpen) CurrencyDialog(currency,{currencyOpen=false}){currency=it;currencyOpen=false}
 }
-@Composable private fun ShiftDialog(original: Shift?,data: AppData,initialDate:String,onClose: ()->Unit,onDelete: (String)->Unit,save: (Shift)->Unit) {
+@Composable internal fun ShiftDialog(original: Shift?,data: AppData,initialDate:String,onClose: ()->Unit,onDelete: (String)->Unit,save: (ManualShiftChange)->Unit) {
     var jobId by remember {mutableStateOf(original?.jobId ?: data.jobs.first { !it.archived }.id)}
     var date by remember {mutableStateOf(original?.date ?: initialDate)}
     val initialJob=data.jobs.first {it.id==jobId}
@@ -757,49 +1010,83 @@ private fun shiftLabel(shift: Shift): String {
     var bonus by remember {mutableStateOf(original?.bonus ?: "0")}
     var kind by remember {mutableStateOf(original?.kind ?: "Work")}
     var currentPrices by remember {mutableStateOf(original==null)}
+    var pendingShift by remember {mutableStateOf<Shift?>(null)}
     val keepPrices=original?.jobId==jobId && !currentPrices
     BrandedEditor(onDismissRequest=onClose,error=error,heightFraction=.82f,title={ScreenHeading(if(original==null) "Add shift" else "Edit shift", Icons.Outlined.Schedule, "Times, breaks and earnings", compact=true)},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
         JobPicker(data.jobs.filterNot {it.archived && it.id!=original?.jobId},jobId){id->
             val selectedJob=data.jobs.first {it.id==id}
             jobId=id;start=selectedJob.defaultStart;end=selectedJob.defaultEnd;breakText=selectedJob.defaultBreakMinutes.toString();paid=selectedJob.paidBreak;currentPrices=true
         }
-        FormPair(first={DateControl("Date",date){date=it}},second={SelectionField("Day type",kind,listOf("Work","Off","Vacation","Sick")){kind=it}})
-        if(kind!="Work") UiText("Days off, vacation and sick leave have no estimated pay.",fontSize=10.sp)
+        if(kind=="Work") FlowRow(horizontalArrangement=Arrangement.spacedBy(5.dp)) {job.shiftTemplates().forEachIndexed {i,t->if(t.active) FilterChip(selected=start==t.start && end==t.end,onClick={start=t.start;end=t.end;breakText=t.breakMinutes.toString();paid=t.paidBreak},label={UiText(listOf("First shift","Second shift","Third shift")[i],fontSize=11.sp)})}}
+        FormPair(first={DateControl("Date",date){date=it}},second={SelectionField("Day type",kind,dayKinds){kind=it}})
+        if(kind!="Work") UiText(if(job.monthlyPay) "Monthly salary stays unchanged. Enter any deduction in Earnings." else "Non-working statuses have no estimated shift pay.",fontSize=10.sp)
         if(date in data.holidays) UiText("Holiday",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
+        if(kind=="Work") {
         FormPair(first={TimeControl("Starts",start){start=it}},second={TimeControl("Ends",end){end=it}})
         if(LocalTime.parse(end)<LocalTime.parse(start)) UiText("Ends the following day",fontSize=10.sp)
         FormPair(first={CompactField("Break (minutes)",breakText,{breakText=it},keyboardType=androidx.compose.ui.text.input.KeyboardType.Number)},
             second={NumberField("Bonus amount",bonus){bonus=it}})
         FormPair(first={CompactToggle("Paid break",paid){paid=it}},second={if(original!=null) CompactToggle("Current job prices",currentPrices){currentPrices=it}})
+        }
         val preview=runCatching {
             val minutes=breakText.toInt();require(minutes>=0)
             Shift(jobId=jobId,date=date,start=start,end=end,breakMinutes=minutes,rate=if(keepPrices) original!!.rate else job.rate,currency=if(keepPrices) original!!.currency else job.currency,
-                fixedPay=if(keepPrices) original!!.fixedPay else job.fixedPay,rules=if(keepPrices) original!!.rules else job.hourlyRules(),bonus=bonus.replace(',','.').toBigDecimal().toPlainString(),kind=kind,paidBreak=paid)
+                fixedPay=if(keepPrices) original!!.fixedPay else job.fixedPay,rules=if(keepPrices) original!!.rules else job.hourlyRules(),bonus=bonus.replace(',','.').toBigDecimal().toPlainString(),kind=kind,paidBreak=paid,monthlyPay=if(keepPrices) original!!.monthlyPay else job.monthlyPay || job.monthlySalaryOn(LocalDate.parse(date))!=null)
         }.getOrNull()
         preview?.let {s->Surface(shape=Round,color=MaterialTheme.colorScheme.primary.copy(alpha=.10f)){
             Row(Modifier.fillMaxWidth().padding(9.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Outlined.AccountBalanceWallet,null,Modifier.size(22.dp),tint=MaterialTheme.colorScheme.primary)
-                Column(Modifier.weight(1f)){UiText("Estimated daily earnings",fontSize=10.sp);UiText(displayMoney(s.earnings(),s.currency),fontSize=18.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
+                Column(Modifier.weight(1f)){UiText(if(s.monthlyPay) "Estimated shift extras" else "Estimated daily earnings",fontSize=10.sp);UiText(displayMoney(s.earnings(),s.currency),fontSize=18.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)}
                 UiText("${hours(s.paidMinutes)} paid",fontSize=10.sp)
             }
         }}
+        if(preview?.monthlyPay==true) UiText("Monthly salary is shown in Earnings.",fontSize=10.sp,color=MaterialTheme.colorScheme.primary)
         CompactField("Note (optional)",note,{note=it},singleLine=false)
         if(original!=null) TextButton(onClick={deleting=true},contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)) {
             Icon(Icons.Outlined.DeleteOutline,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.error);Spacer(Modifier.width(5.dp))
             UiText("Delete shift",fontSize=11.sp,color=MaterialTheme.colorScheme.error)
         }
     }},confirmButton={Button(contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp),onClick={
-        val pause=breakText.toIntOrNull()
+        val pause=if(kind=="Work") breakText.toIntOrNull() else 0
         val candidate=Shift(original?.id ?: java.util.UUID.randomUUID().toString(),jobId,date,start,end,pause ?: 0,note,
             if(keepPrices) original!!.rate else job.rate,if(keepPrices) original!!.currency else job.currency,if(keepPrices) original!!.fixedPay else job.fixedPay,
-            if(keepPrices) original!!.rules else job.hourlyRules(),bonus.replace(',','.').toBigDecimalOrNull()?.toPlainString() ?: "0",kind,paid)
+            if(keepPrices) original!!.rules else job.hourlyRules(),bonus.replace(',','.').toBigDecimalOrNull()?.toPlainString() ?: "0",kind,paid,if(keepPrices) original!!.monthlyPay else job.monthlyPay || job.monthlySalaryOn(LocalDate.parse(date))!=null).let {if(kind=="Work") it else it.copy(breakMinutes=0,bonus="0",paidBreak=false)}
         when {
-            bonus.replace(',','.').toBigDecimalOrNull()?.let {it.signum()<0} != false -> error="Numbers must be valid and non-negative."
-            start==end -> error="Start and end must differ."
+            kind=="Work" && bonus.replace(',','.').toBigDecimalOrNull()?.let {it.signum()<0} != false -> error="Numbers must be valid and non-negative."
+            kind=="Work" && start==end -> error="Start and end must differ."
             pause==null || pause<0 || pause>=java.time.Duration.between(candidate.begins,candidate.finishes).toMinutes() -> error="Break must be shorter than the shift."
-            data.shifts.any {it.id!=candidate.id && it.jobId==jobId && it.date==date && it.start==start && it.end==end} -> error="This shift already exists."
-            else -> save(candidate)
+            kind=="Work" && data.shifts.any {it.kind=="Work" && it.id!=candidate.id && it.jobId==jobId && it.date==date && it.start==start && it.end==end} -> error="This shift already exists."
+            dayStatusReplacements(candidate,data.shifts).isNotEmpty() || overlappingShifts(candidate,data.shifts).isNotEmpty() -> {error=null;pendingShift=candidate}
+            else -> save(ManualShiftChange(candidate))
         }
     }){Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText("Save shift",fontSize=12.sp)}},dismissButton={TextButton(onClick=onClose,contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)){Icon(Icons.Outlined.Close,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Cancel",fontSize=12.sp)}})
     if(deleting) AlertDialog(onDismissRequest={deleting=false},title={UiText("Delete this shift?")},text={UiText("This removes the shift from your calendar and earnings.")},confirmButton={TextButton(onClick={onDelete(original!!.id)}){UiText("Delete")}},dismissButton={TextButton(onClick={deleting=false}){UiText("Cancel")}})
+    pendingShift?.let {candidate->
+        val replacements=dayStatusReplacements(candidate,data.shifts)
+        val overlaps=overlappingShifts(candidate,data.shifts.filterNot {it.id in replacements.map {s->s.id}})
+        AlertDialog(onDismissRequest={pendingShift=null},
+            containerColor=MaterialTheme.colorScheme.surface,
+            title={ScreenHeading(if(replacements.isNotEmpty()) "Replace this job’s day?" else "Overlapping shifts",Icons.Outlined.WarningAmber,"Review before saving",compact=true)},
+            text={Column(Modifier.heightIn(max=240.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(7.dp)) {
+                if(replacements.isNotEmpty()) UiText("These entries for the selected job and date will be replaced. Other jobs are unchanged.",fontSize=12.sp)
+                if(overlaps.isNotEmpty()) UiText("This shift overlaps with the following shifts:",fontSize=12.sp)
+                (replacements+overlaps).distinctBy {it.id}.forEach {conflict->
+                    Surface(shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.primary.copy(alpha=.07f)) {
+                        Row(Modifier.fillMaxWidth().padding(9.dp),horizontalArrangement=Arrangement.spacedBy(7.dp),verticalAlignment=Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Schedule,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.primary)
+                            Column(Modifier.weight(1f)) {
+                                Text(data.jobs.find {it.id==conflict.jobId}?.name ?: conflict.jobId,fontSize=12.sp,fontWeight=FontWeight.Bold)
+                                Text(conflict.begins.format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm",uiLocale()))+" – "+conflict.finishes.format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm",uiLocale())),fontSize=11.sp)
+                            }
+                        }
+                    }
+                }
+            }},
+            confirmButton={Button(onClick={pendingShift=null;save(ManualShiftChange(candidate,replacements.map {it.id}.toSet()))},contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {
+                Icon(Icons.Outlined.Check,null,Modifier.size(16.dp));Spacer(Modifier.width(5.dp));UiText(if(replacements.isNotEmpty()) "Replace entries" else "Save anyway",fontSize=12.sp)
+            }},
+            dismissButton={TextButton(onClick={pendingShift=null},contentPadding=PaddingValues(horizontal=8.dp,vertical=4.dp)) {
+                Icon(Icons.Outlined.Edit,null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText("Edit shift",fontSize=12.sp)
+            }})
+    }
 }

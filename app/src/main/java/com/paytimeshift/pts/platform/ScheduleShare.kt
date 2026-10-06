@@ -11,7 +11,7 @@ import java.io.File
 import java.time.YearMonth
 
 fun shareSchedule(context:Context,data:AppData,month:YearMonth,pdf:Boolean) {
-    val locale=if(data.preferences.language=="mk") java.util.Locale.forLanguageTag("mk") else java.util.Locale.ENGLISH
+    val locale=com.paytimeshift.pts.ui.localeForLanguage(data.preferences.language)
     val rows=data.shifts.filter {YearMonth.from(it.begins)==month}.sortedBy {it.begins}
     val lines=rows.map {s->"${s.date}  ${if(s.kind=="Work") "${s.start}–${s.end}" else translate(s.kind,data.preferences.language)}  ${data.jobs.find {it.id==s.jobId}?.name ?: ""}"}
     val title="PTS · ${month.format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy",locale))}"
@@ -38,4 +38,14 @@ fun shareSchedule(context:Context,data:AppData,month:YearMonth,pdf:Boolean) {
     }
     val uri=FileProvider.getUriForFile(context,"${context.packageName}.files",file)
     context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {type=if(pdf) "application/pdf" else "image/png";putExtra(Intent.EXTRA_STREAM,uri);addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);clipData=android.content.ClipData.newRawUri("PTS",uri)},translate("Share schedule",data.preferences.language)))
+}
+
+fun shareColleagueSchedule(context: Context,job: Job,data: AppData,from: java.time.LocalDate,until: java.time.LocalDate) {
+    val file=File(File(context.cacheDir,"shared").apply {mkdirs()},"PTS-$from-$until.pts-schedule")
+    file.writeText(encodeColleagueSchedule(job,data.shifts,from,until))
+    val uri=FileProvider.getUriForFile(context,"${context.packageName}.files",file)
+    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+        type="application/json";putExtra(Intent.EXTRA_STREAM,uri);addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        clipData=android.content.ClipData.newRawUri("PTS",uri)
+    },translate("Export schedule for colleague",data.preferences.language)))
 }
