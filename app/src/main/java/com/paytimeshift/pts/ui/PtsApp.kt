@@ -6,6 +6,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -204,6 +205,18 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         }
     }
     val dark = data.preferences.appearance == "Dark" || (data.preferences.appearance == "System" && isSystemInDarkTheme())
+    SideEffect {
+        // System bars must follow PTS's selected appearance, not the phone theme.
+        (context as androidx.activity.ComponentActivity).enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT
+            ) { dark },
+            navigationBarStyle = androidx.activity.SystemBarStyle.auto(
+                android.graphics.Color.argb(230, 255, 255, 255),
+                android.graphics.Color.argb(128, 27, 27, 27)
+            ) { dark }
+        )
+    }
     androidx.compose.runtime.CompositionLocalProvider(LocalLanguage provides data.preferences.language, LocalPremium provides account.premium, LocalAdsResolved provides accountResolved) {
     HintProvider(data.preferences,{commit(data.copy(preferences=it))}) {
     MaterialTheme(colorScheme = if (dark) darkColorScheme(primary=Color(0xFF69D6C6), secondary=Color(0xFF69D6C6),primaryContainer=Color(0xFF104A49),onPrimaryContainer=Color(0xFFB8F4E8),secondaryContainer=Color(0xFF164440),onSecondaryContainer=Color(0xFFB8F4E8))

@@ -50,6 +50,52 @@ class LauncherUiTest {
             InstrumentationRegistry.getInstrumentation().runOnMainSync {activity.intent=launchIntent}
         }
     }
+    @Test fun systemBarIconsFollowAppAppearanceAndSurviveRestart() {
+        val store=com.paytimeshift.pts.data.LocalStore(ui.activity)
+        val original=store.load()
+        fun assertIcons(dark: Boolean) {
+            ui.waitForIdle()
+            ui.runOnIdle {
+                val window=ui.activity.window
+                val bars=androidx.core.view.WindowCompat.getInsetsController(window,window.decorView)
+                assertEquals("Status bar clock/icons must contrast with PTS",!dark,bars.isAppearanceLightStatusBars)
+                assertEquals("Navigation icons must contrast with PTS",!dark,bars.isAppearanceLightNavigationBars)
+            }
+        }
+        fun screenshot(name: String) {
+            val instrumentation=InstrumentationRegistry.getInstrumentation()
+            val bitmap=instrumentation.uiAutomation.takeScreenshot()
+            try {
+                val file=File(instrumentation.targetContext.getExternalFilesDir("screenshots"),name)
+                file.parentFile!!.mkdirs()
+                file.outputStream().use {bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
+            } finally {bitmap.recycle()}
+        }
+        try {
+            store.save(original.copy(preferences=original.preferences.copy(language="en",appearance="Light",showHints=false)))
+            ui.activityRule.scenario.recreate()
+            ui.waitUntil(10000) {ui.onAllNodes(hasContentDescription("Settings") and isEnabled()).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+            ui.onNodeWithContentDescription("Settings").performClick()
+            ui.onNodeWithText("Display").assertIsDisplayed()
+            assertIcons(false)
+            screenshot("status-bars-light.png")
+            ui.onNode(hasText("Appearance") and hasClickAction()).performClick()
+            ui.onNodeWithText("Dark").performClick()
+            ui.waitUntil(10000) {store.load().preferences.appearance=="Dark"}
+            assertIcons(true)
+            screenshot("status-bars-dark.png")
+            ui.onNode(hasText("Appearance") and hasClickAction()).performClick()
+            ui.onNodeWithText("Light").performClick()
+            ui.waitUntil(10000) {store.load().preferences.appearance=="Light"}
+            assertIcons(false)
+            ui.activityRule.scenario.recreate()
+            ui.waitUntil(10000) {ui.onAllNodes(hasContentDescription("Settings") and isEnabled()).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+            assertIcons(false)
+        } finally {
+            store.save(original)
+            ui.activityRule.scenario.recreate()
+        }
+    }
     @Test fun profileButtonOpensTheAccountFromTheHeader() {
         ui.waitUntil(10000) {ui.onAllNodes(hasContentDescription("Account & Premium") and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
         ui.onNodeWithContentDescription("Account & Premium").performClick()
