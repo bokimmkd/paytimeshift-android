@@ -176,8 +176,9 @@ private data class IntroPage(val title:String,val description:String,val image:I
         }
     }) { inset ->
         BoxWithConstraints(Modifier.fillMaxSize().padding(inset)) {
+            val heroHeight=(maxHeight*.55f).coerceIn(160.dp,330.dp)
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=24.dp,vertical=12.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)) {
-                Image(painterResource(current.image),null,contentScale=ContentScale.Fit,modifier=Modifier.fillMaxWidth().height((maxHeight*.55f).coerceIn(160.dp,330.dp)))
+                Image(painterResource(current.image),null,contentScale=ContentScale.Fit,modifier=Modifier.fillMaxWidth().height(heroHeight))
                 UiText(current.title,fontSize=27.sp,fontWeight=FontWeight.Bold,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
                 UiText(current.description,fontSize=15.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
                 if(page==pages.lastIndex) Surface(shape=CircleShape,color=MaterialTheme.colorScheme.primaryContainer) {
