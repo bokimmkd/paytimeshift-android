@@ -49,6 +49,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.paytimeshift.pts.data.LocalStore
+import com.paytimeshift.pts.data.OnboardingStore
 import com.paytimeshift.pts.domain.*
 import com.paytimeshift.pts.platform.*
 import com.paytimeshift.pts.premium.*
@@ -75,6 +76,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
 @Composable fun PtsApp(shortcutAction: ShortcutAction? = null, updates: PlayUpdates? = null, widgetTarget: WidgetTarget? = null, onShortcutHandled: () -> Unit = {}) {
     val context = LocalContext.current
     val store = remember { LocalStore(context) }
+    val onboarding = remember { OnboardingStore(context) }
     val scope = rememberCoroutineScope()
     var data by remember { mutableStateOf(AppData()) }
     var loaded by remember { mutableStateOf(false) }
@@ -141,6 +143,10 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     var reportMonthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     var settings by rememberSaveable { mutableStateOf(false) }
+    var helpOpen by rememberSaveable { mutableStateOf(false) }
+    var introOpen by rememberSaveable { mutableStateOf(false) }
+    var introReplay by rememberSaveable { mutableStateOf(false) }
+    var introChecked by rememberSaveable { mutableStateOf(false) }
     var jobEditor by remember { mutableStateOf<Job?>(null) }
     var addJob by remember { mutableStateOf(false) }
     var shiftEditor by remember { mutableStateOf<Shift?>(null) }
@@ -160,6 +166,10 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     LaunchedEffect(Unit) {
         try { data = withContext(Dispatchers.IO) { store.load() } }
         catch (e: Exception) { writable = false; message = "Could not read saved data. Your file has been kept. Close the app and contact support before making changes." }
+        if(writable && !introChecked) {
+            introChecked=true
+            introOpen=shortcutAction==null && onboarding.shouldShow()
+        }
         loaded = true
         if(writable) withContext(Dispatchers.IO){syncReminders(context,data,data);refreshWidgets(context)}
     }
@@ -168,7 +178,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     }
     LaunchedEffect(loaded, shortcutAction, widgetTarget) {
         if (!loaded || shortcutAction == null) return@LaunchedEffect
-        settings=false;accountOpen=false;analyticsOpen=false
+        settings=false;helpOpen=false;introOpen=false;accountOpen=false;analyticsOpen=false
         addJob=false;jobEditor=null;addShift=false;shiftEditor=null
         patterns=false;importer=false;shareMonth=null;sampleConfirm=false;deleteShiftsDate=null
         when (shortcutAction) {
@@ -224,8 +234,14 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     androidx.compose.runtime.CompositionLocalProvider(LocalLanguage provides data.preferences.language, LocalPremium provides account.premium, LocalAdsResolved provides accountResolved) {
     HintProvider(data.preferences,{commit(data.copy(preferences=it))}) {
     MaterialTheme(colorScheme = colors) {
-        BackHandler(settings || tab != Tab.Today) { if (settings) settings=false else tab=Tab.Today }
-        Scaffold(
+        BackHandler(!helpOpen && !introOpen && (settings || tab != Tab.Today)) { if (settings) settings=false else tab=Tab.Today }
+        if(introOpen) IntroductionScreen(introReplay) { start ->
+            if(!introReplay) onboarding.complete()
+            introOpen=false
+            if(!introReplay && start) {settings=false;tab=Tab.Jobs;if(data.jobs.none {!it.archived}) addJob=true}
+        }
+        else if(helpOpen) HelpGuideScreen({helpOpen=false},{introReplay=true;introOpen=true})
+        else Scaffold(
             topBar = { Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start=16.dp,end=8.dp,top=3.dp,bottom=5.dp), verticalAlignment=Alignment.CenterVertically) {
                 BrandLogo()
                 Spacer(Modifier.width(10.dp))
@@ -251,7 +267,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             else LazyColumn(Modifier.fillMaxSize().padding(inset),contentPadding=PaddingValues(16.dp,8.dp,16.dp,if(tab in listOf(Tab.Today,Tab.Calendar) && !settings) 76.dp else 14.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                 if(updates?.transfer?.stage in listOf(UpdateStage.Waiting,UpdateStage.Downloading,UpdateStage.Installing)) item {UpdateProgress(updates!!.transfer)}
                 if(!settings) item {MeasurementChoice()}
-                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError);FormSection("Local backup"){BackupControls(data,{commit(data.withRestoredBackup(it))},{message=it})}} }
+                if(settings) item { Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {SettingsScreen(data.preferences,{ commit(data.copy(preferences=it)) },{accountOpen=true},account.premium,accountResolved,accountError,{helpOpen=true});FormSection("Local backup"){BackupControls(data,{commit(data.withRestoredBackup(it))},{message=it})}} }
                 else when(tab) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
                     Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it},{deleteShiftsDate=it},widgetCalendarDate) }
@@ -292,7 +308,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             TextButton(onClick={scope.launch {try {shareSchedule(context,data,YearMonth.parse(month),false)} catch(_:Exception){message="File could not be saved."}};shareMonth=null}){UiText("Image")}
         }},confirmButton={TextButton(onClick={shareMonth=null}){UiText("Cancel")}})}
         if(sampleConfirm) AlertDialog(onDismissRequest={sampleConfirm=false},title={UiText("Load example schedule?")},text={UiText("Add Factory, Taxi and Restaurant with example shifts. You can edit them or start with your own jobs instead.")},confirmButton={TextButton(onClick={if(data.jobs.isEmpty()) commit(sampleData().copy(preferences=data.preferences)) else message="Examples are available only before adding jobs.";sampleConfirm=false}){UiText("Load examples")}},dismissButton={TextButton(onClick={sampleConfirm=false}){UiText("Cancel")}})
-        if(loaded && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen && deleteShiftsDate==null) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store",failed=updates.installFailed)
+        if(loaded && !introOpen && !helpOpen && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen && deleteShiftsDate==null) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store",failed=updates.installFailed)
         if (saving) androidx.compose.ui.window.Dialog(onDismissRequest={}) { Surface(shape=Round) { Row(Modifier.padding(24.dp),verticalAlignment=Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(24.dp)); Spacer(Modifier.width(12.dp)); UiText("Saving…") } } }
         message?.let { text -> AlertDialog(onDismissRequest={message=null},title={UiText("PTS")},text={UiText(text)},confirmButton={TextButton(onClick={message=null}){UiText("OK")}}) }
     }
@@ -322,7 +338,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         Column(Modifier.padding(9.dp),verticalArrangement=Arrangement.spacedBy(6.dp),content=content)
     }
 }
-@Composable private fun BrandLogo() {
+@Composable internal fun BrandLogo() {
     val ink=MaterialTheme.colorScheme.onSurface
     Canvas(Modifier.size(32.dp)) {
         val stroke=3.dp.toPx(); val center=Offset(size.width/2,size.height/2)
@@ -783,7 +799,7 @@ private fun shiftLabel(shift: Shift): String {
     }
 }
 
-@Composable private fun SettingsScreen(p: Preferences, change: (Preferences)->Unit,premium:()->Unit,isPremium:Boolean,resolved:Boolean=true,statusError:String?=null) {
+@Composable private fun SettingsScreen(p: Preferences, change: (Preferences)->Unit,premium:()->Unit,isPremium:Boolean,resolved:Boolean=true,statusError:String?=null,help:()->Unit={}) {
     var currencyOpen by remember {mutableStateOf(false)}
     val context=LocalContext.current
     Column(verticalArrangement=Arrangement.spacedBy(7.dp)) {
@@ -811,6 +827,17 @@ private fun shiftLabel(shift: Shift): String {
             TextButton(onClick={
                 if(!activatePtsWidget(context)) android.widget.Toast.makeText(context,translate("Could not add widget. Try again.",p.language),android.widget.Toast.LENGTH_SHORT).show()
             },contentPadding=PaddingValues(horizontal=0.dp,vertical=4.dp)) {UiText("Activate widget",fontSize=12.sp)}
+        }
+        Surface(onClick=help,shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.primaryContainer,modifier=Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) {
+                Icon(Icons.Outlined.HelpOutline,null,tint=MaterialTheme.colorScheme.onPrimaryContainer)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    UiText("Help & Guide",fontSize=14.sp,fontWeight=FontWeight.SemiBold,color=MaterialTheme.colorScheme.onPrimaryContainer)
+                    UiText("Quick answers and the introduction",fontSize=11.sp,color=MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+                Icon(Icons.Outlined.ChevronRight,null,tint=MaterialTheme.colorScheme.onPrimaryContainer)
+            }
         }
         FormSection("PTS · Pay Time Shift") {
             UiText("${com.paytimeshift.pts.BuildConfig.VERSION_NAME} · PTS",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)

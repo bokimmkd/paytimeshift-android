@@ -16,6 +16,11 @@ import java.io.File
 class LauncherUiTest {
     @get:Rule val ui=createAndroidComposeRule<MainActivity>()
 
+    @org.junit.Before fun dismissFirstRunIntroduction() {
+        ui.waitUntil(10000) {ui.onAllNodesWithText("Skip").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty() || ui.onAllNodesWithContentDescription("Settings").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+        if(ui.onAllNodesWithText("Skip").fetchSemanticsNodes().isNotEmpty()) ui.onNodeWithText("Skip").performClick()
+    }
+
     private fun open(action: ShortcutAction, expected: String) {
         ui.activityRule.scenario.onActivity { it.startActivity(action.intent(it)) }
         // Shortcut navigation briefly replaces the Compose root. Wait for the new

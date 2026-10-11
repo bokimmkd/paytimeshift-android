@@ -22,6 +22,11 @@ import java.util.Locale
 
 class WidgetUiTest {
     @get:Rule val ui=createAndroidComposeRule<MainActivity>()
+    @org.junit.Before fun dismissFirstRunIntroduction() {
+        ui.waitUntil(10000) {ui.onAllNodesWithText("Skip").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty() || ui.onAllNodesWithContentDescription("Settings").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+        if(ui.onAllNodesWithText("Skip").fetchSemanticsNodes().isNotEmpty()) ui.onNodeWithText("Skip").performClick()
+    }
+
     private val today=LocalDate.of(2026,10,5)
     private fun data(language: String = "en", appearance: String = "Light"): AppData {
         val jobs=listOf(Job(id="a",name="Job 1"),Job(id="b",name="Wolt",color=0xFFFFA000))
