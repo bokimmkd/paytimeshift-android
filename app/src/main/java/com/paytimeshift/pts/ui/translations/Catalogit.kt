@@ -526,7 +526,7 @@ internal val catalogit = mapOf(
     "Set the cycle and date range, review the preview, then save." to "Imposta ciclo e periodo, controlla l'anteprima e salva.",
     "Open Earnings and choose a month to see estimated earnings by job." to "Apri Guadagni e scegli un mese per vedere i guadagni stimati per lavoro.",
     "Add bonuses or deductions to adjust the monthly total." to "Aggiungi bonus o detrazioni per modificare il totale mensile.",
-    "With Premium, open Real earnings for costs and detailed work analytics." to "Con Premium, apri Guadagni reali per costi e analisi dettagliate del lavoro.",
+    "With Premium, open Real earnings for costs and detailed work analytics." to "Con Premium, apri Guadagni effettivi per costi e analisi dettagliate del lavoro.",
     "Open Settings → Android widget → Activate widget." to "Apri Impostazioni → Widget Android → Attiva widget.",
     "You can also hold an empty area on your home screen, open Widgets and choose PTS." to "Puoi anche tenere premuta un'area vuota della schermata iniziale, aprire Widget e scegliere PTS.",
     "Tap a shift in the widget to open it in PTS. Resize the widget for a wider view." to "Tocca un turno nel widget per aprirlo in PTS. Ridimensiona il widget per una vista più ampia.",

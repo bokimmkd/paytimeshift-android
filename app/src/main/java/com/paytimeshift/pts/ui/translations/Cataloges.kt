@@ -527,7 +527,7 @@ internal val cataloges = mapOf(
     "Open Earnings and choose a month to see estimated earnings by job." to "Abre Ingresos y elige un mes para ver los ingresos estimados por trabajo.",
     "Add bonuses or deductions to adjust the monthly total." to "Añade bonificaciones o deducciones para ajustar el total mensual.",
     "With Premium, open Real earnings for costs and detailed work analytics." to "Con Premium, abre Ingresos reales para ver gastos y análisis detallados del trabajo.",
-    "Open Settings → Android widget → Activate widget." to "Abre Ajustes → Widget de Android → Activar widget.",
+    "Open Settings → Android widget → Activate widget." to "Abre Ajustes → Widget Android → Activar widget.",
     "You can also hold an empty area on your home screen, open Widgets and choose PTS." to "También puedes mantener pulsada una zona vacía de la pantalla de inicio, abrir Widgets y elegir PTS.",
     "Tap a shift in the widget to open it in PTS. Resize the widget for a wider view." to "Toca un turno en el widget para abrirlo en PTS. Amplía el widget para ver más.",
     "Open Account & Premium to view Premium or restore a purchase." to "Abre Cuenta y Premium para ver Premium o restaurar una compra.",
