@@ -17,16 +17,7 @@ import java.io.File
 
 class GuideUiTest {
     @get:Rule val ui=createComposeRule()
-    private fun screenshot(name:String) {
-        ui.waitForIdle()
-        val instrumentation=InstrumentationRegistry.getInstrumentation()
-        val bitmap=instrumentation.uiAutomation.takeScreenshot()
-        try {
-            val file=File(instrumentation.targetContext.getExternalFilesDir("screenshots"),name)
-            file.parentFile!!.mkdirs()
-            file.outputStream().use {bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
-        } finally {bitmap.recycle()}
-    }
+    private fun screenshot(name:String)=captureGuideScreenshot(ui,name)
     @Test fun firstIntroductionNavigatesBackAndFinishesWithoutPurchase() {
         var result:Boolean?=null
         val state=StateRestorationTester(ui)
@@ -90,4 +81,18 @@ class GuideUiTest {
         val required=listOf("Help & Guide","Watch introduction again","Jobs & pay rules","Shifts & rotations","Earnings & costs","Home screen widget","Add your jobs","Track your shifts and earnings","See your shifts at a glance","The full picture with PTS Premium","Premium is optional. Start with the free features.")
         languageNames.keys.filter {it!="en"}.forEach {language -> required.forEach {key ->assertNotEquals("$language: $key",key,translate(key,language))}}
     }
+}
+
+/** Wait for the platform draw, as Compose idleness can precede a screenshot frame. */
+internal fun captureGuideScreenshot(ui:androidx.compose.ui.test.junit4.ComposeContentTestRule,name:String) {
+    ui.waitForIdle()
+    val instrumentation=InstrumentationRegistry.getInstrumentation()
+    instrumentation.waitForIdleSync()
+    android.os.SystemClock.sleep(300)
+    val bitmap=instrumentation.uiAutomation.takeScreenshot()
+    try {
+        val file=File(instrumentation.targetContext.getExternalFilesDir("screenshots"),name)
+        file.parentFile!!.mkdirs()
+        file.outputStream().use {bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
+    } finally {bitmap.recycle()}
 }
