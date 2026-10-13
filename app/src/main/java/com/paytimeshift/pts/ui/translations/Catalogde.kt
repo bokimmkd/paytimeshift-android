@@ -551,5 +551,6 @@ internal val catalogde = mapOf(
     "Collapsed" to "Eingeklappt",
     "Rate PTS" to "PTS bewerten",
     "See price in Google Play" to "Preis bei Google Play ansehen",
-    "Could not open Google Play." to "Google Play konnte nicht geöffnet werden."
+    "Could not open Google Play." to "Google Play konnte nicht geöffnet werden.",
+    "Verify your email to secure your account." to "Bestätige deine E-Mail, um dein Konto zu schützen."
 )

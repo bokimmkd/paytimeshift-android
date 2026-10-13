@@ -82,7 +82,7 @@ import kotlinx.coroutines.tasks.await
                     if(repo.auth.currentUser?.providerData?.none {it.providerId=="google.com"}==true)
                         GoogleAccountButton("Link Google account",!busy) {task {continueWithGoogle(context,repo.auth,link=true)}}
                     if(!status.verified) {
-                        UiText("Verify your email to receive automatic reports.",fontSize=11.sp)
+                        UiText("Verify your email to secure your account.",fontSize=11.sp)
                         TextButton(enabled=!busy,onClick={task {repo.auth.currentUser?.sendEmailVerification()?.await();error="Verification email sent."}}){UiText("Send verification email",fontSize=11.sp)}
                     }
                     FormPair(first={OutlinedButton(onClick=refresh,enabled=!busy && !checking,modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.Refresh,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Refresh account",fontSize=11.sp)}},second={
@@ -93,11 +93,6 @@ import kotlinx.coroutines.tasks.await
                     UiText("${translate("Last cloud backup",LocalLanguage.current)}: ${if(status.backupAt==0L) "—" else java.time.Instant.ofEpochMilli(status.backupAt).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime().toString()}",fontSize=10.sp)
                     FormPair(first={OutlinedButton(enabled=premiumReady && !busy,onClick={enableConfirm=true},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.CloudUpload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Back up now",fontSize=11.sp)}},
                         second={OutlinedButton(enabled=premiumReady && !busy,onClick={restoreConfirm=true},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)){Icon(Icons.Outlined.CloudDownload,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Restore backup",fontSize=11.sp)}})
-                }}
-                item {FormSection("Automatic email reports") {
-                    CompactToggle("Monthly Report Email",status.monthlyEmail,enabled=premiumReady && !busy){value->task {repo.reportPreferences(value,status.yearlyEmail,data.preferences.language)}}
-                    CompactToggle("Yearly Report Email",status.yearlyEmail,enabled=premiumReady && !busy){value->task {repo.reportPreferences(status.monthlyEmail,value,data.preferences.language)}}
-                    UiText("Sent at the start of the next month or year to your verified account email. Reports use your latest cloud backup.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }}
                 item {TextButton(onClick={deleteConfirm=true},enabled=!busy){Icon(Icons.Outlined.DeleteOutline,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.error);Spacer(Modifier.width(4.dp));UiText("Delete account",fontSize=12.sp,color=MaterialTheme.colorScheme.error)}}
             }
@@ -113,7 +108,7 @@ import kotlinx.coroutines.tasks.await
         if(restoreRequired) {localBackupNotice=null;restoreConfirm=true} else task {
             val uid=status.uid!!;check(repo.auth.currentUser?.uid==uid)
             if(!repo.bound(uid)) {check(status.revision==0){"Restore existing backup first."};repo.bind(uid,0)}
-            repo.reportPreferences(status.monthlyEmail,status.yearlyEmail,data.preferences.language);repo.backup(data);queueCloudBackup(context,uid)
+            repo.backup(data);queueCloudBackup(context,uid)
         }
     }){UiText(if(restoreRequired) "Restore backup" else "Back up now",fontSize=12.sp)}},dismissButton={TextButton(onClick={enableConfirm=false}){UiText("Cancel",fontSize=12.sp)}})
     if(deleteConfirm) AlertDialog(onDismissRequest={deleteConfirm=false},title={ScreenHeading("Delete account",Icons.Outlined.DeleteOutline,"Account & Premium",compact=true)},text={UiText("Permanently delete your account and cloud backups? Local jobs stay on this phone. Cancel your subscription separately in Google Play. You may need to sign in again.",fontSize=12.sp)},confirmButton={TextButton(onClick={deleteConfirm=false;task {stopCloudBackup(context,status.uid);repo.deleteAccount();clearGoogleSession(context)}}){UiText("Delete account",fontSize=12.sp,color=MaterialTheme.colorScheme.error)}},dismissButton={TextButton(onClick={deleteConfirm=false}){UiText("Cancel",fontSize=12.sp)}})

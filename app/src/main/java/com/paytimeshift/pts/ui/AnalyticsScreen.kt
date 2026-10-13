@@ -48,7 +48,7 @@ import java.time.YearMonth
     }
     val report=remember(data,selected,yearly) {if(yearly) yearlyAnalytics(data,selected.year) else monthlyAnalytics(data,selected)}
     val lines=remember(data,selected,yearly) {compactReportBlocks(reportLines(data,selected,yearly).filterNot {it.label in listOf("Annual Work & Earnings Report","Monthly Work & Earnings Report","Period","Estimated real earnings after work-related costs.","Taxes and government deductions are not calculated. Only entered adjustments are included.")})}
-    BrandedEditor(onDismissRequest=close,title={ScreenHeading("Work Analytics",Icons.Outlined.Insights,"Gross, costs and real earnings",compact=true)},error=error,
+    BrandedEditor(onDismissRequest=close,title={ScreenHeading("Work Analytics",Icons.Outlined.Insights,"Gross, costs and real earnings",compact=true)},error=error,heightFraction=.86f,wrapHeight=true,
         text={LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)) {
             item {Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 IconButton(onClick={selected=if(yearly) selected.minusYears(1) else selected.minusMonths(1)},enabled=selected.year>1){Icon(Icons.Outlined.ChevronLeft,"Previous period")}
@@ -112,13 +112,13 @@ import java.time.YearMonth
             item {UiText("Taxes and government deductions are not calculated. Only entered adjustments are included.",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             item {FormSection("Report export") {
                 FlowRow(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                    listOf("View","PDF","Share","Print","Email").forEach {action->
+                    listOf("View","PDF","Share","Print").forEach {action->
                         OutlinedButton(enabled=!loading,onClick={loading=true;scope.launch {
                             try {val file=withContext(Dispatchers.Default){createWorkReportPdf(context,data,selected,yearly)};if(action=="PDF") {savedPdf=file;savePdf.launch(file.name)} else openWorkReport(context,file,action,data.preferences.language)}
                             catch(_:Exception) {error="No app could open this report. Please install a PDF viewer or try Share."}
                             finally {loading=false}
                         }},contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
-                            Icon(when(action){"Print"->Icons.Outlined.Print;"Email"->Icons.Outlined.Email;"Share"->Icons.Outlined.Share;else->Icons.Outlined.PictureAsPdf},null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText(action,fontSize=11.sp)
+                            Icon(when(action){"Print"->Icons.Outlined.Print;"Share"->Icons.Outlined.Share;else->Icons.Outlined.PictureAsPdf},null,Modifier.size(15.dp));Spacer(Modifier.width(4.dp));UiText(action,fontSize=11.sp)
                         }
                     }
                 }

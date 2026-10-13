@@ -12,7 +12,7 @@ import kotlinx.coroutines.sync.withLock
 import java.security.MessageDigest
 
 data class AccountStatus(val uid: String?=null,val email: String="",val verified: Boolean=false,
-    val premium: Boolean=false,val expiresAt: Long=0,val monthlyEmail: Boolean=true,val yearlyEmail: Boolean=true,
+    val premium: Boolean=false,val expiresAt: Long=0,
     val backupAt: Long=0,val revision: Int=0,val testAccess: Boolean=false,val displayName: String="")
 fun cloudBackupLabel(status:AccountStatus,bound:Boolean,resolved:Boolean,error:Boolean):String = when {
     !resolved && error -> "Cloud backup status unavailable. Refresh account."
@@ -36,11 +36,9 @@ class PremiumRepository(val context: Context) {
         private val statusMutex=Mutex()
         @Volatile private var cached:AccountStatus?=null
         private var checkedAt=0L
-        @Volatile private var cachedPreferences:List<Any>?=null
-        private val preferenceMutex=Mutex()
         private val generation=java.util.concurrent.atomic.AtomicLong()
     }
-    fun invalidateStatus() {generation.incrementAndGet();cached=null;cachedPreferences=null}
+    fun invalidateStatus() {generation.incrementAndGet();cached=null}
     suspend fun status(force:Boolean=false): AccountStatus = statusMutex.withLock {
         val uid=auth.currentUser?.uid
         if(uid==null) {invalidateStatus();return@withLock AccountStatus()}
@@ -56,17 +54,9 @@ class PremiumRepository(val context: Context) {
         val p=call("getAccountStatus",mapOf("force" to force));val ent=p["premium"] as? Map<*,*> ?: emptyMap<String,Any>()
         val expires=(ent["expiresAt"] as? Number)?.toLong() ?: 0
         return AccountStatus(user.uid,user.email ?: "",user.isEmailVerified,ent["active"]==true && expires>System.currentTimeMillis(),expires,
-            p["monthlyEmail"]!=false,p["yearlyEmail"]!=false,(p["backupAt"] as? Number)?.toLong() ?: 0,(p["revision"] as? Number)?.toInt() ?: 0,ent["state"]=="PTS_TEST_ACCESS",user.displayName ?: "")
+            (p["backupAt"] as? Number)?.toLong() ?: 0,(p["revision"] as? Number)?.toInt() ?: 0,ent["state"]=="PTS_TEST_ACCESS",user.displayName ?: "")
     }
     suspend fun verifyPurchase(token: String) {call("verifySubscription",mapOf("purchaseToken" to token));invalidateStatus()}
-    suspend fun reportPreferences(monthly: Boolean,yearly: Boolean,language: String) = preferenceMutex.withLock {
-        val uid=auth.currentUser?.uid ?: return@withLock
-        val zone=java.time.ZoneId.systemDefault().id
-        val key=listOf(uid,monthly,yearly,language,zone)
-        if(cachedPreferences==key) return@withLock
-        call("saveReportPreferences",mapOf("monthlyEmail" to monthly,"yearlyEmail" to yearly,"language" to language,"timeZone" to zone))
-        if(auth.currentUser?.uid==uid) cachedPreferences=key
-    }
     fun bound(uid: String)=binding.getString("uid",null)==uid
     fun bind(uid: String,revision: Int,digest: String?=null) {binding.edit().putString("uid",uid).putInt("revision",revision).putString("digest",digest).commit()}
     fun unbind() {binding.edit().clear().commit();invalidateStatus()}

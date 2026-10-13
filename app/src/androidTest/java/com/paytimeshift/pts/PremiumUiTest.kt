@@ -285,4 +285,28 @@ class PremiumUiTest {
         screenshot("update-installing")
     }
 
+    @Test fun monthlyAndYearlyReportExportKeepsFourActionsAndCompactFooter() {
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {AnalyticsDialog(fixture,YearMonth.of(2026,10),{})}}}
+        repeat(2) {period->
+            if(period==1) ui.onNodeWithText("Yearly report").performScrollTo().performClick()
+            ui.onNodeWithText("Print").performScrollTo().assertIsDisplayed()
+            listOf("View","PDF","Share","Print").forEach {ui.onNodeWithText(it).assertIsDisplayed()}
+            ui.onNodeWithText("Email",useUnmergedTree=true).assertDoesNotExist()
+            val printBottom=ui.onNodeWithText("Print").fetchSemanticsNode().boundsInRoot.bottom
+            val closeTop=ui.onNodeWithText("Close").fetchSemanticsNode().boundsInRoot.top
+            val density=InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+            org.junit.Assert.assertTrue("No unused email row or large footer gap",closeTop-printBottom in 0f..(64f*density))
+            screenshot(if(period==0) "reports-monthly-no-email" else "reports-yearly-no-email")
+        }
+    }
+    @Test fun accountHasNoAutomaticEmailReportControls() {
+        val repo=PremiumRepository(InstrumentationRegistry.getInstrumentation().targetContext)
+        ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {
+            AccountDialog(repo,AccountStatus(uid="ui-fixture",email="owner@example.test",verified=true,premium=true,testAccess=true),"$2.99",{},{},{},fixture,{}, {})
+        }}}
+        ui.onNodeWithText("Delete account").performScrollTo().assertExists()
+        listOf("Automatic email reports","Monthly Report Email","Yearly Report Email").forEach {ui.onNodeWithText(it).assertDoesNotExist()}
+        screenshot("account-no-email-reports")
+    }
+
 }

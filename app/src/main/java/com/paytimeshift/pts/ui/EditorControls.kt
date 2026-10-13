@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -52,9 +53,12 @@ import androidx.compose.ui.window.DialogProperties
 /** The same compact editor shell is used for jobs, shifts, patterns and roster import. */
 @Composable fun BrandedEditor(onDismissRequest: () -> Unit, title: @Composable () -> Unit,
     text: @Composable () -> Unit, confirmButton: @Composable () -> Unit,
-    dismissButton: @Composable () -> Unit, error: String? = null, heightFraction: Float = .90f) {
+    dismissButton: @Composable () -> Unit, error: String? = null, heightFraction: Float = .90f,
+    wrapHeight: Boolean = false) {
     Dialog(onDismissRequest, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(Modifier.fillMaxWidth(.94f).fillMaxHeight(heightFraction).imePadding(),
+        val height=if(wrapHeight) Modifier.heightIn(max=LocalConfiguration.current.screenHeightDp.dp*heightFraction)
+            else Modifier.fillMaxHeight(heightFraction)
+        Surface(Modifier.fillMaxWidth(.94f).then(height).imePadding(),
             shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.background) {
             Column {
                 Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
@@ -65,7 +69,7 @@ import androidx.compose.ui.window.DialogProperties
                     }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Box(Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 8.dp)) { text() }
+                Box(Modifier.weight(1f,fill=!wrapHeight).padding(horizontal = 10.dp, vertical = if(wrapHeight) 6.dp else 8.dp)) { text() }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 error?.let { UiText(it, Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }

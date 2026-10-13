@@ -551,5 +551,6 @@ internal val catalogmk = mapOf(
     "Collapsed" to "Собрано",
     "Rate PTS" to "Оцени ја PTS",
     "See price in Google Play" to "Види ја цената во Google Play",
-    "Could not open Google Play." to "Google Play не може да се отвори."
+    "Could not open Google Play." to "Google Play не може да се отвори.",
+    "Verify your email to secure your account." to "Потврди ја е-поштата за да ја заштитиш сметката."
 )

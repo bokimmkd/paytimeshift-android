@@ -5,23 +5,20 @@ import {getStorage} from 'firebase-admin/storage';
 import {onCall,HttpsError} from 'firebase-functions/v2/https';
 import {onSchedule} from 'firebase-functions/v2/scheduler';
 import {onMessagePublished} from 'firebase-functions/v2/pubsub';
-import {defineSecret,defineString} from 'firebase-functions/params';
+import {defineString} from 'firebase-functions/params';
 import {setGlobalOptions} from 'firebase-functions/v2';
 import {google} from 'googleapis';
 import {createHash,randomUUID} from 'node:crypto';
 import {subscriptionEntitlement} from './entitlement.js';
 import {testerEntitlement} from './tester.js';
 import {validateBackup} from './analytics.js';
-import {reportPdf,translations} from './report.js';
-import {Resend} from 'resend';
-import {freshEntitlement,duePeriods,reportScheduleFields} from './cloud-policy.js';
+import {freshEntitlement} from './cloud-policy.js';
 
 initializeApp();setGlobalOptions({serviceAccount:'pts-premium-runtime@pts-pay-time-shift.iam.gserviceaccount.com',region:'europe-west1',concurrency:8,maxInstances:5,memory:'512MiB',timeoutSeconds:120});
 const db=getFirestore(),auth=getAuth();const bucket=()=>getStorage().bucket();
 const PACKAGE='com.paytimeshift.pts',PRODUCT='pts_premium',BASE_PLAN='annual';
-const resendKey=defineSecret('PTS_RESEND_API_KEY');
-const sender=defineString('PTS_REPORT_SENDER',{description:'Verified sender such as PTS <reports@your-verified-domain>'});
 const testerEmail=defineString('PTS_PREMIUM_TEST_EMAIL',{default:'',description:'Optional owner-approved verified email for Premium QA. Empty disables test access.'});
+const emailReportsDisabled={monthlyEmail:false,yearlyEmail:false,nextReportAt:null};
 const hash=v=>createHash('sha256').update(v).digest('hex');
 const profile=uid=>db.doc(`users/${uid}`);
 const play=()=>google.androidpublisher({version:'v3',auth:new google.auth.GoogleAuth({scopes:['https://www.googleapis.com/auth/androidpublisher']})});
@@ -38,7 +35,7 @@ async function verify(uid,token){
   await db.runTransaction(async tx=>{const owner=await tx.get(ref);if(owner.exists && owner.data().uid!==uid) throw new HttpsError('permission-denied','Purchase already linked.');
     const userRef=profile(uid),old=(await tx.get(userRef)).data() ?? {};const now=Date.now();
     if(!owner.exists) tx.set(ref,{uid,token,updatedAt:now});
-    tx.set(userRef,{premium:next,purchaseToken:token,verifiedAt:now,verifiedTokenHash:hash(token),...reportScheduleFields({...old,premium:next},now)},{merge:true});});
+    tx.set(userRef,{premium:next,purchaseToken:token,verifiedAt:now,verifiedTokenHash:hash(token),...emailReportsDisabled},{merge:true});});
   if(next.active && data.acknowledgementState==='ACKNOWLEDGEMENT_STATE_PENDING') await api.purchases.subscriptions.acknowledge({packageName:PACKAGE,subscriptionId:PRODUCT,token,requestBody:{}});
   return next;
 }
@@ -51,24 +48,18 @@ async function premium(uid){
 export const getAccountStatus=onCall(async request=>{
   const uid=identity(request);await limited(uid,'status');const user=await auth.getUser(uid);
   const p=await db.runTransaction(async tx=>{const ref=profile(uid),snap=await tx.get(ref);if(snap.exists) return snap.data();
-    const created={monthlyEmail:true,yearlyEmail:true,language:'en',timeZone:'UTC',createdAt:Date.now(),reportScheduleVersion:1,nextReportAt:null};tx.set(ref,created);return created;});
+    const created={...emailReportsDisabled,createdAt:Date.now()};tx.set(ref,created);return created;});
   let ent=testerEntitlement(user,testerEmail.value());
-  if(ent && (p.premium?.expiresAt!==ent.expiresAt || p.premium?.state!==ent.state)) await profile(uid).set({premium:ent,verifiedAt:Date.now(),...reportScheduleFields({...p,premium:ent})},{merge:true});
+  if(ent && (p.premium?.expiresAt!==ent.expiresAt || p.premium?.state!==ent.state)) await profile(uid).set({premium:ent,verifiedAt:Date.now(),...emailReportsDisabled},{merge:true});
   else {
     ent=p.purchaseToken ? (request.data?.force===true ? null : freshEntitlement(p,hash(p.purchaseToken))) ?? await verify(uid,p.purchaseToken) : {active:false,expiresAt:0};
-    if(p.premium?.state==='PTS_TEST_ACCESS') await profile(uid).set({premium:ent,...reportScheduleFields({...p,premium:ent})},{merge:true});
+    if(p.premium?.state==='PTS_TEST_ACCESS') await profile(uid).set({premium:ent,...emailReportsDisabled},{merge:true});
   }
-  return {premium:ent,email:user.email ?? '',emailVerified:user.emailVerified,monthlyEmail:p.monthlyEmail!==false,yearlyEmail:p.yearlyEmail!==false,backupAt:p.backupAt ?? 0,revision:p.revision ?? 0};
+  return {premium:ent,email:user.email ?? '',emailVerified:user.emailVerified,monthlyEmail:false,yearlyEmail:false,backupAt:p.backupAt ?? 0,revision:p.revision ?? 0};
 });
 export const verifySubscription=onCall(async request=>{const uid=identity(request);await limited(uid,'purchase');return verify(uid,request.data?.purchaseToken);});
-export const saveReportPreferences=onCall(async request=>{
-  const uid=identity(request);const {monthlyEmail,yearlyEmail,language,timeZone}=request.data ?? {};
-  if(typeof monthlyEmail!=='boolean' || typeof yearlyEmail!=='boolean' || !['en','mk','de','it','es','fr','sr','pt-BR','el'].includes(language)) throw new HttpsError('invalid-argument','Invalid report preferences.');
-  try {new Intl.DateTimeFormat('en',{timeZone}).format(new Date());} catch {throw new HttpsError('invalid-argument','Invalid timezone.');}
-  await db.runTransaction(async tx=>{const ref=profile(uid),p=(await tx.get(ref)).data() ?? {};
-    if(p.monthlyEmail===monthlyEmail && p.yearlyEmail===yearlyEmail && p.language===language && p.timeZone===timeZone && p.reportScheduleVersion===1) return;
-    const update={monthlyEmail,yearlyEmail,language,timeZone};tx.set(ref,{...update,...reportScheduleFields({...p,...update})},{merge:true});});return {saved:true};
-});
+// Compatibility for installed versions: email options stay disabled, with no profile reads/writes.
+export const saveReportPreferences=onCall(async request=>{identity(request);return {saved:true,monthlyEmail:false,yearlyEmail:false};});
 export const saveCloudBackup=onCall({timeoutSeconds:120},async request=>{
   const uid=identity(request);await limited(uid,'backup',10);await premium(uid);
   const {text,expectedRevision}=request.data ?? {};let data;
@@ -79,7 +70,7 @@ export const saveCloudBackup=onCall({timeoutSeconds:120},async request=>{
   try {await db.runTransaction(async tx=>{const ref=profile(uid),p=(await tx.get(ref)).data() ?? {};if((p.revision ?? 0)!==expectedRevision) throw new HttpsError('aborted','A newer cloud backup exists. Restore it before uploading.');
     // Empty installs must never silently overwrite populated cloud data.
     if(p.backupJobCount>0 && data.jobs.length===0) throw new HttpsError('failed-precondition','Empty data cannot replace this cloud backup.');
-    old=p.previousBackupObject;revision=expectedRevision+1;tx.set(ref,{backupObject:object,previousBackupObject:p.backupObject ?? null,backupAt:Date.now(),revision,backupJobCount:data.jobs.length,backupShiftCount:data.shifts.length,backupDigest:hash(text),...reportScheduleFields({...p,backupObject:object})},{merge:true});});}
+    old=p.previousBackupObject;revision=expectedRevision+1;tx.set(ref,{backupObject:object,previousBackupObject:p.backupObject ?? null,backupAt:Date.now(),revision,backupJobCount:data.jobs.length,backupShiftCount:data.shifts.length,backupDigest:hash(text),...emailReportsDisabled},{merge:true});});}
   catch(e){await bucket().file(object).delete({ignoreNotFound:true});throw e;}
   if(old) await bucket().file(old).delete({ignoreNotFound:true});return {revision,backupAt:Date.now()};
 });
@@ -98,51 +89,6 @@ export const playSubscriptionNotifications=onMessagePublished({topic:'pts-play-s
   const message=event.data.message.json; if(message.packageName!==PACKAGE || !message.subscriptionNotification?.purchaseToken) return;
   const token=message.subscriptionNotification.purchaseToken;const owner=await db.doc(`purchaseOwners/${hash(token)}`).get();if(owner.exists) await verify(owner.data().uid,token);
 });
-async function sendReport(uid,year,month,annual,key){
-  const user=await auth.getUser(uid);if(!user.emailVerified || !user.email) return;
-  const p=await premium(uid);if(!p.backupObject) return;
-  const [bytes]=await bucket().file(p.backupObject).download();const data=validateBackup(bytes.toString('utf8'));
-  const language=p.language ?? 'en';const labels=translations(language);const tr=s=>labels[s] ?? s;
-  const pdf=await reportPdf(data,year,month,annual,language);
-  const result=await new Resend(resendKey.value()).emails.send({from:sender.value(),to:user.email,
-    subject:`PTS · ${tr(annual?'Annual Work & Earnings Report':'Monthly Work & Earnings Report')} — ${annual?year:`${year}-${String(month).padStart(2,'0')}`}`,
-    text:[tr('Estimated real earnings after work-related costs.'),tr('Taxes, government deductions and payroll deductions are not included.'),`${tr('Account & Premium')} · ${tr('Monthly Report Email')} / ${tr('Yearly Report Email')}`].join('\n\n'),
-    attachments:[{filename:`PTS-${annual?year:`${year}-${month}`}-work-report.pdf`,content:pdf}]}, {idempotencyKey:key});
-  if(result.error) throw Error('Report email delivery failed');return true;
-}
-export const emailWorkReport=onCall({secrets:[resendKey]},async request=>{
-  const uid=identity(request);await limited(uid,'email',60);const {year,month,annual}=request.data ?? {};
-  if(!Number.isInteger(year) || year<1900 || year>9999 || !Number.isInteger(month) || month<1 || month>12 || typeof annual!=='boolean') throw new HttpsError('invalid-argument','Invalid report period.');
-  const sent=await sendReport(uid,year,month,annual,`pts-manual-${uid}-${randomUUID()}`);if(!sent) throw new HttpsError('failed-precondition','Verify your email and save a cloud backup first.');return {sent:true};
-});
-// Only due users are read. Existing profiles are seeded by tools/migrate-report-schedules.js.
-export const automaticReports=onSchedule({schedule:'0 * * * *',timeZone:'UTC',secrets:[resendKey],retryCount:2,timeoutSeconds:540},async()=>{
-  const now=Date.now();let cursor;
-  do {
-    let query=db.collection('users').where('nextReportAt','<=',now).orderBy('nextReportAt').orderBy('__name__').limit(100);
-    if(cursor) query=query.startAfter(cursor);
-    const profiles=await query.get();if(profiles.empty) break;
-    for(const snap of profiles.docs) {
-      const p=snap.data();let retry=false;
-      if(p.premium?.active===true && p.premium.expiresAt>now && p.backupObject) {
-        for(const period of duePeriods(p,now)) {
-          try {
-            if(await sendReport(snap.id,period.year,period.month,period.annual,`pts-auto-${snap.id}-${period.key}`)) await snap.ref.set({[period.field]:period.key},{merge:true});
-          } catch {retry=true;console.error('PTS automatic report deferred',hash(snap.id).slice(0,12),period.key);}
-        }
-      }
-      // Reread current preferences and entitlement so a concurrent change cannot be overwritten.
-      await db.runTransaction(async tx=>{
-        const current=await tx.get(snap.ref);if(!current.exists) return;
-        const fields=reportScheduleFields(current.data(),Date.now());
-        if(retry && fields.nextReportAt!==null && fields.nextReportAt<=Date.now()) fields.nextReportAt=Date.now()+3600000;
-        tx.set(snap.ref,fields,{merge:true});
-      });
-    }
-    cursor=profiles.docs.at(-1);if(profiles.size<100) break;
-  }while(cursor);
-});
-
 // Remove temporary abuse counters after their 24-hour retention window.
 export const purgeAbuseLimits=onSchedule({schedule:'15 * * * *',timeZone:'UTC'},async()=>{
   for(let page=0;page<20;page++) {

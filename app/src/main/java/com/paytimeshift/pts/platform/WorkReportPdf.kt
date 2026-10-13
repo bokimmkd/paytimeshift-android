@@ -83,7 +83,7 @@ fun openWorkReport(context: Context,file: File,action: String,language: String) 
     }
     val uri=FileProvider.getUriForFile(context,"${context.packageName}.files",file)
     val intent=if(action=="View") Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/pdf") else Intent(Intent.ACTION_SEND).apply {
-        type=if(action=="Email") "message/rfc822" else "application/pdf"
+        type="application/pdf"
         putExtra(Intent.EXTRA_STREAM,uri);putExtra(Intent.EXTRA_SUBJECT,"PTS · Pay Time Shift — ${file.nameWithoutExtension}")
     }
     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);intent.clipData=android.content.ClipData.newRawUri("PTS",uri)

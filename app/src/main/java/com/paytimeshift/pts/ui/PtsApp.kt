@@ -142,9 +142,6 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             account=account.copy(premium=false);accountResolved=false;refreshAccount(force=true)
         }
     }
-    LaunchedEffect(account.uid,accountResolved,loaded,data.preferences.language) {
-        if(account.uid!=null && accountResolved && loaded) try {premiumRepo.reportPreferences(account.monthlyEmail,account.yearlyEmail,data.preferences.language)} catch(_:Exception) { }
-    }
     LaunchedEffect(account.premium,account.uid,accountResolved) {if(account.premium && accountResolved && premiumRepo.bound(account.uid!!)) queueCloudBackup(context,account.uid)}
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     var reportMonthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }

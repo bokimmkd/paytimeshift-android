@@ -551,5 +551,6 @@ internal val catalogptBR = mapOf(
     "Collapsed" to "Recolhido",
     "Rate PTS" to "Avaliar PTS",
     "See price in Google Play" to "Veja o preço no Google Play",
-    "Could not open Google Play." to "Não foi possível abrir o Google Play."
+    "Could not open Google Play." to "Não foi possível abrir o Google Play.",
+    "Verify your email to secure your account." to "Verifique seu e-mail para proteger sua conta."
 )
