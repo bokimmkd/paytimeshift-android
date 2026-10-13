@@ -548,5 +548,8 @@ internal val catalogit = mapOf(
     "Get started" to "Inizia",
     "Done" to "Fatto",
     "Expanded" to "Espanso",
-    "Collapsed" to "Compresso"
+    "Collapsed" to "Compresso",
+    "Rate PTS" to "Valuta PTS",
+    "See price in Google Play" to "Vedi il prezzo su Google Play",
+    "Could not open Google Play." to "Impossibile aprire Google Play."
 )

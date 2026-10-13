@@ -14,6 +14,7 @@ import {testerEntitlement} from './tester.js';
 import {validateBackup} from './analytics.js';
 import {reportPdf,translations} from './report.js';
 import {Resend} from 'resend';
+import {freshEntitlement,duePeriods,reportScheduleFields} from './cloud-policy.js';
 
 initializeApp();setGlobalOptions({serviceAccount:'pts-premium-runtime@pts-pay-time-shift.iam.gserviceaccount.com',region:'europe-west1',concurrency:8,maxInstances:5,memory:'512MiB',timeoutSeconds:120});
 const db=getFirestore(),auth=getAuth();const bucket=()=>getStorage().bucket();
@@ -35,7 +36,9 @@ async function verify(uid,token){
   if(data.externalAccountIdentifiers?.obfuscatedExternalAccountId!==hash(uid)) throw new HttpsError('permission-denied','This purchase belongs to another account.');
   let next;try {next=subscriptionEntitlement(data);} catch {throw new HttpsError('invalid-argument','This is not the PTS annual subscription.');}const ref=db.doc(`purchaseOwners/${hash(token)}`);
   await db.runTransaction(async tx=>{const owner=await tx.get(ref);if(owner.exists && owner.data().uid!==uid) throw new HttpsError('permission-denied','Purchase already linked.');
-    tx.set(ref,{uid,token,updatedAt:Date.now()});tx.set(profile(uid),{premium:next,purchaseToken:token,verifiedAt:Date.now()},{merge:true});});
+    const userRef=profile(uid),old=(await tx.get(userRef)).data() ?? {};const now=Date.now();
+    if(!owner.exists) tx.set(ref,{uid,token,updatedAt:now});
+    tx.set(userRef,{premium:next,purchaseToken:token,verifiedAt:now,verifiedTokenHash:hash(token),...reportScheduleFields({...old,premium:next},now)},{merge:true});});
   if(next.active && data.acknowledgementState==='ACKNOWLEDGEMENT_STATE_PENDING') await api.purchases.subscriptions.acknowledge({packageName:PACKAGE,subscriptionId:PRODUCT,token,requestBody:{}});
   return next;
 }
@@ -43,16 +46,17 @@ async function premium(uid){
   const snap=await profile(uid).get();const p=snap.data() ?? {};
   if(testerEntitlement(await auth.getUser(uid),testerEmail.value())) return p;
   if(!p.purchaseToken) throw new HttpsError('permission-denied','Premium is required.');
-  const ent=await verify(uid,p.purchaseToken);if(!ent.active) throw new HttpsError('permission-denied','Premium is not active.');return p;
+  const ent=freshEntitlement(p,hash(p.purchaseToken)) ?? await verify(uid,p.purchaseToken);if(!ent.active) throw new HttpsError('permission-denied','Premium is not active.');return p;
 }
 export const getAccountStatus=onCall(async request=>{
   const uid=identity(request);await limited(uid,'status');const user=await auth.getUser(uid);
-  await db.runTransaction(async tx=>{const ref=profile(uid),snap=await tx.get(ref);if(!snap.exists) tx.set(ref,{monthlyEmail:true,yearlyEmail:true,language:'en',timeZone:'UTC',createdAt:Date.now()});});
-  let p=(await profile(uid).get()).data();let ent=testerEntitlement(user,testerEmail.value());
-  if(ent) await profile(uid).set({premium:ent,verifiedAt:Date.now()},{merge:true});
+  const p=await db.runTransaction(async tx=>{const ref=profile(uid),snap=await tx.get(ref);if(snap.exists) return snap.data();
+    const created={monthlyEmail:true,yearlyEmail:true,language:'en',timeZone:'UTC',createdAt:Date.now(),reportScheduleVersion:1,nextReportAt:null};tx.set(ref,created);return created;});
+  let ent=testerEntitlement(user,testerEmail.value());
+  if(ent && (p.premium?.expiresAt!==ent.expiresAt || p.premium?.state!==ent.state)) await profile(uid).set({premium:ent,verifiedAt:Date.now(),...reportScheduleFields({...p,premium:ent})},{merge:true});
   else {
-    ent=p.purchaseToken ? await verify(uid,p.purchaseToken) : {active:false,expiresAt:0};
-    if(p.premium?.state==='PTS_TEST_ACCESS') await profile(uid).set({premium:ent},{merge:true});
+    ent=p.purchaseToken ? (request.data?.force===true ? null : freshEntitlement(p,hash(p.purchaseToken))) ?? await verify(uid,p.purchaseToken) : {active:false,expiresAt:0};
+    if(p.premium?.state==='PTS_TEST_ACCESS') await profile(uid).set({premium:ent,...reportScheduleFields({...p,premium:ent})},{merge:true});
   }
   return {premium:ent,email:user.email ?? '',emailVerified:user.emailVerified,monthlyEmail:p.monthlyEmail!==false,yearlyEmail:p.yearlyEmail!==false,backupAt:p.backupAt ?? 0,revision:p.revision ?? 0};
 });
@@ -61,7 +65,9 @@ export const saveReportPreferences=onCall(async request=>{
   const uid=identity(request);const {monthlyEmail,yearlyEmail,language,timeZone}=request.data ?? {};
   if(typeof monthlyEmail!=='boolean' || typeof yearlyEmail!=='boolean' || !['en','mk','de','it','es','fr','sr','pt-BR','el'].includes(language)) throw new HttpsError('invalid-argument','Invalid report preferences.');
   try {new Intl.DateTimeFormat('en',{timeZone}).format(new Date());} catch {throw new HttpsError('invalid-argument','Invalid timezone.');}
-  await profile(uid).set({monthlyEmail,yearlyEmail,language,timeZone},{merge:true});return {saved:true};
+  await db.runTransaction(async tx=>{const ref=profile(uid),p=(await tx.get(ref)).data() ?? {};
+    if(p.monthlyEmail===monthlyEmail && p.yearlyEmail===yearlyEmail && p.language===language && p.timeZone===timeZone && p.reportScheduleVersion===1) return;
+    const update={monthlyEmail,yearlyEmail,language,timeZone};tx.set(ref,{...update,...reportScheduleFields({...p,...update})},{merge:true});});return {saved:true};
 });
 export const saveCloudBackup=onCall({timeoutSeconds:120},async request=>{
   const uid=identity(request);await limited(uid,'backup',10);await premium(uid);
@@ -73,7 +79,7 @@ export const saveCloudBackup=onCall({timeoutSeconds:120},async request=>{
   try {await db.runTransaction(async tx=>{const ref=profile(uid),p=(await tx.get(ref)).data() ?? {};if((p.revision ?? 0)!==expectedRevision) throw new HttpsError('aborted','A newer cloud backup exists. Restore it before uploading.');
     // Empty installs must never silently overwrite populated cloud data.
     if(p.backupJobCount>0 && data.jobs.length===0) throw new HttpsError('failed-precondition','Empty data cannot replace this cloud backup.');
-    old=p.previousBackupObject;revision=expectedRevision+1;tx.set(ref,{backupObject:object,previousBackupObject:p.backupObject ?? null,backupAt:Date.now(),revision,backupJobCount:data.jobs.length,backupShiftCount:data.shifts.length,backupDigest:hash(text)},{merge:true});});}
+    old=p.previousBackupObject;revision=expectedRevision+1;tx.set(ref,{backupObject:object,previousBackupObject:p.backupObject ?? null,backupAt:Date.now(),revision,backupJobCount:data.jobs.length,backupShiftCount:data.shifts.length,backupDigest:hash(text),...reportScheduleFields({...p,backupObject:object})},{merge:true});});}
   catch(e){await bucket().file(object).delete({ignoreNotFound:true});throw e;}
   if(old) await bucket().file(old).delete({ignoreNotFound:true});return {revision,backupAt:Date.now()};
 });
@@ -109,22 +115,29 @@ export const emailWorkReport=onCall({secrets:[resendKey]},async request=>{
   if(!Number.isInteger(year) || year<1900 || year>9999 || !Number.isInteger(month) || month<1 || month>12 || typeof annual!=='boolean') throw new HttpsError('invalid-argument','Invalid report period.');
   const sent=await sendReport(uid,year,month,annual,`pts-manual-${uid}-${randomUUID()}`);if(!sent) throw new HttpsError('failed-precondition','Verify your email and save a cloud backup first.');return {sent:true};
 });
-// Hourly timezone-aware scheduler retries failed sends on the first local calendar day.
+// Only due users are read. Existing profiles are seeded by tools/migrate-report-schedules.js.
 export const automaticReports=onSchedule({schedule:'0 * * * *',timeZone:'UTC',secrets:[resendKey],retryCount:2,timeoutSeconds:540},async()=>{
-  let cursor;
+  const now=Date.now();let cursor;
   do {
-    let query=db.collection('users').where('premium.active','==',true).orderBy('__name__').limit(100);if(cursor) query=query.startAfter(cursor);
+    let query=db.collection('users').where('nextReportAt','<=',now).orderBy('nextReportAt').orderBy('__name__').limit(100);
+    if(cursor) query=query.startAfter(cursor);
     const profiles=await query.get();if(profiles.empty) break;
-    for(const snap of profiles.docs){
-      const p=snap.data();const parts=new Intl.DateTimeFormat('en-US',{timeZone:p.timeZone ?? 'UTC',year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date());
-      const get=k=>Number(parts.find(v=>v.type===k).value);if(get('day')!==1) continue;
-      const month=get('month')===1?12:get('month')-1;const year=get('month')===1?get('year')-1:get('year');
-      for(const annual of get('month')===1 ? [false,true] : [false]) {
-        const key=`${annual?'year':'month'}-${year}${annual?'':`-${month}`}`;const field=annual?'lastYearReport':'lastMonthReport';
-        if((annual?p.yearlyEmail:p.monthlyEmail)===false || p[field]===key) continue;
-        try {if(await sendReport(snap.id,year,month,annual,`pts-auto-${snap.id}-${key}`)) await snap.ref.set({[field]:key},{merge:true});}
-        catch {console.error('PTS automatic report deferred',hash(snap.id).slice(0,12),key);}
+    for(const snap of profiles.docs) {
+      const p=snap.data();let retry=false;
+      if(p.premium?.active===true && p.premium.expiresAt>now && p.backupObject) {
+        for(const period of duePeriods(p,now)) {
+          try {
+            if(await sendReport(snap.id,period.year,period.month,period.annual,`pts-auto-${snap.id}-${period.key}`)) await snap.ref.set({[period.field]:period.key},{merge:true});
+          } catch {retry=true;console.error('PTS automatic report deferred',hash(snap.id).slice(0,12),period.key);}
+        }
       }
+      // Reread current preferences and entitlement so a concurrent change cannot be overwritten.
+      await db.runTransaction(async tx=>{
+        const current=await tx.get(snap.ref);if(!current.exists) return;
+        const fields=reportScheduleFields(current.data(),Date.now());
+        if(retry && fields.nextReportAt!==null && fields.nextReportAt<=Date.now()) fields.nextReportAt=Date.now()+3600000;
+        tx.set(snap.ref,fields,{merge:true});
+      });
     }
     cursor=profiles.docs.at(-1);if(profiles.size<100) break;
   }while(cursor);

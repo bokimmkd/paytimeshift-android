@@ -50,7 +50,7 @@ import kotlinx.coroutines.tasks.await
         text={LazyColumn(verticalArrangement=Arrangement.spacedBy(6.dp)) {
             item {FormSection("Premium") {
                 UiText(if(!resolved) (if(statusError!=null) "Account status unavailable" else "Checking account…") else if(status.premium) "Premium active" else "Buy us a coffee ☕",fontSize=17.sp,fontWeight=FontWeight.Bold)
-                if(resolved && !status.premium) UiText(if(price!=null) "$price / ${translate("year",LocalLanguage.current)}" else "$1.99 / year",fontSize=17.sp,color=MaterialTheme.colorScheme.primary)
+                if(resolved && !status.premium) UiText(if(price!=null) "$price / ${translate("year",LocalLanguage.current)}" else "See price in Google Play",fontSize=17.sp,color=MaterialTheme.colorScheme.primary)
                 listOf("No Ads","Automatic Cloud Backup","Restore on new phone","Advanced Work Analytics","Detailed Monthly / Yearly Reports").forEach {benefit->Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) {Icon(Icons.Outlined.CheckCircleOutline,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.primary);UiText(benefit,fontSize=12.sp)}}
                 if(resolved && status.premium && !status.testAccess) {
                     UiText("${translate("Access until",LocalLanguage.current)}: ${java.time.Instant.ofEpochMilli(status.expiresAt).atZone(java.time.ZoneId.systemDefault()).toLocalDate()}",fontSize=11.sp)

@@ -548,5 +548,8 @@ internal val catalogmk = mapOf(
     "Get started" to "Започни",
     "Done" to "Готово",
     "Expanded" to "Проширено",
-    "Collapsed" to "Собрано"
+    "Collapsed" to "Собрано",
+    "Rate PTS" to "Оцени ја PTS",
+    "See price in Google Play" to "Види ја цената во Google Play",
+    "Could not open Google Play." to "Google Play не може да се отвори."
 )

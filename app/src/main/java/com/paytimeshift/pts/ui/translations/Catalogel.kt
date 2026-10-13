@@ -548,5 +548,8 @@ internal val catalogel = mapOf(
     "Get started" to "Ξεκίνα",
     "Done" to "Τέλος",
     "Expanded" to "Αναπτυγμένο",
-    "Collapsed" to "Συμπτυγμένο"
+    "Collapsed" to "Συμπτυγμένο",
+    "Rate PTS" to "Αξιολόγησε το PTS",
+    "See price in Google Play" to "Δες την τιμή στο Google Play",
+    "Could not open Google Play." to "Δεν ήταν δυνατό το άνοιγμα του Google Play."
 )

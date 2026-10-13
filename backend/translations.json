@@ -546,7 +546,10 @@
     "Get started": "Започни",
     "Done": "Готово",
     "Expanded": "Проширено",
-    "Collapsed": "Собрано"
+    "Collapsed": "Собрано",
+    "Rate PTS": "Оцени ја PTS",
+    "See price in Google Play": "Види ја цената во Google Play",
+    "Could not open Google Play.": "Google Play не може да се отвори."
   },
   "de": {
     "Today": "Heute",
@@ -1095,7 +1098,10 @@
     "Get started": "Loslegen",
     "Done": "Fertig",
     "Expanded": "Ausgeklappt",
-    "Collapsed": "Eingeklappt"
+    "Collapsed": "Eingeklappt",
+    "Rate PTS": "PTS bewerten",
+    "See price in Google Play": "Preis bei Google Play ansehen",
+    "Could not open Google Play.": "Google Play konnte nicht geöffnet werden."
   },
   "it": {
     "Today": "Oggi",
@@ -1644,7 +1650,10 @@
     "Get started": "Inizia",
     "Done": "Fatto",
     "Expanded": "Espanso",
-    "Collapsed": "Compresso"
+    "Collapsed": "Compresso",
+    "Rate PTS": "Valuta PTS",
+    "See price in Google Play": "Vedi il prezzo su Google Play",
+    "Could not open Google Play.": "Impossibile aprire Google Play."
   },
   "es": {
     "Today": "Hoy",
@@ -2193,7 +2202,10 @@
     "Get started": "Empezar",
     "Done": "Listo",
     "Expanded": "Expandido",
-    "Collapsed": "Contraído"
+    "Collapsed": "Contraído",
+    "Rate PTS": "Valora PTS",
+    "See price in Google Play": "Consulta el precio en Google Play",
+    "Could not open Google Play.": "No se pudo abrir Google Play."
   },
   "fr": {
     "Today": "Aujourd’hui",
@@ -2742,7 +2754,10 @@
     "Get started": "Commencer",
     "Done": "Terminé",
     "Expanded": "Développé",
-    "Collapsed": "Réduit"
+    "Collapsed": "Réduit",
+    "Rate PTS": "Noter PTS",
+    "See price in Google Play": "Voir le prix sur Google Play",
+    "Could not open Google Play.": "Impossible d’ouvrir Google Play."
   },
   "sr": {
     "Today": "Danas",
@@ -3291,7 +3306,10 @@
     "Get started": "Počni",
     "Done": "Gotovo",
     "Expanded": "Prošireno",
-    "Collapsed": "Skupljeno"
+    "Collapsed": "Skupljeno",
+    "Rate PTS": "Oceni PTS",
+    "See price in Google Play": "Pogledaj cenu na Google Play-u",
+    "Could not open Google Play.": "Google Play nije moguće otvoriti."
   },
   "pt-BR": {
     "Today": "Hoje",
@@ -3840,7 +3858,10 @@
     "Get started": "Começar",
     "Done": "Concluído",
     "Expanded": "Expandido",
-    "Collapsed": "Recolhido"
+    "Collapsed": "Recolhido",
+    "Rate PTS": "Avaliar PTS",
+    "See price in Google Play": "Veja o preço no Google Play",
+    "Could not open Google Play.": "Não foi possível abrir o Google Play."
   },
   "el": {
     "Today": "Σήμερα",
@@ -4389,6 +4410,9 @@
     "Get started": "Ξεκίνα",
     "Done": "Τέλος",
     "Expanded": "Αναπτυγμένο",
-    "Collapsed": "Συμπτυγμένο"
+    "Collapsed": "Συμπτυγμένο",
+    "Rate PTS": "Αξιολόγησε το PTS",
+    "See price in Google Play": "Δες την τιμή στο Google Play",
+    "Could not open Google Play.": "Δεν ήταν δυνατό το άνοιγμα του Google Play."
   }
 }

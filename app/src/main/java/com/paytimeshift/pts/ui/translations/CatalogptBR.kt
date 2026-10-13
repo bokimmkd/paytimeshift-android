@@ -548,5 +548,8 @@ internal val catalogptBR = mapOf(
     "Get started" to "Começar",
     "Done" to "Concluído",
     "Expanded" to "Expandido",
-    "Collapsed" to "Recolhido"
+    "Collapsed" to "Recolhido",
+    "Rate PTS" to "Avaliar PTS",
+    "See price in Google Play" to "Veja o preço no Google Play",
+    "Could not open Google Play." to "Não foi possível abrir o Google Play."
 )

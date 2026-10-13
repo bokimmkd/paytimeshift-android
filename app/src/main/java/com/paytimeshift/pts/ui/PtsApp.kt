@@ -94,15 +94,15 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     var analyticsOpen by remember {mutableStateOf(false)}
     var annualPrice by remember {mutableStateOf<String?>(null)}
     val verifyingTokens=remember {mutableSetOf<String>()}
-    fun refreshAccount() {
+    fun refreshAccount(force:Boolean=false) {
         val requestedUid=premiumRepo.auth.currentUser?.uid
-        if(refreshJob?.isActive==true && refreshUid==requestedUid) return
+        if(!force && refreshJob?.isActive==true && refreshUid==requestedUid) return
         refreshJob?.cancel();refreshUid=requestedUid;accountChecking=true;accountError=null
         refreshJob=scope.launch {
             try {
-                val refreshed=try {premiumRepo.status()} catch(e:com.google.firebase.functions.FirebaseFunctionsException) {
+                val refreshed=try {premiumRepo.status(force)} catch(e:com.google.firebase.functions.FirebaseFunctionsException) {
                     if(e.code!=com.google.firebase.functions.FirebaseFunctionsException.Code.RESOURCE_EXHAUSTED) throw e
-                    kotlinx.coroutines.delay(2200);premiumRepo.status()
+                    kotlinx.coroutines.delay(2200);premiumRepo.status(force)
                 }
                 if(premiumRepo.auth.currentUser?.uid==requestedUid) {account=refreshed;accountResolved=true}
             } catch(e:kotlinx.coroutines.CancellationException) {throw e}
@@ -117,7 +117,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
             premiumRepo.verifyPurchase(token)
             // A status request started before purchase verification may still return Free.
             refreshJob?.join()
-            if(premiumRepo.auth.currentUser?.uid==requestedUid) refreshAccount()
+            if(premiumRepo.auth.currentUser?.uid==requestedUid) refreshAccount(force=true)
         }
         catch(e:kotlinx.coroutines.CancellationException) {throw e}
         catch(e:Exception) {message=cloudError(e)}
@@ -125,7 +125,7 @@ private enum class Tab(val title: String, val icon: ImageVector) {
     }},{message=it},{annualPrice=it})}
     DisposableEffect(Unit) {
         val listener=com.google.firebase.auth.FirebaseAuth.AuthStateListener {
-            if(account.uid!=it.currentUser?.uid) {account=AccountStatus(uid=it.currentUser?.uid);accountResolved=it.currentUser==null}
+            if(account.uid!=it.currentUser?.uid) {premiumRepo.invalidateStatus();account=AccountStatus(uid=it.currentUser?.uid);accountResolved=it.currentUser==null}
             account=account.copy(email=it.currentUser?.email ?: "",verified=it.currentUser?.isEmailVerified==true,displayName=it.currentUser?.displayName ?: "")
             refreshAccount();billing.restore()
         }
@@ -136,6 +136,12 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         onDispose {host.lifecycle.removeObserver(observer);premiumRepo.auth.removeAuthStateListener(listener);refreshJob?.cancel();billing.close()}
     }
     LaunchedEffect(accountOpen) {if(accountOpen) refreshAccount()}
+    LaunchedEffect(account.uid,account.expiresAt,account.premium) {
+        if(account.uid!=null && account.premium && account.expiresAt>0) {
+            kotlinx.coroutines.delay((account.expiresAt-System.currentTimeMillis()).coerceAtLeast(0))
+            account=account.copy(premium=false);accountResolved=false;refreshAccount(force=true)
+        }
+    }
     LaunchedEffect(account.uid,accountResolved,loaded,data.preferences.language) {
         if(account.uid!=null && accountResolved && loaded) try {premiumRepo.reportPreferences(account.monthlyEmail,account.yearlyEmail,data.preferences.language)} catch(_:Exception) { }
     }
@@ -272,11 +278,11 @@ private enum class Tab(val title: String, val icon: ImageVector) {
                     Tab.Today -> item { TodayScreen(data,{shiftEditor=it},{addJob=true},{sampleConfirm=true},{reportMonthText=YearMonth.now().toString();tab=Tab.Earnings}) }
                     Tab.Calendar -> item { CalendarScreen(data,reportMonthText,{reportMonthText=it},{shiftEditor=it},{month->shareMonth=month},{importer=true},{date->commit(data.withHoliday(date))},{newShiftDate=it},{deleteShiftsDate=it},widgetCalendarDate) }
                     Tab.Earnings -> item { EarningsScreen(data,reportMonthText,{reportMonthText=it},{if(account.premium) analyticsOpen=true else accountOpen=true}) {commit(data.copy(adjustments=it))} }
-                    Tab.Jobs -> item { JobsScreen(data,{jobEditor=it},{addJob=true},{message=it},{patterns=true},{accountOpen=true}) }
+                    Tab.Jobs -> item { JobsScreen(data,{jobEditor=it},{addJob=true},{message=it},{patterns=true},{accountOpen=true},annualPrice) }
                 }
             }
         }
-        if(accountOpen) AccountDialog(premiumRepo,account,annualPrice,{refreshAccount()},{billing.buy()},{billing.restore()},data,{next->
+        if(accountOpen) AccountDialog(premiumRepo,account,annualPrice,{refreshAccount(force=true)},{billing.buy()},{billing.restore()},data,{next->
             check(loaded && writable && !saving);saving=true
             val restored=data.withRestoredBackup(next)
             try {withContext(Dispatchers.IO){store.save(restored);syncReminders(context,data,restored);refreshWidgets(context)};data=restored}
@@ -309,6 +315,12 @@ private enum class Tab(val title: String, val icon: ImageVector) {
         }},confirmButton={TextButton(onClick={shareMonth=null}){UiText("Cancel")}})}
         if(sampleConfirm) AlertDialog(onDismissRequest={sampleConfirm=false},title={UiText("Load example schedule?")},text={UiText("Add Factory, Taxi and Restaurant with example shifts. You can edit them or start with your own jobs instead.")},confirmButton={TextButton(onClick={if(data.jobs.isEmpty()) commit(sampleData().copy(preferences=data.preferences)) else message="Examples are available only before adding jobs.";sampleConfirm=false}){UiText("Load examples")}},dismissButton={TextButton(onClick={sampleConfirm=false}){UiText("Cancel")}})
         if(loaded && !introOpen && !helpOpen && !saving && updates?.prompt!=null && !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen && deleteShiftsDate==null) UpdateOffer(updates.prompt=="Ready",{if(updates.prompt=="Ready") updates.restart() else updates.download()},{updates.later()},store=updates.prompt=="Store",failed=updates.installFailed)
+        AutomaticPtsReview(context as android.app.Activity,
+            allowed=loaded && writable && !settings && !introOpen && !helpOpen && !saving && !accountChecking && message==null &&
+                updates?.prompt==null && updates?.transfer?.stage !in listOf(UpdateStage.Waiting,UpdateStage.Downloading,UpdateStage.Installing) &&
+                !addJob && jobEditor==null && !addShift && shiftEditor==null && !patterns && !accountOpen && !analyticsOpen &&
+                deleteShiftsDate==null && !exporter && !importer && shareMonth==null && !sampleConfirm,
+            hasShifts=data.shifts.isNotEmpty())
         if (saving) androidx.compose.ui.window.Dialog(onDismissRequest={}) { Surface(shape=Round) { Row(Modifier.padding(24.dp),verticalAlignment=Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(24.dp)); Spacer(Modifier.width(12.dp)); UiText("Saving…") } } }
         message?.let { text -> AlertDialog(onDismissRequest={message=null},title={UiText("PTS")},text={UiText(text)},confirmButton={TextButton(onClick={message=null}){UiText("OK")}}) }
     }
@@ -759,7 +771,7 @@ private fun shiftLabel(shift: Shift): String {
     "Biweekly" -> "Biweekly · ${LocalDate.parse(job.paydayAnchor).dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL,uiLocale())}"
     else -> "Custom payday"
 }
-@Composable private fun JobsScreen(data: AppData,edit: (Job)->Unit,add: ()->Unit,info: (String)->Unit,patterns:()->Unit,premium:()->Unit) {
+@Composable private fun JobsScreen(data: AppData,edit: (Job)->Unit,add: ()->Unit,info: (String)->Unit,patterns:()->Unit,premium:()->Unit,price:String?) {
     Stack {
         Heading("Your jobs","Separate pay rules for every job.")
         Spacer(Modifier.height(2.dp))
@@ -789,7 +801,7 @@ private fun shiftLabel(shift: Shift): String {
                 Box(Modifier.size(40.dp).background(Color(0xFFFFE3BA),CircleShape),contentAlignment=Alignment.Center){UiText("☕",fontSize=28.sp)}
                 Spacer(Modifier.width(10.dp));Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
                     UiText("Buy us a coffee ☕",fontSize=14.sp,fontWeight=FontWeight.Bold,color=Navy)
-                    UiText("$1.99 / year",fontSize=15.sp,fontWeight=FontWeight.Medium,color=Navy)
+                    UiText(if(price!=null) "$price / ${translate("year",LocalLanguage.current)}" else "See price in Google Play",fontSize=15.sp,fontWeight=FontWeight.Medium,color=Navy)
                     UiText("No ads + automatic backup",fontSize=11.sp,color=Color(0xFF33425D))
                     UiText("Explore Premium →",Modifier.clickable {premium()}.padding(vertical=3.dp),fontSize=12.sp,fontWeight=FontWeight.Bold,color=Color(0xFF0087FF))
                 }
@@ -846,6 +858,11 @@ private fun shiftLabel(shift: Shift): String {
             }},second={OutlinedButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://paytimeshift.com/privacy-premium.html")))},modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
                 Icon(Icons.Outlined.PrivacyTip,null,Modifier.size(16.dp));Spacer(Modifier.width(4.dp));UiText("Privacy policy",fontSize=11.sp)
             }})
+            OutlinedButton(onClick={
+                if(!openPtsStore(context)) android.widget.Toast.makeText(context,translate("Could not open Google Play.",p.language),android.widget.Toast.LENGTH_SHORT).show()
+            },modifier=Modifier.fillMaxWidth().heightIn(min=36.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=3.dp)) {
+                Icon(Icons.Outlined.StarOutline,null,Modifier.size(17.dp));Spacer(Modifier.width(5.dp));UiText("Rate PTS",fontSize=12.sp)
+            }
             OutlinedButton(onClick={
                 val mail=Intent(Intent.ACTION_SENDTO,android.net.Uri.parse("mailto:bokimk.ap@gmail.com"))
                 try {context.startActivity(mail)} catch(_:android.content.ActivityNotFoundException) {

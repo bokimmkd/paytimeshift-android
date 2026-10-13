@@ -548,5 +548,8 @@ internal val catalogde = mapOf(
     "Get started" to "Loslegen",
     "Done" to "Fertig",
     "Expanded" to "Ausgeklappt",
-    "Collapsed" to "Eingeklappt"
+    "Collapsed" to "Eingeklappt",
+    "Rate PTS" to "PTS bewerten",
+    "See price in Google Play" to "Preis bei Google Play ansehen",
+    "Could not open Google Play." to "Google Play konnte nicht geöffnet werden."
 )

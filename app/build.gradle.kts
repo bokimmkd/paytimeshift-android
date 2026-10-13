@@ -10,8 +10,8 @@ android {
         applicationId = "com.paytimeshift.pts"
         minSdk = 26
         targetSdk = 36
-        versionCode = 25
-        versionName = "0.2.15"
+        versionCode = 26
+        versionName = "0.2.16"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
@@ -55,6 +55,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:review:2.0.2")
     implementation("com.facebook.android:facebook-core:18.3.0")
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("com.android.billingclient:billing:9.1.0")

@@ -7,6 +7,8 @@ import com.google.firebase.functions.FirebaseFunctionsException
 import com.paytimeshift.pts.data.LocalStore
 import com.paytimeshift.pts.domain.AppData
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.security.MessageDigest
 
 data class AccountStatus(val uid: String?=null,val email: String="",val verified: Boolean=false,
@@ -29,21 +31,40 @@ class PremiumRepository(val context: Context) {
     private val functions=FirebaseFunctions.getInstance("europe-west1")
     private val binding=context.getSharedPreferences("pts-cloud-device",Context.MODE_PRIVATE)
     suspend fun call(name: String,args: Map<String,Any> = emptyMap()): Map<*,*> = functions.getHttpsCallable(name).call(args).await().data as Map<*,*>
-    suspend fun status(): AccountStatus {
+    private val statusMutex=Mutex()
+    private var cached:AccountStatus?=null
+    private var checkedAt=0L
+    private var cachedPreferences:List<Any>?=null
+    private val preferenceMutex=Mutex()
+    fun invalidateStatus() {cached=null;cachedPreferences=null}
+    suspend fun status(force:Boolean=false): AccountStatus = statusMutex.withLock {
+        val uid=auth.currentUser?.uid
+        if(uid==null) {invalidateStatus();return@withLock AccountStatus()}
+        val now=android.os.SystemClock.elapsedRealtime()
+        val hit=cached
+        if(!force && hit?.uid==uid && StatusCachePolicy.fresh(now,checkedAt,System.currentTimeMillis(),hit.premium,hit.expiresAt)) return@withLock hit
+        fetchStatus(force).also {if(auth.currentUser?.uid==uid) {cached=it;checkedAt=android.os.SystemClock.elapsedRealtime()}}
+    }
+    private suspend fun fetchStatus(force:Boolean): AccountStatus {
         val user=auth.currentUser ?: return AccountStatus()
-        user.reload().await();user.getIdToken(true).await()
-        val p=call("getAccountStatus");val ent=p["premium"] as? Map<*,*> ?: emptyMap<String,Any>()
+        user.reload().await();user.getIdToken(force).await()
+        val p=call("getAccountStatus",mapOf("force" to force));val ent=p["premium"] as? Map<*,*> ?: emptyMap<String,Any>()
         val expires=(ent["expiresAt"] as? Number)?.toLong() ?: 0
         return AccountStatus(user.uid,user.email ?: "",user.isEmailVerified,ent["active"]==true && expires>System.currentTimeMillis(),expires,
             p["monthlyEmail"]!=false,p["yearlyEmail"]!=false,(p["backupAt"] as? Number)?.toLong() ?: 0,(p["revision"] as? Number)?.toInt() ?: 0,ent["state"]=="PTS_TEST_ACCESS",user.displayName ?: "")
     }
-    suspend fun verifyPurchase(token: String) {call("verifySubscription",mapOf("purchaseToken" to token))}
-    suspend fun reportPreferences(monthly: Boolean,yearly: Boolean,language: String) {
-        call("saveReportPreferences",mapOf("monthlyEmail" to monthly,"yearlyEmail" to yearly,"language" to language,"timeZone" to java.time.ZoneId.systemDefault().id))
+    suspend fun verifyPurchase(token: String) {call("verifySubscription",mapOf("purchaseToken" to token));invalidateStatus()}
+    suspend fun reportPreferences(monthly: Boolean,yearly: Boolean,language: String) = preferenceMutex.withLock {
+        val uid=auth.currentUser?.uid ?: return@withLock
+        val zone=java.time.ZoneId.systemDefault().id
+        val key=listOf(uid,monthly,yearly,language,zone)
+        if(cachedPreferences==key) return@withLock
+        call("saveReportPreferences",mapOf("monthlyEmail" to monthly,"yearlyEmail" to yearly,"language" to language,"timeZone" to zone))
+        if(auth.currentUser?.uid==uid) cachedPreferences=key
     }
     fun bound(uid: String)=binding.getString("uid",null)==uid
     fun bind(uid: String,revision: Int,digest: String?=null) {binding.edit().putString("uid",uid).putInt("revision",revision).putString("digest",digest).commit()}
-    fun unbind() {binding.edit().clear().commit()}
+    fun unbind() {binding.edit().clear().commit();invalidateStatus()}
     suspend fun backup(data: AppData) {
         val uid=auth.currentUser?.uid ?: error("Sign in first.")
         check(bound(uid)) {"Choose cloud restore or enable backup on this phone first."}
@@ -51,10 +72,10 @@ class PremiumRepository(val context: Context) {
         if(binding.getString("digest",null)==digest) return
         val revision=binding.getInt("revision",0)
         val result=call("saveCloudBackup",mapOf("text" to text,"expectedRevision" to revision))
-        if(auth.currentUser?.uid==uid && bound(uid)) bind(uid,(result["revision"] as Number).toInt(),digest)
+        if(auth.currentUser?.uid==uid && bound(uid)) {bind(uid,(result["revision"] as Number).toInt(),digest);invalidateStatus()}
     }
     suspend fun restored(): Pair<AppData,Int> {
-        val result=call("getCloudBackup");val data=LocalStore.decode(result["text"] as String)
+        val result=call("getCloudBackup");invalidateStatus();val data=LocalStore.decode(result["text"] as String)
         return data to (result["revision"] as Number).toInt()
     }
     suspend fun deleteAccount() {call("deletePtsAccount");unbind();auth.signOut()}

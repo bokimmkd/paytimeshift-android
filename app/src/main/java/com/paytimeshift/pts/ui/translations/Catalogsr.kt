@@ -548,5 +548,8 @@ internal val catalogsr = mapOf(
     "Get started" to "Počni",
     "Done" to "Gotovo",
     "Expanded" to "Prošireno",
-    "Collapsed" to "Skupljeno"
+    "Collapsed" to "Skupljeno",
+    "Rate PTS" to "Oceni PTS",
+    "See price in Google Play" to "Pogledaj cenu na Google Play-u",
+    "Could not open Google Play." to "Google Play nije moguće otvoriti."
 )

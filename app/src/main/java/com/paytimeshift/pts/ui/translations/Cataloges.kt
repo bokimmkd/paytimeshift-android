@@ -548,5 +548,8 @@ internal val cataloges = mapOf(
     "Get started" to "Empezar",
     "Done" to "Listo",
     "Expanded" to "Expandido",
-    "Collapsed" to "Contraído"
+    "Collapsed" to "Contraído",
+    "Rate PTS" to "Valora PTS",
+    "See price in Google Play" to "Consulta el precio en Google Play",
+    "Could not open Google Play." to "No se pudo abrir Google Play."
 )
