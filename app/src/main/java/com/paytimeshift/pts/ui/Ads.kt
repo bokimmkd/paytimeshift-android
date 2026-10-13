@@ -49,7 +49,7 @@ val LocalAdsResolved=staticCompositionLocalOf {false}
         }
         // Keep the view attached for loading, but reserve no space before onAdLoaded.
         Box(Modifier.fillMaxWidth().height(if(visible) size.height.dp else 0.dp).clipToBounds()) {
-            AndroidView(factory={view},modifier=Modifier.fillMaxWidth().requiredHeight(size.height.dp))
+            key(view) {AndroidView(factory={view},modifier=Modifier.fillMaxWidth().requiredHeight(size.height.dp))}
         }
     }
 }
@@ -102,6 +102,6 @@ private class BannerRecovery(val activity:Activity,val view:AdView,val shown:()-
     fun close() {
         closed=true;handler.removeCallbacksAndMessages(null);lifecycle?.removeObserver(observer)
         if(registered) runCatching {network.unregisterNetworkCallback(callback)}
-        view.adListener=null;view.destroy()
+        view.adListener=object:AdListener() {};view.destroy()
     }
 }

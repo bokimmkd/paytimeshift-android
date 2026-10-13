@@ -8,7 +8,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import com.google.android.play.review.ReviewManagerFactory
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.paytimeshift.pts.BuildConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await

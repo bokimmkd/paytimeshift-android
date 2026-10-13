@@ -31,19 +31,24 @@ class PremiumRepository(val context: Context) {
     private val functions=FirebaseFunctions.getInstance("europe-west1")
     private val binding=context.getSharedPreferences("pts-cloud-device",Context.MODE_PRIVATE)
     suspend fun call(name: String,args: Map<String,Any> = emptyMap()): Map<*,*> = functions.getHttpsCallable(name).call(args).await().data as Map<*,*>
-    private val statusMutex=Mutex()
-    private var cached:AccountStatus?=null
-    private var checkedAt=0L
-    private var cachedPreferences:List<Any>?=null
-    private val preferenceMutex=Mutex()
-    fun invalidateStatus() {cached=null;cachedPreferences=null}
+    companion object {
+        // Retained within this process across activity recreation; never persisted or shared across UIDs.
+        private val statusMutex=Mutex()
+        @Volatile private var cached:AccountStatus?=null
+        private var checkedAt=0L
+        @Volatile private var cachedPreferences:List<Any>?=null
+        private val preferenceMutex=Mutex()
+        private val generation=java.util.concurrent.atomic.AtomicLong()
+    }
+    fun invalidateStatus() {generation.incrementAndGet();cached=null;cachedPreferences=null}
     suspend fun status(force:Boolean=false): AccountStatus = statusMutex.withLock {
         val uid=auth.currentUser?.uid
         if(uid==null) {invalidateStatus();return@withLock AccountStatus()}
         val now=android.os.SystemClock.elapsedRealtime()
         val hit=cached
         if(!force && hit?.uid==uid && StatusCachePolicy.fresh(now,checkedAt,System.currentTimeMillis(),hit.premium,hit.expiresAt)) return@withLock hit
-        fetchStatus(force).also {if(auth.currentUser?.uid==uid) {cached=it;checkedAt=android.os.SystemClock.elapsedRealtime()}}
+        val requestedGeneration=generation.get()
+        fetchStatus(force).also {if(auth.currentUser?.uid==uid && generation.get()==requestedGeneration) {cached=it;checkedAt=android.os.SystemClock.elapsedRealtime()}}
     }
     private suspend fun fetchStatus(force:Boolean): AccountStatus {
         val user=auth.currentUser ?: return AccountStatus()
