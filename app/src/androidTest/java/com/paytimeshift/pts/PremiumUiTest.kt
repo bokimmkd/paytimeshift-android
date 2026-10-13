@@ -288,8 +288,12 @@ class PremiumUiTest {
     @Test fun monthlyAndYearlyReportExportKeepsFourActionsAndCompactFooter() {
         ui.setContent {CompositionLocalProvider(LocalLanguage provides "en") {Theme {AnalyticsDialog(fixture,YearMonth.of(2026,10),{})}}}
         repeat(2) {period->
-            if(period==1) ui.onNodeWithText("Yearly report").performScrollTo().performClick()
-            ui.onNodeWithText("Print").performScrollTo().assertIsDisplayed()
+            if(period==1) {
+                ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Yearly report"))
+                ui.onNodeWithText("Yearly report").performClick()
+            }
+            ui.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Print"))
+            ui.onNodeWithText("Print").assertIsDisplayed()
             listOf("View","PDF","Share","Print").forEach {ui.onNodeWithText(it).assertIsDisplayed()}
             ui.onNodeWithText("Email",useUnmergedTree=true).assertDoesNotExist()
             val printBottom=ui.onNodeWithText("Print").fetchSemanticsNode().boundsInRoot.bottom
