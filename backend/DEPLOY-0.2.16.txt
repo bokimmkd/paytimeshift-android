@@ -1,0 +1,20 @@
+PTS 0.2.16 backend optimization — project pts-pay-time-shift
+
+The AAB can use the old backend safely, but the server savings need this deployment.
+Use an existing authorized Firebase/GCP session and Application Default Credentials for this project. Do not put credentials in this folder or chat.
+
+From the package root:
+1. cd backend
+2. npm ci --ignore-scripts --no-audit --no-fund
+3. npm run check
+4. npm test
+5. node tools/migrate-report-schedules.js --project pts-pay-time-shift
+6. node tools/migrate-report-schedules.js --project pts-pay-time-shift --apply
+7. cd ..
+8. firebase deploy --only functions --project pts-pay-time-shift
+
+Run the migration before deployment. It only adds nextReportAt/reportScheduleVersion fields and is safe to rerun. Existing reports, data, plans, secrets, purchases and pricing are preserved. Due queries use the default ascending nextReportAt index with __name__ ordering; no new composite index is required. Do not exempt nextReportAt from automatic single-field indexing.
+
+Verify automaticReports has no missing-index error and processes due users at the next hourly run. Verify purchase/restore, Play RTDN renewal/expiry, timezone changes, monthly/yearly email preferences, and a changed/unchanged cloud backup. Google Play test subscriptions expire quickly and must never be extended by cache. Cached server entitlements last at most 5 minutes and never beyond expiry. RTDN and explicit purchase/restore verification bypass that cache.
+
+At-scale limits and actual costs must be monitored from Firebase/Google Cloud and the email provider. This package does not claim a measured live bill or a completed deployment.

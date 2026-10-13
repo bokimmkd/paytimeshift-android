@@ -1,0 +1,1 @@
+{"functions":[{"source":"backend","codebase":"pts-premium","runtime":"nodejs22","ignore":["node_modules","test/**","tools/**","sample-reports/**",".env*",".secret*"]}],"firestore":{"rules":"firestore.rules"},"storage":{"rules":"storage.rules"}}

@@ -1,0 +1,7 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // No public files or client writes. Functions verify Firebase identity and Play entitlement.
+    match /{object=**} { allow read, write: if false; }
+  }
+}

@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -52,9 +53,12 @@ import androidx.compose.ui.window.DialogProperties
 /** The same compact editor shell is used for jobs, shifts, patterns and roster import. */
 @Composable fun BrandedEditor(onDismissRequest: () -> Unit, title: @Composable () -> Unit,
     text: @Composable () -> Unit, confirmButton: @Composable () -> Unit,
-    dismissButton: @Composable () -> Unit, error: String? = null, heightFraction: Float = .90f) {
+    dismissButton: @Composable () -> Unit, error: String? = null, heightFraction: Float = .90f,
+    wrapHeight: Boolean = false) {
     Dialog(onDismissRequest, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(Modifier.fillMaxWidth(.94f).fillMaxHeight(heightFraction).imePadding(),
+        val height=if(wrapHeight) Modifier.heightIn(max=LocalConfiguration.current.screenHeightDp.dp*heightFraction)
+            else Modifier.fillMaxHeight(heightFraction)
+        Surface(Modifier.fillMaxWidth(.94f).then(height).imePadding(),
             shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.background) {
             Column {
                 Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
@@ -65,7 +69,7 @@ import androidx.compose.ui.window.DialogProperties
                     }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Box(Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 8.dp)) { text() }
+                Box(Modifier.weight(1f,fill=!wrapHeight).padding(horizontal = 10.dp, vertical = if(wrapHeight) 6.dp else 8.dp)) { text() }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 error?.let { UiText(it, Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
@@ -122,6 +126,8 @@ import androidx.compose.ui.window.DialogProperties
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val translatedLabel = translate(label, LocalLanguage.current)
+    HintAnchor(label) { show, close ->
+    LaunchedEffect(focused) { if(focused) show() else close() }
     BasicTextField(value, change, Modifier.fillMaxWidth().heightIn(min = 54.dp)
         .border(1.dp, if (focused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
         .padding(horizontal = 9.dp, vertical = 6.dp).semantics { contentDescription = translatedLabel },
@@ -137,11 +143,13 @@ import androidx.compose.ui.window.DialogProperties
                 }
             }
         })
+    }
 }
 
 @Composable fun CompactChoice(label: String, value: String, modifier: Modifier = Modifier,
     translateValue: Boolean = true, icon: @Composable () -> Unit = {}, click: () -> Unit) {
-    Surface(onClick = click, modifier = modifier.fillMaxWidth().heightIn(min = 54.dp), shape = RoundedCornerShape(8.dp),
+    HintAnchor(label) { show, _ ->
+    Surface(onClick = { show(); click() }, modifier = modifier.fillMaxWidth().heightIn(min = 54.dp), shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Column(Modifier.padding(horizontal = 9.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             UiText(label, fontSize = 10.sp, lineHeight = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -154,14 +162,17 @@ import androidx.compose.ui.window.DialogProperties
             }
         }
     }
+    }
 }
 
-@Composable fun CompactToggle(label: String, checked: Boolean, change: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).toggleable(checked, role = Role.Checkbox, onValueChange = change)
+@Composable fun CompactToggle(label: String, checked: Boolean, enabled: Boolean = true, change: (Boolean) -> Unit) {
+    HintAnchor(label) { show, _ ->
+    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = { show(); change(it) })
         .padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Checkbox(checked, null, Modifier.size(24.dp))
+        Checkbox(checked, null, Modifier.size(24.dp), enabled = enabled)
         UiText(label, Modifier.weight(1f), fontSize = 11.sp, lineHeight = 14.sp)
+    }
     }
 }
 
@@ -179,3 +190,4 @@ import androidx.compose.ui.window.DialogProperties
 @Composable fun RateField(label: String, value: String, currency: String, change: (String) -> Unit) {
     CompactField(label, value, change, keyboardType = KeyboardType.Decimal, suffix = "$currency / hour")
 }
+

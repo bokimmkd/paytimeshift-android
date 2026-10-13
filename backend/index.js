@@ -1,0 +1,99 @@
+import {initializeApp} from 'firebase-admin/app';
+import {getAuth} from 'firebase-admin/auth';
+import {getFirestore,FieldValue} from 'firebase-admin/firestore';
+import {getStorage} from 'firebase-admin/storage';
+import {onCall,HttpsError} from 'firebase-functions/v2/https';
+import {onSchedule} from 'firebase-functions/v2/scheduler';
+import {onMessagePublished} from 'firebase-functions/v2/pubsub';
+import {defineString} from 'firebase-functions/params';
+import {setGlobalOptions} from 'firebase-functions/v2';
+import {google} from 'googleapis';
+import {createHash,randomUUID} from 'node:crypto';
+import {subscriptionEntitlement} from './entitlement.js';
+import {testerEntitlement} from './tester.js';
+import {validateBackup} from './analytics.js';
+import {freshEntitlement} from './cloud-policy.js';
+
+initializeApp();setGlobalOptions({serviceAccount:'pts-premium-runtime@pts-pay-time-shift.iam.gserviceaccount.com',region:'europe-west1',concurrency:8,maxInstances:5,memory:'512MiB',timeoutSeconds:120});
+const db=getFirestore(),auth=getAuth();const bucket=()=>getStorage().bucket();
+const PACKAGE='com.paytimeshift.pts',PRODUCT='pts_premium',BASE_PLAN='annual';
+const testerEmail=defineString('PTS_PREMIUM_TEST_EMAIL',{default:'',description:'Optional owner-approved verified email for Premium QA. Empty disables test access.'});
+const emailReportsDisabled={monthlyEmail:false,yearlyEmail:false,nextReportAt:null};
+const hash=v=>createHash('sha256').update(v).digest('hex');
+const profile=uid=>db.doc(`users/${uid}`);
+const play=()=>google.androidpublisher({version:'v3',auth:new google.auth.GoogleAuth({scopes:['https://www.googleapis.com/auth/androidpublisher']})});
+function identity(request){if(!request.auth) throw new HttpsError('unauthenticated','Sign in first.');return request.auth.uid;}
+async function limited(uid,key,seconds=2){
+  const ref=db.doc(`limits/${hash(uid+':'+key)}`);await db.runTransaction(async tx=>{const previous=await tx.get(ref);const now=Date.now();if(previous.exists && now-previous.data().at<seconds*1000) throw new HttpsError('resource-exhausted','Please wait and try again.');tx.set(ref,{at:now,expires:new Date(now+86400000)});});
+}
+
+async function verify(uid,token){
+  if(typeof token!=='string' || token.length<10 || token.length>4096) throw new HttpsError('invalid-argument','Invalid purchase token.');
+  const api=play();const {data}=await api.purchases.subscriptionsv2.get({packageName:PACKAGE,token});
+  if(data.externalAccountIdentifiers?.obfuscatedExternalAccountId!==hash(uid)) throw new HttpsError('permission-denied','This purchase belongs to another account.');
+  let next;try {next=subscriptionEntitlement(data);} catch {throw new HttpsError('invalid-argument','This is not the PTS annual subscription.');}const ref=db.doc(`purchaseOwners/${hash(token)}`);
+  await db.runTransaction(async tx=>{const owner=await tx.get(ref);if(owner.exists && owner.data().uid!==uid) throw new HttpsError('permission-denied','Purchase already linked.');
+    const userRef=profile(uid),old=(await tx.get(userRef)).data() ?? {};const now=Date.now();
+    if(!owner.exists) tx.set(ref,{uid,token,updatedAt:now});
+    tx.set(userRef,{premium:next,purchaseToken:token,verifiedAt:now,verifiedTokenHash:hash(token),...emailReportsDisabled},{merge:true});});
+  if(next.active && data.acknowledgementState==='ACKNOWLEDGEMENT_STATE_PENDING') await api.purchases.subscriptions.acknowledge({packageName:PACKAGE,subscriptionId:PRODUCT,token,requestBody:{}});
+  return next;
+}
+async function premium(uid){
+  const snap=await profile(uid).get();const p=snap.data() ?? {};
+  if(testerEntitlement(await auth.getUser(uid),testerEmail.value())) return p;
+  if(!p.purchaseToken) throw new HttpsError('permission-denied','Premium is required.');
+  const ent=freshEntitlement(p,hash(p.purchaseToken)) ?? await verify(uid,p.purchaseToken);if(!ent.active) throw new HttpsError('permission-denied','Premium is not active.');return p;
+}
+export const getAccountStatus=onCall(async request=>{
+  const uid=identity(request);await limited(uid,'status');const user=await auth.getUser(uid);
+  const p=await db.runTransaction(async tx=>{const ref=profile(uid),snap=await tx.get(ref);if(snap.exists) return snap.data();
+    const created={...emailReportsDisabled,createdAt:Date.now()};tx.set(ref,created);return created;});
+  let ent=testerEntitlement(user,testerEmail.value());
+  if(ent && (p.premium?.expiresAt!==ent.expiresAt || p.premium?.state!==ent.state)) await profile(uid).set({premium:ent,verifiedAt:Date.now(),...emailReportsDisabled},{merge:true});
+  else {
+    ent=p.purchaseToken ? (request.data?.force===true ? null : freshEntitlement(p,hash(p.purchaseToken))) ?? await verify(uid,p.purchaseToken) : {active:false,expiresAt:0};
+    if(p.premium?.state==='PTS_TEST_ACCESS') await profile(uid).set({premium:ent,...emailReportsDisabled},{merge:true});
+  }
+  return {premium:ent,email:user.email ?? '',emailVerified:user.emailVerified,monthlyEmail:false,yearlyEmail:false,backupAt:p.backupAt ?? 0,revision:p.revision ?? 0};
+});
+export const verifySubscription=onCall(async request=>{const uid=identity(request);await limited(uid,'purchase');return verify(uid,request.data?.purchaseToken);});
+// Compatibility for installed versions: email options stay disabled, with no profile reads/writes.
+export const saveReportPreferences=onCall(async request=>{identity(request);return {saved:true,monthlyEmail:false,yearlyEmail:false};});
+export const saveCloudBackup=onCall({timeoutSeconds:120},async request=>{
+  const uid=identity(request);await limited(uid,'backup',10);await premium(uid);
+  const {text,expectedRevision}=request.data ?? {};let data;
+  try {data=validateBackup(text);} catch {throw new HttpsError('invalid-argument','Invalid backup data.');}
+  if(!Number.isInteger(expectedRevision) || expectedRevision<0) throw new HttpsError('invalid-argument','Invalid backup revision.');
+  const object=`backups/${uid}/${randomUUID()}.json`;await bucket().file(object).save(text,{contentType:'application/json',resumable:false,metadata:{cacheControl:'private,no-store'}});
+  let old;let revision;
+  try {await db.runTransaction(async tx=>{const ref=profile(uid),p=(await tx.get(ref)).data() ?? {};if((p.revision ?? 0)!==expectedRevision) throw new HttpsError('aborted','A newer cloud backup exists. Restore it before uploading.');
+    // Empty installs must never silently overwrite populated cloud data.
+    if(p.backupJobCount>0 && data.jobs.length===0) throw new HttpsError('failed-precondition','Empty data cannot replace this cloud backup.');
+    old=p.previousBackupObject;revision=expectedRevision+1;tx.set(ref,{backupObject:object,previousBackupObject:p.backupObject ?? null,backupAt:Date.now(),revision,backupJobCount:data.jobs.length,backupShiftCount:data.shifts.length,backupDigest:hash(text),...emailReportsDisabled},{merge:true});});}
+  catch(e){await bucket().file(object).delete({ignoreNotFound:true});throw e;}
+  if(old) await bucket().file(old).delete({ignoreNotFound:true});return {revision,backupAt:Date.now()};
+});
+export const getCloudBackup=onCall(async request=>{
+  const uid=identity(request);await limited(uid,'restore');await premium(uid);const p=(await profile(uid).get()).data();
+  if(!p.backupObject) throw new HttpsError('not-found','No cloud backup exists.');const [bytes]=await bucket().file(p.backupObject).download();const text=bytes.toString('utf8');validateBackup(text);return {text,revision:p.revision,backupAt:p.backupAt};
+});
+export const deletePtsAccount=onCall(async request=>{
+  const uid=identity(request);if(Date.now()/1000-Number(request.auth.token.auth_time)>300) throw new HttpsError('failed-precondition','Sign in again before deleting your account.');
+  await bucket().deleteFiles({prefix:`backups/${uid}/`});
+  const owners=await db.collection('purchaseOwners').where('uid','==',uid).get();
+  const batch=db.batch();owners.docs.forEach(doc=>batch.delete(doc.ref));batch.delete(profile(uid));for(const key of ['status','purchase','backup','restore','email']) batch.delete(db.doc(`limits/${hash(uid+':'+key)}`));await batch.commit();await auth.deleteUser(uid);
+  return {deleted:true};
+});
+export const playSubscriptionNotifications=onMessagePublished({topic:'pts-play-subscriptions',retry:true},async event=>{
+  const message=event.data.message.json; if(message.packageName!==PACKAGE || !message.subscriptionNotification?.purchaseToken) return;
+  const token=message.subscriptionNotification.purchaseToken;const owner=await db.doc(`purchaseOwners/${hash(token)}`).get();if(owner.exists) await verify(owner.data().uid,token);
+});
+// Remove temporary abuse counters after their 24-hour retention window.
+export const purgeAbuseLimits=onSchedule({schedule:'15 * * * *',timeZone:'UTC'},async()=>{
+  for(let page=0;page<20;page++) {
+    const expired=await db.collection('limits').where('expires','<=',new Date()).limit(400).get();
+    if(expired.empty) return;const batch=db.batch();expired.docs.forEach(doc=>batch.delete(doc.ref));await batch.commit();
+    if(expired.size<400) return;
+  }
+});

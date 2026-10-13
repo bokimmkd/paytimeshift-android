@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Public SDK identifiers read from the PTS Firebase project settings; never service account credentials. -->
+    <string name="google_app_id" translatable="false">1:924616791326:android:174355ced8024951fda50f</string>
+    <string name="google_api_key" translatable="false">AIzaSyCpMGaF_Rx6HCd2VD8KvZNCxxGL1dDyxtM</string>
+    <string name="project_id" translatable="false">pts-pay-time-shift</string>
+    <string name="gcm_defaultSenderId" translatable="false">924616791326</string>
+    <string name="google_storage_bucket" translatable="false">pts-pay-time-shift.firebasestorage.app</string>
+    <string name="default_web_client_id" translatable="false">924616791326-e7mig0qla54oda4jqbfgtqrh923uot28.apps.googleusercontent.com</string>
+</resources>
