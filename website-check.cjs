@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, 'docs');
-const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml'};
+const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp'};
 const server = http.createServer((req,res)=>{
   const url = new URL(req.url,'http://localhost');
   const file = path.join(root,url.pathname==='/'?'index.html':decodeURIComponent(url.pathname));
@@ -48,10 +48,14 @@ const server = http.createServer((req,res)=>{
   }
   const assets=await page.evaluate(()=>[...document.querySelectorAll('img[src]')].map(i=>i.getAttribute('src')));
   for(const src of assets)assert(fs.existsSync(path.join(root,src)),src);
-  const ratio=await page.locator('.cover img').evaluate(el=>({display:el.clientWidth/el.clientHeight,natural:el.naturalWidth/el.naturalHeight}));
-  assert(Math.abs(ratio.display-ratio.natural)<0.03,'Cover cropped');
+  const ratio=await page.locator('.hero-art img').evaluate(el=>({display:el.clientWidth/el.clientHeight,natural:el.naturalWidth/el.naturalHeight}));
+  assert(Math.abs(ratio.display-ratio.natural)<0.03,'Hero cropped');
+  assert.equal(await page.locator('.start-card').count(),3);
+  assert((await page.locator('.premium h3').innerText()).includes('$2.99'));
+  for(const selector of ['.hero-art img','.start-card img']) for(const img of await page.locator(selector).all()) await img.evaluate(el=>el.decode());
   assert.deepEqual(errors,[]);
-  fs.writeFileSync('website-validation/result.json',JSON.stringify({languages:9,guideScreens:9,viewports:[1440,390],checks:'translations, screenshots, overflow, full banner, modal, keyboard, persistence',result:'passed'},null,2));
-  console.log('Website passed: 9 languages × 9 guides × 2 widths; banner, modal, keyboard and persistence.');
+  fs.writeFileSync('website-validation/result.json',JSON.stringify({languages:9,guideScreens:9,viewports:[1440,390],checks:'translations, screenshots, overflow, hero and quick-start, modal, keyboard, persistence',result:'passed'},null,2));
+  console.log('Website passed: 9 languages × 9 guides × 2 widths; hero, quick-start, modal, keyboard and persistence.');
   await browser.close();server.close();
 })().catch(e=>{console.error(e);server.close();process.exit(1);});
+

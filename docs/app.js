@@ -28,6 +28,7 @@ const english={};document.querySelectorAll("[data-t]").forEach(e=>english[e.data
 const supported=["en","mk","de","it","es","fr","sr","pt-BR","el"];
 for(const lang of Object.keys(window.PTS_GUIDES))guides.forEach((g,i)=>g[lang]=window.PTS_GUIDES[lang][i]);
 const dictionaries={mk,...window.PTS_TRANSLATIONS};
+for(const [lang,copy] of Object.entries(window.PTS_LANDING_TRANSLATIONS)) Object.assign(dictionaries[lang],copy);
 let language="en",selected=0;
 try{const saved=localStorage.getItem("pts-site-language");if(supported.includes(saved))language=saved;}catch{}
 const nav=document.querySelector(".guide-nav"),panel=document.querySelector("#guide-panel");
@@ -40,3 +41,4 @@ function showImage(){const from=document.querySelector("#guide-image"),img=docum
 document.querySelector("#zoom-trigger").addEventListener("click",showImage);document.querySelector("#screen-button").addEventListener("click",showImage);
 dialog.addEventListener("click",e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
 setLanguage(language);
+
